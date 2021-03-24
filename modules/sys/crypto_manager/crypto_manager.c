@@ -39,7 +39,8 @@ int crypto_manager_gen_keypair(crypto_manager_keys_t* keys)
         goto exit;
     }
     uint32_t key_size = CURVE25519_KEYSIZE;
-    ret = wc_curve25519_export_key_raw(&key, keys->sk, &key_size, keys->pk, &key_size);
+    ret = wc_curve25519_export_key_raw(&key, keys->sk, (word32 *)&key_size,
+                                       keys->pk, (word32 *)&key_size);
     exit:
     wc_FreeRng(&rng);
     return ret;
