@@ -2,11 +2,13 @@
 #include <string.h>
 #include "embUnit.h"
 #include "crypto_manager.h"
+#include "random.h"
 
 static crypto_manager_keys_t keys;
 
 static void setUp(void)
 {
+    random_init(0);
     memset(&keys, 0, sizeof(crypto_manager_keys_t));
 }
 
@@ -17,17 +19,19 @@ static void tearDown(void)
 
 static void test_crypto_manager_gen_keypair(void)
 {
-
+    crypto_manager_keys_t empty_keys;
+    memset(&empty_keys, 0, sizeof(crypto_manager_keys_t));
     TEST_ASSERT(crypto_manager_gen_keypair(&keys) == 0);
+    TEST_ASSERT(memcmp(&empty_keys, &keys, sizeof(crypto_manager_keys_t)));
 }
 
 static void test_crypto_manager_gen_pet(void)
 {
-    /* generate host keys */
     uint8_t pet[SHARED_SECRET_SIZE];
     uint8_t prefix[SHARED_SECRET_SIZE] = { 0 };
-    TEST_ASSERT(crypto_manager_gen_keypair(&keys) == 0);
     crypto_manager_keys_t pub_keys;
+    TEST_ASSERT(crypto_manager_gen_keypair(&keys) == 0);
+    TEST_ASSERT(crypto_manager_gen_keypair(&pub_keys) == 0);
     TEST_ASSERT(crypto_manager_gen_pet(&keys, &pub_keys, prefix, pet) == 0);
 }
 
