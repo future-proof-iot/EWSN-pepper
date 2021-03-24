@@ -1,9 +1,6 @@
 .PHONY: all clean build init-submodules RIOT-branch-%
 
-APPLICATIONS =      \
-    01_uwb_rng      \
-    02_ble_scan_rss \
-    #
+APPLICATIONS = $(wildcard $(CURDIR)/tests/* )
 
 all: build
 
@@ -13,6 +10,12 @@ clean:
 build:
 	for app in $(APPLICATIONS); do make -C $$app all; done
 
+test:
+	for app in $(APPLICATIONS); do make -C $$app all test; done
+
 init-submodules:
 	git submodule update --init --recursive
 	git submodule update
+
+info-debug-variable-%:
+	@echo $($*)

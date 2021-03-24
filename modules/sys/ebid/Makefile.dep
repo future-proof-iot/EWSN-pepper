@@ -1,0 +1,7 @@
+USEPKG += wolfssl
+USEMODULE += wolfcrypt
+USEMODULE += wolfcrypt_curve25519
+USEMODULE += wolfcrypt_random
+
+# USEPKG += hacl
+# USEMODULE += random
