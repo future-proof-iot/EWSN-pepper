@@ -11,7 +11,7 @@ build:
 	for app in $(APPLICATIONS); do make -C $$app all; done
 
 test:
-	for app in $(APPLICATIONS); do make -C $$app all test; done
+	for app in $(APPLICATIONS); do make -C $$app flash test; done
 
 init-submodules:
 	git submodule update --init --recursive
