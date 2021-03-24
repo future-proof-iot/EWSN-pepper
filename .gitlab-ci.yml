@@ -1,0 +1,9 @@
+variables:
+  GIT_SUBMODULE_STRATEGY: normal
+
+default:
+  image: riot/riotbuild
+
+build:
+  script:
+    - make
