@@ -1,5 +1,6 @@
 
 #include <string.h>
+
 #include "embUnit.h"
 #include "crypto_manager.h"
 #include "random.h"

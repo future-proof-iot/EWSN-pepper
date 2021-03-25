@@ -23,9 +23,6 @@
 #include "hashes/sha256.h"
 #include "wolfssl/wolfcrypt/curve25519.h"
 
-#define ENABLE_DEBUG    1
-#include "debug.h"
-
 int crypto_manager_gen_keypair(crypto_manager_keys_t *keys)
 {
     int ret;
