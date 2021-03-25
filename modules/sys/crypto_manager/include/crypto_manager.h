@@ -35,10 +35,18 @@ typedef struct {
     uint8_t sk[C25519_KEY_SIZE];
 } crypto_manager_keys_t;
 
+typedef struct {
+    uint8_t rtl[C25519_KEY_SIZE];
+    uint8_t etl[C25519_KEY_SIZE];
+} pet_t;
+
 int crypto_manager_gen_keypair(crypto_manager_keys_t* keys);
 
-int crypto_manager_gen_pet(crypto_manager_keys_t* sk, crypto_manager_keys_t* pk,
-                           uint8_t* prefix, uint8_t* pet);
+int crypto_manager_gen_pet(crypto_manager_keys_t *keys, uint8_t *pk,
+                           const uint8_t *prefix, uint8_t *pet);
+
+int crypto_manager_gen_pets(crypto_manager_keys_t *keys, uint8_t *ebid,
+                            pet_t* pet);
 
 #ifdef __cplusplus
 }

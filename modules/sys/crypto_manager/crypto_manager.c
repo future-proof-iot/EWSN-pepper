@@ -44,8 +44,7 @@ exit:
     return ret;
 }
 
-int _gen_shared_secret(crypto_manager_keys_t *sk, crypto_manager_keys_t *pk,
-                       uint8_t *secret, size_t secret_len)
+int _gen_shared_secret(uint8_t *sk, uint8_t *pk, uint8_t *secret, size_t secret_len)
 {
     curve25519_key sec;
     curve25519_key pub;
@@ -54,12 +53,12 @@ int _gen_shared_secret(crypto_manager_keys_t *sk, crypto_manager_keys_t *pk,
     wc_curve25519_init(&sec);
     wc_curve25519_init(&pub);
 
-    ret = wc_curve25519_import_private_ex(sk->sk, CURVE25519_KEYSIZE, &sec,
+    ret = wc_curve25519_import_private_ex(sk, CURVE25519_KEYSIZE, &sec,
                                           EC25519_LITTLE_ENDIAN);
     if (ret) {
         goto exit;
     }
-    ret = wc_curve25519_import_public_ex(pk->pk, CURVE25519_KEYSIZE, &pub,
+    ret = wc_curve25519_import_public_ex(pk, CURVE25519_KEYSIZE, &pub,
                                          EC25519_LITTLE_ENDIAN);
     if (ret) {
         goto exit;
@@ -74,13 +73,13 @@ exit:
     return ret;
 }
 
-int crypto_manager_gen_pet(crypto_manager_keys_t *sk, crypto_manager_keys_t *pk,
-                           uint8_t *prefix, uint8_t *pet)
+int crypto_manager_gen_pet(crypto_manager_keys_t *keys, uint8_t *pk,
+                           const uint8_t *prefix, uint8_t *pet)
 {
     uint8_t buf[SHARED_SECRET_SIZE];
     uint8_t secret[SHARED_SECRET_SIZE];
 
-    if (_gen_shared_secret(sk, pk, secret, SHARED_SECRET_SIZE)) {
+    if (_gen_shared_secret(keys->sk, pk, secret, SHARED_SECRET_SIZE)) {
         return -1;
     }
 
@@ -95,3 +94,42 @@ int crypto_manager_gen_pet(crypto_manager_keys_t *sk, crypto_manager_keys_t *pk,
 
     return 0;
 }
+
+int crypto_manager_gen_pets(crypto_manager_keys_t *keys, uint8_t *ebid,
+                            pet_t* pet)
+{
+    static const uint8_t ones[] = {
+        0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
+        0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
+        0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
+        0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
+    };
+    static const uint8_t twos[] = {
+        0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02,
+        0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02,
+        0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02,
+        0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02,
+    };
+
+    int8_t pk_gt_ebid = -1;
+    for (uint8_t i = 0; i < CURVE25519_KEYSIZE; i ++) {
+        if (keys->pk[i] > ebid[i]) {
+            pk_gt_ebid = 1;
+            break;
+        } else if (keys->pk[i] < ebid[i]) {
+            pk_gt_ebid = 0;
+            break;
+        }
+    }
+    if (pk_gt_ebid == -1) {
+        return -1;
+    } else if (pk_gt_ebid == 0) {
+        crypto_manager_gen_pet(keys, ebid, twos, pet->etl);
+        crypto_manager_gen_pet(keys, ebid, ones, pet->rtl);
+    } else {
+        crypto_manager_gen_pet(keys, ebid, ones, pet->etl);
+        crypto_manager_gen_pet(keys, ebid, twos, pet->rtl);
+    }
+    return 0;
+}
+

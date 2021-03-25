@@ -29,11 +29,11 @@ static void test_crypto_manager_gen_keypair(void)
 static void test_crypto_manager_gen_pet(void)
 {
     uint8_t pet[SHARED_SECRET_SIZE];
-    uint8_t prefix[SHARED_SECRET_SIZE] = { 0 };
+    const uint8_t prefix[SHARED_SECRET_SIZE] = { 0 };
     crypto_manager_keys_t pub_keys;
     TEST_ASSERT(crypto_manager_gen_keypair(&keys) == 0);
     TEST_ASSERT(crypto_manager_gen_keypair(&pub_keys) == 0);
-    TEST_ASSERT(crypto_manager_gen_pet(&keys, &pub_keys, prefix, pet) == 0);
+    TEST_ASSERT(crypto_manager_gen_pet(&keys, pub_keys.pk, prefix, pet) == 0);
 }
 
 Test *tests_crypto_manager(void)
