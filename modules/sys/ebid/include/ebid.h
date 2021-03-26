@@ -11,6 +11,13 @@
  * @ingroup     sys
  * @brief       C25519 based Ephemeral Bluetooth Identifiers Generator (EBID)
  *
+ * All @ref ebid_t struct should be initialized by caling @ref ebid_init.
+ * Once initialized an ebid_t can be generated from a public/secret key pair
+ * with @ref ebid_generate, or interatively loaded by use of the different
+ * @ref ebid_set_slice1, ebid_set_slice2, etc. Once at least 3 out of
+ * the 3 slices + xor are set the full ebid can be reconstructed with
+ * @ref ebid_reconstruct
+ *
  * @{
  *
  * @file

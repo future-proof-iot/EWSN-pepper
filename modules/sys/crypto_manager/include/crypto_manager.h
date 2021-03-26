@@ -11,6 +11,13 @@
  * @ingroup     sys
  * @brief       Desire Crypto Manager
  *
+ * A public/private key pair can ve generated from a preallocated
+ * @ref crypto_manager_keys_t structure by calling @ref crypto_manager_gen_keypair.
+ *
+ * Once ebid are received the Private Encounter Tokens can be generated
+ * by calling @ref crypto_manager_gen_pets with the received ebid and
+ * the host public/private key pair for that encounter.
+ *
  * @{
  *
  * @file
@@ -35,7 +42,6 @@ extern "C" {
  * @brief   Private Encounter Tokens (PET) size
  */
 #define     PET_SIZE                (32U)
-
 
 /**
  * @brief   Public and Secret key pair
