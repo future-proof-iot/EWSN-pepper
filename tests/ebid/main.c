@@ -6,19 +6,19 @@
 #include "random.h"
 #include "crypto_manager.h"
 
-static const uint8_t desire_ebid_slice_1[EBID_SLICE_SIZE] = {
+static const uint8_t desire_ebid_slice_1[EBID_SLICE_SIZE_LONG] = {
     0x20, 0x21, 0x22, 0x23,
     0x24, 0x25, 0x26, 0x27,
     0x28, 0x29, 0x20, 0x2e
 };
 
-static const uint8_t desire_ebid_slice_2[EBID_SLICE_SIZE] = {
+static const uint8_t desire_ebid_slice_2[EBID_SLICE_SIZE_LONG] = {
     0x10, 0x11, 0x12, 0x13,
     0x14, 0x15, 0x16, 0x17,
     0x18, 0x19, 0x20, 0xfe
 };
 
-static const uint8_t desire_ebid_slice_3[EBID_SLICE_SHORT_SIZE] = {
+static const uint8_t desire_ebid_slice_3[EBID_SLICE_SIZE_SHORT] = {
     0x10, 0x11, 0x12, 0x13,
     0x14, 0x15, 0x16, 0x17
 };
@@ -33,7 +33,7 @@ static const uint8_t desire_ebid[EBID_SIZE] = {
     0x16, 0x17
 };
 
-static const uint8_t desire_ebid_xor[EBID_SLICE_SIZE] = {
+static const uint8_t desire_ebid_xor[EBID_SLICE_SIZE_LONG] = {
     0x20, 0x21, 0x22, 0x23,
     0x24, 0x25, 0x26, 0x27,
     0x30, 0x30, 0x00, 0xd0
@@ -55,24 +55,24 @@ static crypto_manager_keys_t keys = {
     }
 };
 
-static const uint8_t ebid_slice_1[EBID_SLICE_SIZE] = {
+static const uint8_t ebid_slice_1[EBID_SLICE_SIZE_LONG] = {
     0x5c, 0x24, 0x4c, 0x6e,
     0xf9, 0x7a, 0x02, 0x9c,
     0x83, 0xe3, 0x67, 0xac,
 };
 
-static const uint8_t ebid_slice_2[EBID_SLICE_SIZE] = {
+static const uint8_t ebid_slice_2[EBID_SLICE_SIZE_LONG] = {
     0x3c, 0x31, 0xd0, 0x20,
     0x97, 0xdc, 0x59, 0xf8,
     0xab, 0xe4, 0xa5, 0xb8,
 };
 
-static const uint8_t ebid_slice_3[EBID_SLICE_SHORT_SIZE] = {
+static const uint8_t ebid_slice_3[EBID_SLICE_SIZE_SHORT] = {
     0xf6, 0xd9, 0x07, 0x11,
     0x3d, 0xce, 0x90, 0x25
 };
 
-static const uint8_t ebid_xor[EBID_SLICE_SIZE] = {
+static const uint8_t ebid_xor[EBID_SLICE_SIZE_LONG] = {
     0x96, 0xcc, 0x9b, 0x5f,
     0x53, 0x68, 0xcb, 0x41,
     0x28, 0x07, 0xc2, 0x14
@@ -95,18 +95,18 @@ static void test_ebid_generate(void)
 {
     ebid_generate(&ebid, &keys);
     TEST_ASSERT(memcmp(keys.pk, ebid.parts.ebid.u8, sizeof(EBID_SIZE)) == 0);
-    TEST_ASSERT(memcmp(ebid_get_part1(&ebid), ebid_slice_1, sizeof(EBID_SLICE_SIZE)) == 0);
-    TEST_ASSERT(memcmp(ebid_get_part2(&ebid), ebid_slice_2, sizeof(EBID_SLICE_SIZE)) == 0);
-    TEST_ASSERT(memcmp(ebid_get_part3(&ebid), ebid_slice_3, sizeof(EBID_SLICE_SHORT_SIZE)) == 0);
+    TEST_ASSERT(memcmp(ebid_get_slice1(&ebid), ebid_slice_1, sizeof(EBID_SLICE_SIZE_LONG)) == 0);
+    TEST_ASSERT(memcmp(ebid_get_slice2(&ebid), ebid_slice_2, sizeof(EBID_SLICE_SIZE_LONG)) == 0);
+    TEST_ASSERT(memcmp(ebid_get_slice3(&ebid), ebid_slice_3, sizeof(EBID_SLICE_SIZE_SHORT)) == 0);
     uint8_t zero_buffer[4] = {0};
-    TEST_ASSERT(memcmp(&ebid.parts.ebid.slice.ebid_3[EBID_SLICE_SHORT_SIZE], zero_buffer, sizeof(zero_buffer)) == 0);
-    TEST_ASSERT(memcmp(ebid_get_part4(&ebid), ebid_xor, sizeof(EBID_SLICE_SIZE)) == 0);
+    TEST_ASSERT(memcmp(&ebid.parts.ebid.slice.ebid_3[EBID_SLICE_SIZE_SHORT], zero_buffer, sizeof(zero_buffer)) == 0);
+    TEST_ASSERT(memcmp(ebid_get_xor(&ebid), ebid_xor, sizeof(EBID_SLICE_SIZE_LONG)) == 0);
 }
 
 static void test_ebid_reconstruct_FAIL(void)
 {
-    ebid_set_part2(&ebid, ebid_slice_2);
-    ebid_set_part3(&ebid, ebid_slice_3);
+    ebid_set_slice2(&ebid, ebid_slice_2);
+    ebid_set_slice3(&ebid, ebid_slice_3);
     TEST_ASSERT(ebid_reconstruct(&ebid));
 }
 
@@ -118,38 +118,38 @@ static void test_ebid_reconstruct_SUCCESS_ALL_SET(void)
 
 static void test_ebid_reconstruct_SUCCESS_1(void)
 {
-    ebid_set_part2(&ebid, ebid_slice_2);
-    ebid_set_part3(&ebid, ebid_slice_3);
-    ebid_set_part4(&ebid, ebid_xor);
+    ebid_set_slice2(&ebid, ebid_slice_2);
+    ebid_set_slice3(&ebid, ebid_slice_3);
+    ebid_set_xor(&ebid, ebid_xor);
     ebid_reconstruct(&ebid);
-    TEST_ASSERT(memcmp(ebid_get_part1(&ebid), ebid_slice_1, sizeof(EBID_SLICE_SIZE)) == 0);
+    TEST_ASSERT(memcmp(ebid_get_slice1(&ebid), ebid_slice_1, sizeof(EBID_SLICE_SIZE_LONG)) == 0);
 }
 
 static void test_ebid_reconstruct_SUCCESS_2(void)
 {
-    ebid_set_part1(&ebid, ebid_slice_1);
-    ebid_set_part3(&ebid, ebid_slice_3);
-    ebid_set_part4(&ebid, ebid_xor);
+    ebid_set_slice1(&ebid, ebid_slice_1);
+    ebid_set_slice3(&ebid, ebid_slice_3);
+    ebid_set_xor(&ebid, ebid_xor);
     ebid_reconstruct(&ebid);
-    TEST_ASSERT(memcmp(ebid_get_part2(&ebid), ebid_slice_2, sizeof(EBID_SLICE_SIZE)) == 0);
+    TEST_ASSERT(memcmp(ebid_get_slice2(&ebid), ebid_slice_2, sizeof(EBID_SLICE_SIZE_LONG)) == 0);
 }
 
 static void test_ebid_reconstruct_SUCCESS_3(void)
 {
-    ebid_set_part1(&ebid, ebid_slice_1);
-    ebid_set_part2(&ebid, ebid_slice_2);
-    ebid_set_part4(&ebid, ebid_xor);
+    ebid_set_slice1(&ebid, ebid_slice_1);
+    ebid_set_slice2(&ebid, ebid_slice_2);
+    ebid_set_xor(&ebid, ebid_xor);
     ebid_reconstruct(&ebid);
-    TEST_ASSERT(memcmp(ebid_get_part3(&ebid), ebid_slice_3, sizeof(EBID_SLICE_SIZE)) == 0);
+    TEST_ASSERT(memcmp(ebid_get_slice3(&ebid), ebid_slice_3, sizeof(EBID_SLICE_SIZE_LONG)) == 0);
 }
 
 static void test_ebid_reconstruct_SUCCESS_xor(void)
 {
-    ebid_set_part1(&ebid, ebid_slice_1);
-    ebid_set_part2(&ebid, ebid_slice_2);
-    ebid_set_part3(&ebid, ebid_slice_3);
+    ebid_set_slice1(&ebid, ebid_slice_1);
+    ebid_set_slice2(&ebid, ebid_slice_2);
+    ebid_set_slice3(&ebid, ebid_slice_3);
     ebid_reconstruct(&ebid);
-    TEST_ASSERT(memcmp(ebid_get_part4(&ebid), ebid_xor, sizeof(EBID_SLICE_SIZE)) == 0);
+    TEST_ASSERT(memcmp(ebid_get_xor(&ebid), ebid_xor, sizeof(EBID_SLICE_SIZE_LONG)) == 0);
 }
 
 static void test_ebid_generate_desire(void)
@@ -158,17 +158,17 @@ static void test_ebid_generate_desire(void)
     memcpy(keys.pk, desire_ebid, EBID_SIZE);
     ebid_generate(&ebid, &keys);
     TEST_ASSERT(memcmp(desire_ebid, ebid.parts.ebid.u8, sizeof(EBID_SIZE)) == 0);
-    TEST_ASSERT(memcmp(ebid_get_part1(&ebid), desire_ebid_slice_1, sizeof(EBID_SLICE_SIZE)) == 0);
-    TEST_ASSERT(memcmp(ebid_get_part2(&ebid), desire_ebid_slice_2, sizeof(EBID_SLICE_SIZE)) == 0);
-    TEST_ASSERT(memcmp(ebid_get_part3(&ebid), desire_ebid_slice_3, sizeof(EBID_SLICE_SHORT_SIZE)) == 0);
+    TEST_ASSERT(memcmp(ebid_get_slice1(&ebid), desire_ebid_slice_1, sizeof(EBID_SLICE_SIZE_LONG)) == 0);
+    TEST_ASSERT(memcmp(ebid_get_slice2(&ebid), desire_ebid_slice_2, sizeof(EBID_SLICE_SIZE_LONG)) == 0);
+    TEST_ASSERT(memcmp(ebid_get_slice3(&ebid), desire_ebid_slice_3, sizeof(EBID_SLICE_SIZE_SHORT)) == 0);
 }
 
 static void test_ebid_reconstruct_desire(void)
 {
     /* set the desire ebid as pk */
-    ebid_set_part1(&ebid, desire_ebid_slice_1);
-    ebid_set_part2(&ebid, desire_ebid_slice_2);
-    ebid_set_part3(&ebid, desire_ebid_slice_3);
+    ebid_set_slice1(&ebid, desire_ebid_slice_1);
+    ebid_set_slice2(&ebid, desire_ebid_slice_2);
+    ebid_set_slice3(&ebid, desire_ebid_slice_3);
     ebid_reconstruct(&ebid);
     TEST_ASSERT(memcmp(desire_ebid, ebid.parts.ebid.u8, sizeof(EBID_SIZE)) == 0);
 }
@@ -176,17 +176,17 @@ static void test_ebid_reconstruct_desire(void)
 static void test_ebid_reconstruct_FAIL_desire(void)
 {
     /* set the desire ebid as pk */
-    ebid_set_part1(&ebid, desire_ebid_slice_1);
-    ebid_set_part2(&ebid, desire_ebid_slice_2);
+    ebid_set_slice1(&ebid, desire_ebid_slice_1);
+    ebid_set_slice2(&ebid, desire_ebid_slice_2);
     TEST_ASSERT(ebid_reconstruct(&ebid));
 }
 
 static void test_ebid_reconstruct_SUCCESS_1_desire(void)
 {
     /* set the desire ebid as pk */
-    ebid_set_part1(&ebid, desire_ebid_slice_1);
-    ebid_set_part2(&ebid, desire_ebid_slice_2);
-    ebid_set_part4(&ebid, desire_ebid_xor);
+    ebid_set_slice1(&ebid, desire_ebid_slice_1);
+    ebid_set_slice2(&ebid, desire_ebid_slice_2);
+    ebid_set_xor(&ebid, desire_ebid_xor);
     ebid_reconstruct(&ebid);
     TEST_ASSERT(memcmp(desire_ebid, ebid.parts.ebid.u8, sizeof(EBID_SIZE)) == 0);
 }
