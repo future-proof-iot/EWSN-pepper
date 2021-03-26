@@ -7,3 +7,7 @@ default:
 build:
   script:
     - make
+
+test:
+  script:
+    - make test
