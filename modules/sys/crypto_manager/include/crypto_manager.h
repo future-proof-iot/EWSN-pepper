@@ -86,7 +86,7 @@ int crypto_manager_gen_keypair(crypto_manager_keys_t* keys);
  * @return      0 on success, -1 otherwise
  */
 int crypto_manager_gen_pet(crypto_manager_keys_t *keys, uint8_t *pk,
-                           const uint8_t *prefix, uint8_t *pet);
+                           const uint8_t prefix, uint8_t *pet);
 
 /**
  * @brief       Generate a Request Token and an Encounter Token
