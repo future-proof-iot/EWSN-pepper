@@ -19,7 +19,7 @@
  * @author      Francisco Molina <francois-xavier.molina@inria.fr>
  *
  * @}
- */
+*/
 
 #include <assert.h>
 
@@ -52,6 +52,8 @@ exit:
 
 int _gen_shared_secret(uint8_t *sk, uint8_t *pk, uint8_t *secret, size_t secret_len)
 {
+    assert(sk && pk && secret);
+
     curve25519_key sec;
     curve25519_key pub;
     int ret = 0;
@@ -60,18 +62,17 @@ int _gen_shared_secret(uint8_t *sk, uint8_t *pk, uint8_t *secret, size_t secret_
     wc_curve25519_init(&pub);
 
     ret = wc_curve25519_import_private_ex(sk, CURVE25519_KEYSIZE, &sec,
-                                          EC25519_LITTLE_ENDIAN);
+                                          EC25519_BIG_ENDIAN);
     if (ret) {
         goto exit;
     }
     ret = wc_curve25519_import_public_ex(pk, CURVE25519_KEYSIZE, &pub,
-                                         EC25519_LITTLE_ENDIAN);
+                                         EC25519_BIG_ENDIAN);
     if (ret) {
         goto exit;
     }
-    ret = wc_curve25519_shared_secret_ex(&pub, &pub, secret, &secret_len,
-                                         EC25519_LITTLE_ENDIAN);
-
+    ret = wc_curve25519_shared_secret_ex(&sec, &pub, secret, &secret_len,
+                                         EC25519_BIG_ENDIAN);
 exit:
     wc_curve25519_free(&sec);
     wc_curve25519_free(&pub);
@@ -83,9 +84,10 @@ int crypto_manager_gen_pet(crypto_manager_keys_t *keys, uint8_t *pk,
                            const uint8_t *prefix, uint8_t *pet)
 {
     assert(keys && pk && prefix && pet);
-
-    uint8_t buf[PET_SIZE];
-    uint8_t secret[PET_SIZE];
+    uint8_t buf[PET_SIZE] = {0};
+    uint8_t secret[PET_SIZE] = {0};
+    /* clear pet */
+    memset(pet, 0, PET_SIZE);
 
     if (_gen_shared_secret(keys->sk, pk, secret, PET_SIZE)) {
         return -1;
