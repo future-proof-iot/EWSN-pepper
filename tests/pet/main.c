@@ -58,8 +58,8 @@ static void test_crypto_manager_gen_pets(void)
     ebid_generate(&alice, &keys_alice);
     crypto_manager_gen_pets(&keys_alice, bob.parts.ebid.u8, &pet_alice);
     crypto_manager_gen_pets(&keys_bob, alice.parts.ebid.u8, &pet_bob);
-    TEST_ASSERT(memcmp(pet_bob.et, pet_alice.rt, sizeof(pet_bob.et)));
-    TEST_ASSERT(memcmp(pet_alice.et, pet_bob.rt, sizeof(pet_bob.et)));
+    TEST_ASSERT(memcmp(pet_bob.et, pet_alice.rt, sizeof(pet_bob.et)) == 0);
+    TEST_ASSERT(memcmp(pet_alice.et, pet_bob.rt, sizeof(pet_bob.et)) == 0);
 }
 
 Test *tests_ebid(void)

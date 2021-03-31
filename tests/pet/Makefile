@@ -12,6 +12,6 @@ EXTERNAL_MODULE_DIRS += $(CURDIR)/../../modules/sys/crypto_manager
 USEMODULE += ebid
 EXTERNAL_MODULE_DIRS += $(CURDIR)/../../modules/sys/ebid
 
-CFLAGS += -DEBID_FIXED_KEYS
+CFLAGS += -DEBID_FIXED_KEYS=1
 
 include $(RIOTBASE)/Makefile.include
