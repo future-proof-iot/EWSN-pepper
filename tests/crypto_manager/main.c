@@ -28,7 +28,7 @@ static void test_crypto_manager_gen_keypair(void)
 static void test_crypto_manager_gen_pet(void)
 {
     uint8_t pet[PET_SIZE];
-    const uint8_t prefix[PET_SIZE] = { 0 };
+    const uint8_t prefix = 0;
     crypto_manager_keys_t pub_keys;
     TEST_ASSERT(crypto_manager_gen_keypair(&keys) == 0);
     TEST_ASSERT(crypto_manager_gen_keypair(&pub_keys) == 0);
