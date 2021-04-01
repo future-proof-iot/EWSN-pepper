@@ -51,13 +51,14 @@ exit:
     return ret;
 }
 
-int _gen_shared_secret(uint8_t *sk, uint8_t *pk, uint8_t *secret, size_t secret_len)
+int crypto_manager_shared_secret(uint8_t *sk, uint8_t *pk, uint8_t *secret)
 {
     assert(sk && pk && secret);
 
     curve25519_key sec;
     curve25519_key pub;
     int ret = 0;
+    size_t secret_len = CURVE25519_KEYSIZE;
 
     wc_curve25519_init(&sec);
     wc_curve25519_init(&pub);
@@ -89,7 +90,7 @@ int crypto_manager_gen_pet(crypto_manager_keys_t *keys, uint8_t *pk,
     /* clear pet */
     memset(pet, 0, PET_SIZE);
 
-    if (_gen_shared_secret(keys->sk, pk, secret, PET_SIZE)) {
+    if (crypto_manager_shared_secret(keys->sk, pk, secret)) {
         return -1;
     }
 

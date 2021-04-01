@@ -69,6 +69,20 @@ typedef struct {
 int crypto_manager_gen_keypair(crypto_manager_keys_t* keys);
 
 /**
+ * @brief       Compute shared secret key
+ *
+ * This function computes a shared secret key given a secret private key and a received public key.
+ * It stores the generated secret key in the 'secret' out buffer.
+ *
+ * @param[in]       sk      32 bytes secret key
+ * @param[in]       pk      32 bytes public key (pk != keys->pk)
+ * @param[in]       secret  Pointer to a buffer in which to store the 32 byte computed secret key.
+ *
+ * @return      0 on success, -1 otherwise
+ */
+int crypto_manager_shared_secret(uint8_t *sk, uint8_t *pk, uint8_t *secret);
+
+/**
  * @brief       Generate a Privacy Encounter Token
  *
  * This function will generate a shared secret from the keys secret key (keys->sk)
