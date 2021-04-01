@@ -63,10 +63,10 @@ static void test_crypto_manager_gen_keypair(void)
 static void test_crypto_manager_gen_pet(void)
 {
     _b64_decode_test_vectors();
-    uint8_t pet_1[32];
-    uint8_t pet_2[32];
-    TEST_ASSERT(crypto_manager_gen_pet(&keys, ebid, 0x01, expected_pet_1) == 0);
-    TEST_ASSERT(crypto_manager_gen_pet(&keys, ebid, 0x02, expected_pet_2) == 0);
+    uint8_t pet_1[32] = {0};
+    uint8_t pet_2[32] = {0};
+    TEST_ASSERT(crypto_manager_gen_pet(&keys, ebid, 0x01, pet_1) == 0);
+    TEST_ASSERT(crypto_manager_gen_pet(&keys, ebid, 0x02, pet_2) == 0);
     TEST_ASSERT(memcmp(pet_1, expected_pet_1, PET_SIZE) == 0);
     TEST_ASSERT(memcmp(pet_2, expected_pet_2, PET_SIZE) == 0);
 }
