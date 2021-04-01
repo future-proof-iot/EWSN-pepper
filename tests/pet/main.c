@@ -147,6 +147,8 @@ static void _desire_b64_decode(void)
 
 static void test_crypto_manager_gen_pets_desire(void)
 {
+    int ret;
+
     _desire_b64_decode();
     ebid_t bob;
     ebid_t alice;
@@ -156,11 +158,17 @@ static void test_crypto_manager_gen_pets_desire(void)
     ebid_init(&bob);
     ebid_init(&alice);
     
-    ebid_generate(&bob, &keys_bob_desire);
-    ebid_generate(&alice, &keys_alice_desire);
+    ret = ebid_generate(&bob, &keys_bob_desire);
+    TEST_ASSERT_EQUAL_INT(ret, 0);
 
-    crypto_manager_gen_pets(&keys_alice_desire, bob.parts.ebid.u8, &pet_alice);
-    crypto_manager_gen_pets(&keys_bob_desire, alice.parts.ebid.u8, &pet_bob);
+    ret = ebid_generate(&alice, &keys_alice_desire);
+    TEST_ASSERT_EQUAL_INT(ret, 0);
+
+    ret = crypto_manager_gen_pets(&keys_alice_desire, bob.parts.ebid.u8, &pet_alice);
+    TEST_ASSERT_EQUAL_INT(ret, 0);
+
+    ret = crypto_manager_gen_pets(&keys_bob_desire, alice.parts.ebid.u8, &pet_bob);
+    TEST_ASSERT_EQUAL_INT(ret, 0);
 
     _printBuf("pet_1: ", pet_1, sizeof(pet_bob.et));
     _printBuf("pet_bob.et: ", pet_bob.et, sizeof(pet_bob.et));
