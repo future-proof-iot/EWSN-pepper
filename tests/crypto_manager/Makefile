@@ -6,6 +6,7 @@ BOARD ?= native
 RIOTBASE ?= $(CURDIR)/../../RIOT
 
 USEMODULE += embunit
+USEMODULE += base64
 USEMODULE += crypto_manager
 EXTERNAL_MODULE_DIRS += $(CURDIR)/../../modules/sys/crypto_manager
 
