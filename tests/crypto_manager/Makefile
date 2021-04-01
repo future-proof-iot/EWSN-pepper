@@ -9,4 +9,6 @@ USEMODULE += embunit
 USEMODULE += crypto_manager
 EXTERNAL_MODULE_DIRS += $(CURDIR)/../../modules/sys/crypto_manager
 
+DEFAULT_MODULE += test_utils_interactive_sync
+
 include $(RIOTBASE)/Makefile.include

@@ -15,4 +15,6 @@ EXTERNAL_MODULE_DIRS += $(CURDIR)/../../modules/sys/ebid
 
 CFLAGS += -DEBID_FIXED_KEYS=1
 
+DEFAULT_MODULE += test_utils_interactive_sync
+
 include $(RIOTBASE)/Makefile.include
