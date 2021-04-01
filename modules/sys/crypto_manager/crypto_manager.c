@@ -59,6 +59,21 @@ int crypto_manager_shared_secret(uint8_t *sk, uint8_t *pk, uint8_t *secret)
 {
     assert(sk && pk && secret);
 
+    if (IS_ACTIVE(ENABLE_DEBUG)) {
+        DEBUG("[crypto_manager]: sk: ");
+        for(uint8_t i = 0; i < PET_SIZE; i++) {
+            DEBUG("%02x ", sk[i]);
+        }
+        DEBUG("\n");
+    }
+    if (IS_ACTIVE(ENABLE_DEBUG)) {
+        DEBUG("[crypto_manager]: pk: ");
+        for(uint8_t i = 0; i < PET_SIZE; i++) {
+            DEBUG("%02x ", pk[i]);
+        }
+        DEBUG("\n");
+    }
+
     curve25519_key sec;
     curve25519_key pub;
     int ret = 0;
@@ -70,11 +85,13 @@ int crypto_manager_shared_secret(uint8_t *sk, uint8_t *pk, uint8_t *secret)
     ret = wc_curve25519_import_private_ex(sk, CURVE25519_KEYSIZE, &sec,
                                           EC25519_LITTLE_ENDIAN);
     if (ret) {
+        DEBUG("[crypto_manager]: failed private key import");
         goto exit;
     }
     ret = wc_curve25519_import_public_ex(pk, CURVE25519_KEYSIZE, &pub,
                                          EC25519_LITTLE_ENDIAN);
     if (ret) {
+        DEBUG("[crypto_manager]: failed public key import");
         goto exit;
     }
     ret = wc_curve25519_shared_secret_ex(&sec, &pub, secret, &secret_len,
@@ -84,8 +101,7 @@ exit:
     wc_curve25519_free(&pub);
 
     if (IS_ACTIVE(ENABLE_DEBUG)) {
-        DEBUG("\n");
-        DEBUG("shared secret: ");
+        DEBUG("[crypto_manager]: shared secret: ");
         for(uint8_t i = 0; i < PET_SIZE; i++) {
             DEBUG("%02x ", secret[i]);
         }
@@ -104,6 +120,7 @@ int crypto_manager_gen_pet(crypto_manager_keys_t *keys, uint8_t *pk,
     memset(pet, 0, PET_SIZE);
 
     if (crypto_manager_shared_secret(keys->sk, pk, secret)) {
+        DEBUG("[crypto_manager]: failed secret generation");
         return -1;
     }
 

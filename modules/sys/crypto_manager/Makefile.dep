@@ -2,5 +2,4 @@ USEPKG += wolfssl
 USEMODULE += wolfcrypt
 USEMODULE += wolfcrypt_curve25519
 USEMODULE += wolfcrypt_random
-
 USEMODULE += hashes
