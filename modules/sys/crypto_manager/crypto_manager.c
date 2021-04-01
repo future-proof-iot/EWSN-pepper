@@ -25,8 +25,12 @@
 
 #include "crypto_manager.h"
 
+#include "kernel_defines.h"
 #include "hashes/sha256.h"
 #include "wolfssl/wolfcrypt/curve25519.h"
+
+#define ENABLE_DEBUG    0
+#include "debug.h"
 
 int crypto_manager_gen_keypair(crypto_manager_keys_t *keys)
 {
@@ -78,6 +82,15 @@ int crypto_manager_shared_secret(uint8_t *sk, uint8_t *pk, uint8_t *secret)
 exit:
     wc_curve25519_free(&sec);
     wc_curve25519_free(&pub);
+
+    if (IS_ACTIVE(ENABLE_DEBUG)) {
+        DEBUG("\n");
+        DEBUG("shared secret: ");
+        for(uint8_t i = 0; i < PET_SIZE; i++) {
+            DEBUG("%02x ", secret[i]);
+        }
+        DEBUG("\n");
+    }
 
     return ret;
 }
