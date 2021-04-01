@@ -1,4 +1,4 @@
 [submodule "RIOT"]
 	path = RIOT
-	url = git@gitlab.inria.fr:pepper/RIOT.git
+	url = https://gitlab.inria.fr/pepper/riot-desire.git
 	branch = pepper/wip/nimble-uwb-core
