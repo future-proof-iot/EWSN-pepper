@@ -28,6 +28,7 @@
 
 #include <inttypes.h>
 #include <assert.h>
+#include <stdbool.h>
 
 #include "clist.h"
 
@@ -35,16 +36,24 @@
 extern "C" {
 #endif
 
+/**
+ * @brief   Encounter Data Type uninitialized timestamp value
+ */
 #define EDL_TIMESTAMP_NONE      (UINT32_MAX)
 
 /**
- * @brief   Encounter data untion
+ * @brief   Values above this values will be clipped when added to the
+ *          linked list
+ */
+#define EDL_DATA_RSS_CLIPPING_THRESH    (0)
+
+/**
+ * @brief   Encounter data union
  */
 typedef union __attribute__((packed)) {
     int rssi;         /**< BLE rssi data */
     float range;      /**< TWR range data */
 } edl_data_t;
-
 
 /**
  * @brief   Encounter data list item
@@ -52,7 +61,7 @@ typedef union __attribute__((packed)) {
 typedef struct edl {
     clist_node_t list_node; /**< next element in list */
     edl_data_t data;        /**< encounter relevant data metrics */
-    uint32_t timestamp;     /**< timestamp of data */
+    uint32_t timestamp;     /**< timestamp of data in ms*/
 } edl_t;
 
 /**
@@ -62,7 +71,6 @@ typedef struct edl_list {
     clist_node_t list;    /**< list head */
     void* ebid;           /**< ebid pointer */
 } edl_list_t;
-
 
 /**
  * @brief   Initialize an Encounter Data List
@@ -101,6 +109,9 @@ static inline void edl_init(edl_t * edl)
 static inline void edl_init_rssi(edl_t * edl, int rssi, uint32_t timestamp)
 {
     edl_init(edl);
+    if (rssi > EDL_DATA_RSS_CLIPPING_THRESH) {
+        rssi = EDL_DATA_RSS_CLIPPING_THRESH;
+    }
     edl->data.rssi = rssi;
     edl->timestamp = timestamp;
 }
@@ -194,6 +205,17 @@ edl_t* edl_list_get_by_time(edl_list_t *list, uint32_t timestamp);
  * @return          the exposure time
  */
 uint32_t edl_list_exposure_time(edl_list_t *list);
+
+/**
+ * @brief   Returns the exposure time for a given list
+ *
+ * @param[in]       edl         encounter data list element
+ * @param[in]       start       start of time range
+ * @param[in]       end         end of time range
+ *
+ * @return          the exposure time
+ */
+bool edl_in_range(edl_t* edl, uint32_t start, uint32_t end);
 
 #ifdef __cplusplus
 }

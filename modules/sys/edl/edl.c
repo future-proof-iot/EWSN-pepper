@@ -124,3 +124,11 @@ uint32_t edl_list_exposure_time(edl_list_t *list)
     assert(first->timestamp >= last->timestamp);
     return first->timestamp - last->timestamp;
 }
+
+bool edl_in_range(edl_t* edl, uint32_t start, uint32_t end)
+{
+    if (edl->timestamp >= start && edl->timestamp <= end) {
+        return true;
+    }
+    return false;
+}

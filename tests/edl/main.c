@@ -35,7 +35,7 @@ static void tearDown(void)
     /* Finalize */
 }
 
-static void test_edl_add(void)
+static void test_edl_init_rssi(void)
 {
     edl_t edl_1;
     edl_t edl_2;
@@ -47,6 +47,15 @@ static void test_edl_add(void)
     edl_t *last = (edl_t*) clist_rpeek(&list.list);
     TEST_ASSERT(memcmp(first, &edl_1, sizeof(edl_t)) == 0);
     TEST_ASSERT(memcmp(last, &edl_2, sizeof(edl_t)) == 0);
+}
+
+static void test_edl_add(void)
+{
+    edl_t edl_1;
+    edl_init_rssi(&edl_1, TEST_EDL_RSSI_1, 0);
+    TEST_ASSERT(edl_1.data.rssi == TEST_EDL_RSSI_1);
+    edl_init_rssi(&edl_1, EDL_DATA_RSS_CLIPPING_THRESH + 2, 0);
+    TEST_ASSERT(edl_1.data.rssi == EDL_DATA_RSS_CLIPPING_THRESH);
 }
 
 static void test_edl_remove(void)
@@ -144,9 +153,25 @@ static void test_edl_list_exposure_time(void)
     TEST_ASSERT_EQUAL_INT(19, edl_list_exposure_time(&list));
 }
 
+static void test_edl_in_range(void)
+{
+    edl_t edl;
+    edl_init_rssi(&edl, 0, 1);
+    TEST_ASSERT(edl_in_range(&edl, 0, 1));
+    edl_init_rssi(&edl, 0, 4);
+    TEST_ASSERT(edl_in_range(&edl, 4, 5));
+    edl_init_rssi(&edl, 0, 5);
+    TEST_ASSERT(edl_in_range(&edl, 3, 6));
+    edl_init_rssi(&edl, 0, 1);
+    TEST_ASSERT(!edl_in_range(&edl, 2, 3));
+    edl_init_rssi(&edl, 0, 4);
+    TEST_ASSERT(!edl_in_range(&edl, 2, 3));
+}
+
 Test *tests_edl(void)
 {
     EMB_UNIT_TESTFIXTURES(fixtures) {
+        new_TestFixture(test_edl_init_rssi),
         new_TestFixture(test_edl_add),
         new_TestFixture(test_edl_remove),
         new_TestFixture(test_edl_list_get_nth),
@@ -154,6 +179,7 @@ Test *tests_edl(void)
         new_TestFixture(test_edl_list_get_after),
         new_TestFixture(test_edl_list_get_by_time),
         new_TestFixture(test_edl_list_exposure_time),
+        new_TestFixture(test_edl_in_range),
     };
 
     EMB_UNIT_TESTCALLER(edl_tests, setUp, tearDown, fixtures);
