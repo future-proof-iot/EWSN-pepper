@@ -126,7 +126,7 @@ static inline void edl_init_rssi(edl_t * edl, int rssi, uint32_t timestamp)
 static inline void edl_init_range(edl_t * edl, float range, uint32_t timestamp)
 {
     edl_init(edl);
-    edl->data.rssi = range;
+    edl->data.range = range;
     edl->timestamp = timestamp;
 }
 
