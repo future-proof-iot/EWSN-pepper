@@ -1,4 +1,4 @@
-APPLICATION = test_edl
+APPLICATION = test_rdl_window
 
 BOARD ?= native
 
@@ -7,8 +7,6 @@ RIOTBASE ?= $(CURDIR)/../../RIOT
 
 USEMODULE += embunit
 
-USEMODULE += edl
-EXTERNAL_MODULE_DIRS += $(CURDIR)/../../modules/sys/edl
 USEMODULE += rdl_window
 EXTERNAL_MODULE_DIRS += $(CURDIR)/../../modules/sys/rdl_window
 
