@@ -110,7 +110,6 @@ typedef struct {
  * @brief   EBID descriptor
  */
 typedef struct __attribute__((packed)) {
-    crypto_manager_keys_t* keys;    /**< the key pair matching the ebid, can be NULL*/
     ebid_parts_t parts;             /**< the ebid parts, slices and xor */
     ebid_status_t status;           /**< the ebid status */
 } ebid_t;

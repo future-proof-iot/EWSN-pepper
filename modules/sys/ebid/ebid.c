@@ -31,13 +31,12 @@ void ebid_init(ebid_t* ebid)
 
 int ebid_generate(ebid_t* ebid, crypto_manager_keys_t *keys)
 {
-    ebid->keys = keys;
     int ret = 0;
     if (!IS_ACTIVE(EBID_FIXED_KEYS)) {
-        ret = crypto_manager_gen_keypair(ebid->keys);
+        ret = crypto_manager_gen_keypair(keys);
     }
     if (ret == 0) {
-        memcpy(ebid->parts.ebid.u8, ebid->keys->pk, C25519_KEY_SIZE);
+        memcpy(ebid->parts.ebid.u8, keys->pk, C25519_KEY_SIZE);
     }
     for (uint8_t i = 0; i < EBID_SLICE_SIZE_LONG; i++) {
         ebid->parts.ebid_xor[i] = ebid->parts.ebid.slice.ebid_1[i] ^
