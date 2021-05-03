@@ -4,10 +4,23 @@ variables:
 default:
   image: riot/riotbuild
 
+stages:
+  - static-checks
+  - build
+  - test
+
 build:
+  stage: build
   script:
     - make
 
 test:
+  stage: test
   script:
     - make test
+
+cppcheck:
+  stage: static-checks
+  allow_failure: true
+  script:
+    - cppcheck --enable=style --quiet ./modules/ ./tests/
