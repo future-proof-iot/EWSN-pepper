@@ -24,6 +24,7 @@
 #include "epoch.h"
 #include "fmt.h"
 #include "log.h"
+#include "base64.h"
 #include "test_utils/result_output.h"
 
 typedef struct top_ed {
