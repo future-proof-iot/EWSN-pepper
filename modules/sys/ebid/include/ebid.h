@@ -70,7 +70,17 @@ extern "C" {
 #define EBID_HAS_XOR              (1 << 3)  /**< xor is set */
 #define EBID_HAS_ALL              (EBID_HAS_SLICE_1 | EBID_HAS_SLICE_2 | \
                                    EBID_HAS_SLICE_3 | EBID_HAS_XOR)
-#define EBID_VALID                (EBID_HAS_ALL)      /**< EBID is valid, are slices and XOR are set */
+#define EBID_VALID                (EBID_HAS_ALL)      /**< EBID is valid, all slices and XOR are set */
+/** @} */
+
+/**
+ * @name EBID parts defines
+ * @{
+ */
+#define EBID_SLICE_1        (0U)
+#define EBID_SLICE_2        (1U)
+#define EBID_SLICE_3        (2U)
+#define EBID_XOR            (3U)
 /** @} */
 
 /**
@@ -110,7 +120,6 @@ typedef struct {
  * @brief   EBID descriptor
  */
 typedef struct __attribute__((packed)) {
-    crypto_manager_keys_t* keys;    /**< the key pair matching the ebid, can be NULL*/
     ebid_parts_t parts;             /**< the ebid parts, slices and xor */
     ebid_status_t status;           /**< the ebid status */
 } ebid_t;
@@ -220,6 +229,25 @@ static inline uint8_t* ebid_get_xor(ebid_t* ebid)
 }
 
 /**
+ * @brief       Sets an ebid slice or the xor
+ *
+ * @param[inout]     ebid        The ebid
+ * @param[in]        slice       The slice or xor
+ * @param[in]        idx         The slice idx to set
+ * @param[in]        len         Then len of the slice to set
+ */
+
+static inline void ebid_set_slice(ebid_t* ebid, const uint8_t* slice,
+                                  uint8_t idx)
+{
+    if (!(ebid->status.status & (1 << idx))) {
+        size_t len = idx == EBID_SLICE_3 ? EBID_SLICE_SIZE_SHORT : EBID_SLICE_SIZE_LONG;
+        memcpy((ebid->parts.ebid.u8 + EBID_SLICE_SIZE_LONG * idx), slice, len);
+        ebid->status.status |= (1 << idx);
+    }
+}
+
+/**
  * @brief       Sets the first EBID slice
  *
  * @param[inout]     ebid        The ebid to set the first slice
@@ -228,8 +256,7 @@ static inline uint8_t* ebid_get_xor(ebid_t* ebid)
  */
 static inline void ebid_set_slice1(ebid_t* ebid, const uint8_t* ebid_1)
 {
-    memcpy(ebid->parts.ebid.slice.ebid_1, ebid_1, EBID_SLICE_SIZE_LONG);
-    ebid->status.status |= EBID_HAS_SLICE_1;
+    ebid_set_slice(ebid, ebid_1, EBID_SLICE_1);
 }
 
 /**
@@ -241,8 +268,7 @@ static inline void ebid_set_slice1(ebid_t* ebid, const uint8_t* ebid_1)
  */
 static inline void ebid_set_slice2(ebid_t* ebid, const uint8_t* ebid_2)
 {
-    memcpy(ebid->parts.ebid.slice.ebid_2, ebid_2, EBID_SLICE_SIZE_LONG);
-    ebid->status.status |= EBID_HAS_SLICE_2;
+    ebid_set_slice(ebid, ebid_2, EBID_SLICE_2);
 }
 
 /**
@@ -254,8 +280,7 @@ static inline void ebid_set_slice2(ebid_t* ebid, const uint8_t* ebid_2)
  */
 static inline void ebid_set_slice3(ebid_t* ebid, const uint8_t* ebid_3)
 {
-    memcpy(ebid->parts.ebid.slice.ebid_3, ebid_3, EBID_SLICE_SIZE_SHORT);
-    ebid->status.status |= EBID_HAS_SLICE_3;
+    ebid_set_slice(ebid, ebid_3, EBID_SLICE_3);
 }
 
 /**
@@ -267,8 +292,7 @@ static inline void ebid_set_slice3(ebid_t* ebid, const uint8_t* ebid_3)
  */
 static inline void ebid_set_xor(ebid_t* ebid, const uint8_t* ebid_xor)
 {
-    memcpy(ebid->parts.ebid_xor, ebid_xor, EBID_SLICE_SIZE_LONG);
-    ebid->status.status |= EBID_HAS_XOR;
+    ebid_set_slice(ebid, ebid_xor, EBID_XOR);
 }
 
 #ifdef __cplusplus

@@ -11,6 +11,11 @@
  * @ingroup     sys
  * @brief       Desire Encounter Data (EDL) after windowing and fading
  *
+ *
+ * TODO:
+ *      - try to use half-precision floating point values
+ *      - use libfixmath
+ *
  * @{
  *
  * @file
@@ -24,7 +29,6 @@
 #include <inttypes.h>
 
 #include "timex.h"
-#include "edl.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -40,14 +44,19 @@ extern "C" {
  * @brief   Duration of a Window in seconds
  */
 #ifndef WINDOW_LENGTH_S
-#define WINDOW_LENGTH_S           120LU
+#define WINDOW_LENGTH_S           (120LU)
 #endif
 /**
  * @brief   Step between windows in seconds
  */
 #ifndef WINDOW_STEP_S
-#define WINDOW_STEP_S             60LU
+#define WINDOW_STEP_S             (60LU)
 #endif
+
+/**
+ * @brief   Values above this values will be clipped before being averaged
+ */
+#define RSSI_CLIPPING_THRESH    (0)
 
 /**
  * @brief   Window data
@@ -57,13 +66,10 @@ typedef struct rdl_window {
     uint16_t samples;       /**< samples/messages per widnow */
 } rdl_window_t;
 
-/**
+/*
  * @brief   RDL windows
  */
-typedef struct rdl_windows
-{
-    uint32_t timestamp;             /**< timestamp marking start of epoch */
-    uint32_t duration;              /**< encounter duration */
+typedef struct rdl_windows {
     rdl_window_t wins[WINDOWS_PER_EPOCH]; /**< individual windows */
 } rdl_windows_t;
 
@@ -73,24 +79,29 @@ typedef struct rdl_windows
  * @note    Called by @ref rdl_windows_from_edl_list
  *
  * @param[inout]    wins        the windows
- * @param[in]       timestamp   the timestamp that marks the start of an epoch
  */
-static inline void rdl_windows_init(rdl_windows_t* wins, uint32_t timestamp)
+static inline void rdl_windows_init(rdl_windows_t *wins)
 {
     memset(wins, '\0', sizeof(rdl_windows_t));
-    wins->timestamp = timestamp;
 }
 
 /**
  * @brief   Returns windowed rtl from an Encounter Data List (EDL)
  *
- * @param[in]       list        the input data list
- * @param[in]       timestamp   the timestamp that marks the start of an epoch
- * @param[in]       wins        output RTL windows
+ * @param[inout]    wins        RTL windows
+ * @param[in]       time        the timestamp that marks the start of an epoch
+ * @param[in]       rssi        the received RSSI
  *
  * @return          the found edl_t, NULL otherwise
  */
-void rdl_windows_from_edl_list(edl_list_t* list, uint32_t timestamp, rdl_windows_t* wins);
+void rdl_windows_update(rdl_windows_t *wins, float rssi, int16_t time);
+
+/**
+ * @brief   Finalize rtl windows by computing the average
+ *
+ * @param[inout]    wins        the windows
+ */
+void rdl_windows_finalize(rdl_windows_t *wins);
 
 #ifdef __cplusplus
 }
