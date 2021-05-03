@@ -11,42 +11,47 @@
 
 static int rssi[MAX_MSG_PER_WINDOW];
 
-static void _bench(void)
+static float _bench(void)
 {
     float value = 0;
+
     for (uint16_t i = 0; i < MAX_MSG_PER_WINDOW; i++) {
-        value += pow(10, (float) rssi[i] / 10);
+        value += pow(10, (float)rssi[i] / 10);
     }
     value = 10 * log10f(value / MAX_MSG_PER_WINDOW);
+    return value;
 }
 
 int main(void)
 {
     uint32_t start;
     uint32_t end;
+
     for (int i = 0; i < MAX_MSG_PER_WINDOW; i++) {
-        rssi[i] = -1 * ((int) random_uint32_range(0, 60));
+        rssi[i] = -1 * ((int)random_uint32_range(0, 60));
     }
     puts("Fading test");
 
     start = ztimer_now(ZTIMER_MSEC);
     _bench();
     end = ztimer_now(ZTIMER_MSEC);
-    printf("%d messages:   %05"PRIu32" [ms]\n", MAX_MSG_PER_WINDOW, end - start);
+    printf("%d messages:   %05" PRIu32 " [ms]\n", MAX_MSG_PER_WINDOW,
+           end - start);
 
     start = ztimer_now(ZTIMER_MSEC);
     for (int j = 0; j < WINDOWS_PER_EPOCH; j++) {
         _bench();
     }
     end = ztimer_now(ZTIMER_MSEC);
-    printf(" %d windows:    %05"PRIu32" [ms]\n", WINDOWS_PER_EPOCH, end - start);
+    printf(" %d windows:    %05" PRIu32 " [ms]\n", WINDOWS_PER_EPOCH,
+           end - start);
 
     start = ztimer_now(ZTIMER_MSEC);
     for (int j = 0; j < WINDOWS_PER_EPOCH * ENCOUNTERS; j++) {
         _bench();
     }
     end = ztimer_now(ZTIMER_MSEC);
-    printf("%d encounters: %05"PRIu32" [ms]\n", ENCOUNTERS, end - start);
+    printf("%d encounters: %05" PRIu32 " [ms]\n", ENCOUNTERS, end - start);
 
     return 0;
 }
