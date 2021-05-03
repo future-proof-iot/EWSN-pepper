@@ -240,7 +240,7 @@ static void ble_advertise_once(desire_ble_adv_payload_t *adv_payload)
     assert(nimlble_ret == BLUETIL_AD_OK);
 
     // Add service data uuid
-    uint16_t service_data = 0x6666;
+    uint16_t service_data = DESIRE_SERVICE_UUID16;
 
     nimlble_ret = nimble_autoadv_add_field(BLE_GAP_AD_UUID16_COMP,
                                            &service_data, sizeof(service_data));

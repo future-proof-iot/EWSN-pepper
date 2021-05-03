@@ -46,6 +46,11 @@ extern "C" {
 #define MD_VERSION 0xC8
 
 /**
+ * @brief   Desire BLE service 16 bits uuid.
+ */
+#define DESIRE_SERVICE_UUID16 0x6666
+
+/**
  * @brief   Desire BLE adverisement payload sizethat fits into the Service Data field of the BLE advertisment packet.
  *
  */
@@ -105,7 +110,7 @@ static inline void desire_ble_adv_payload_build(
     desire_ble_adv_payload_t *adv_payload, uint8_t sid, uint32_t cid,
     const uint8_t *ebid_slice)
 {
-    adv_payload->data.service_uuid_16 = 0x6666;
+    adv_payload->data.service_uuid_16 = DESIRE_SERVICE_UUID16;
     adv_payload->data.sid_cid = encode_sid_cid(sid, cid);                   // header
     memcpy(adv_payload->data.ebid_slice, ebid_slice, EBID_SLICE_SIZE_LONG); // payload
     adv_payload->data.md_version = MD_VERSION;                              // footer
