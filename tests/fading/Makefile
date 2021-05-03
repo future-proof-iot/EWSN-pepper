@@ -6,6 +6,7 @@ BOARD ?= native
 RIOTBASE ?= $(CURDIR)/../../RIOT
 
 USEMODULE += ztimer_periph_timer
+USEMODULE += ztimer_usec
 USEMODULE += ztimer_msec
 USEMODULE += random
 DEFAULT_MODULE += test_utils_interactive_sync
