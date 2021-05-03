@@ -7,9 +7,9 @@
  */
 
 /**
- * @defgroup    sys_desire_ble_adv EBID advertisment manager
- * @ingroup     sys
- * @brief       Desire BLE EBID advertisement in Carousel mode.
+ * @defgroup    ble_include Common BLE definition
+ * @ingroup     ble
+ * @brief       Desire BLE advertisementpaqcket defintion
  *
  *
  * @{
@@ -19,25 +19,17 @@
  * @author      Roudy Dagher <roudy.dagher@inria.fr>
  */
 
-#ifndef DESIRE_BLE_ADV_H
-#define DESIRE_BLE_ADV_H
+#ifndef DESIRE_BLE_PKT_H
+#define DESIRE_BLE_PKT_H
 
 #include <string.h>
 #include <stdint.h>
 #include <stdbool.h>
 
-#include "timex.h"
 #include "ebid.h"
 
 #ifdef __cplusplus
 extern "C" {
-#endif
-
-#define DESIRE_DEFAULT_SLICE_ROTATION_PERIOD_SEC 20
-#define DESIRE_DEFAULT_EBID_ROTATION_PERIOD_SEC (15 * SEC_PER_MIN)
-
-#ifndef DESIRE_STATIC_EBID
-    #define DESIRE_STATIC_EBID 0
 #endif
 
 /**
@@ -129,32 +121,6 @@ static inline int8_t ble_current_tx_pwr(void)
 
     return (int8_t)ble_phy_txpwr_get(); // tx power is only one byte wide
 }
-
-/**
- * @brief       Initialize the advertising module internal structure and advertising thread.
- *
- */
-void desire_ble_adv_init(void);
-
-/**
- * @brief       Advertises an EBID following Desire Carousel scheme.
- *
- * The EBID is split in 3 slices with an extra XOR slice. Each slice is advertised every second for a duration slice_adv_time_sec.
- * The EBID is regenerated every ebid_adv_time_sec.
- *
- * @param[in]       slice_adv_time_sec      The rotation period (default to use in @ref DESIRE_DEFAULT_SLICE_ROTATION_PERIOD_SEC)
- * @param[in]       ebid_adv_time_sec       Interval in seconds for renewing the EBID (default to use in @ref DESIRE_DEFAULT_EBID_ROTATION_PERIOD_SEC)
- *
- */
-void desire_ble_adv_start(uint16_t slice_adv_time_sec,
-                          uint16_t ebid_adv_time_sec);
-
-/**
- * @brief       Stops the advertisement loop.
- *
- */
-void desire_ble_adv_stop(void);
-
 
 #ifdef __cplusplus
 }

@@ -9,6 +9,6 @@ RIOTBASE ?= $(CURDIR)/../../RIOT
 # set EBID to static for testing, DDESIRE_STATIC_EBID=1 comment for dynamic ebid
 USEMODULE += desire_advertiser
 CFLAGS += -DDESIRE_STATIC_EBID=1
-EXTERNAL_MODULE_DIRS += $(CURDIR)/../../modules/sys/desire_advertiser
+EXTERNAL_MODULE_DIRS += $(CURDIR)/../../modules/ble/desire_advertiser
 
 include $(RIOTBASE)/Makefile.include

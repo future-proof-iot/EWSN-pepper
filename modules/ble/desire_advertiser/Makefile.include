@@ -1,2 +1,4 @@
 USEMODULE_INCLUDES_desire_advertiser := $(LAST_MAKEFILEDIR)/include
 USEMODULE_INCLUDES += $(USEMODULE_INCLUDES_desire_advertiser)
+
+USEMODULE_INCLUDES += $(USEMODULE_INCLUDES_desire_advertiser)/../../include
