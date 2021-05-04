@@ -21,10 +21,8 @@ void detection_cb(uint32_t ts,
     decode_sid_cid(adv_payload->data.sid_cid, &sid, &cid);
 
     // dump
-    printf(">> Desire packet (service_uuid_16=0x%X): ts=%ld, rssi=%d, host = ", adv_payload->data.service_uuid_16, ts, rssi);
-    dbg_print_addr(addr);
-    putchar('\n');
-
+    printf(">> Desire packet (service_uuid_16=0x%X): ts=%ld, rssi=%d, ", adv_payload->data.service_uuid_16, ts, rssi);
+    dbg_print_ble_addr(addr);
     printf("\t sid = %d, cid=0x%lX, md_version=0x%lX\n", sid, cid, adv_payload->data.md_version);
     dbg_dump_buffer("\t ebid_slice = ", adv_payload->data.ebid_slice, EBID_SLICE_SIZE_LONG, '\n');
 }

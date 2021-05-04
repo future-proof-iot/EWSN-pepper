@@ -8,55 +8,63 @@ extern "C" {
 #endif
 
 static inline void dbg_dump_buffer(const char *prefix, const uint8_t *buf,
-                               size_t size,
-                               char suffix)
+                                   size_t size,
+                                   char suffix)
 {
     printf("%s", prefix);
     for (unsigned int i = 0; i < size; i++) {
         printf("%.2X", buf[i]);
         putchar((i < (size - 1))?':':suffix);
     }
+    if (size == 0) {
+        putchar(suffix);
+    }
 }
 
-static inline void dbg_print_addr(const ble_addr_t *addr)
+static inline void dbg_reverse_dump_buffer(const char *prefix,
+                                           const uint8_t *buf,
+                                           size_t size,
+                                           char suffix)
 {
-    printf("%02x", (int)addr->val[5]);
-    for (int i = 4; i >= 0; i--) {
-        printf(":%02x", addr->val[i]);
+    printf("%s", prefix);
+    for (int i = size-1; i >= 0; i--) {
+        printf("%.2X", buf[i]);
+        putchar((i > 0)?':':suffix);
     }
-
-    switch (addr->type) {
-    case BLE_ADDR_PUBLIC:       printf(" (PUBLIC)");   break;
-    case BLE_ADDR_RANDOM:       printf(" (RANDOM)");   break;
-    case BLE_ADDR_PUBLIC_ID:    printf(" (PUB_ID)");   break;
-    case BLE_ADDR_RANDOM_ID:    printf(" (RAND_ID)");  break;
-    default:                    printf(" (UNKNOWN)");  break;
+    if (size == 0) {
+        putchar(suffix);
     }
 }
 
-static inline void dbg_print_type(uint8_t type)
+static inline char *dbg_parse_ble_addr_type(uint8_t addr_type)
+{
+    switch (addr_type) {
+    case BLE_ADDR_PUBLIC:       return "(PUBLIC)";   break;
+    case BLE_ADDR_RANDOM:       return "(RANDOM)";   break;
+    case BLE_ADDR_PUBLIC_ID:    return "(PUB_ID)";   break;
+    case BLE_ADDR_RANDOM_ID:    return "(RAND_ID)";  break;
+    default:                    return "(UNKNOWN)";  break;
+    }
+}
+
+static inline char *dbg_parse_ble_adv_type(uint8_t type)
 {
     switch (type) {
-    case BLE_HCI_ADV_TYPE_ADV_IND:
-        printf(" [IND]");
-        break;
-    case BLE_HCI_ADV_TYPE_ADV_DIRECT_IND_HD:
-        printf(" [DIRECT_IND_HD]");
-        break;
-    case BLE_HCI_ADV_TYPE_ADV_SCAN_IND:
-        printf(" [SCAN_IND]");
-        break;
-    case BLE_HCI_ADV_TYPE_ADV_NONCONN_IND:
-        printf(" [NONCONN_IND]");
-        break;
-    case BLE_HCI_ADV_TYPE_ADV_DIRECT_IND_LD:
-        printf(" [DIRECT_IND_LD]");
-        break;
-    default:
-        printf(" [INVALID]");
-        break;
+    case BLE_HCI_ADV_TYPE_ADV_IND: return "[IND]";
+    case BLE_HCI_ADV_TYPE_ADV_DIRECT_IND_HD: return "[DIRECT_IND_HD]";
+    case BLE_HCI_ADV_TYPE_ADV_SCAN_IND: return "[SCAN_IND]";
+    case BLE_HCI_ADV_TYPE_ADV_NONCONN_IND: return "[NONCONN_IND]";
+    case BLE_HCI_ADV_TYPE_ADV_DIRECT_IND_LD: return "[DIRECT_IND_LD]";
+    default: return " [INVALID]";
     }
 }
+
+static inline void dbg_print_ble_addr(const ble_addr_t *addr)
+{
+    dbg_reverse_dump_buffer("ble_addr = ", addr->val, 6, ' ');
+    printf("%s\n", dbg_parse_ble_addr_type(addr->type));
+}
+
 
 
 #ifdef __cplusplus
