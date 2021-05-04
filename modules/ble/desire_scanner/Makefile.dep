@@ -1,0 +1,16 @@
+MODULE_DESIRE_SCANNER_DIR := $(LAST_MAKEFILEDIR)
+
+# configure and use Nimble pkg with the autoadv without name and manual start from our app
+USEPKG += nimble
+USEMODULE += nimble_scanner
+USEMODULE += bluetil_ad
+
+# EBID module
+USEMODULE += ebid
+CFLAGS += -DEBID_FIXED_KEYS=0
+EXTERNAL_MODULE_DIRS += $(MODULE_DESIRE_SCANNER_DIR)/../../sys/ebid
+
+# event module
+#USEMODULE += event_timeout
+#USEMODULE += event_thread
+
