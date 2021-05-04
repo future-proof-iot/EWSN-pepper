@@ -55,18 +55,6 @@ static const uint8_t ebid[EBID_SIZE] = {
     0xf6, 0xd9, 0x07, 0x11, 0x3d, 0xce, 0x90, 0x25,
 };
 
-static const uint8_t ble_addr_1[] = {
-    0x00, 0x01, 0x02, 0x03, 0x04, 0x05
-};
-
-static const uint8_t ble_addr_2[] = {
-    0x10, 0x11, 0x12, 0x13, 0x14, 0x15
-};
-
-static const uint8_t ble_addr_3[] = {
-    0x20, 0x21, 0x22, 0x23, 0x24, 0x25
-};
-
 static ed_list_t list;
 static ed_memory_manager_t manager;
 
@@ -90,8 +78,8 @@ static void test_ed_init(void)
 {
     ed_t ed;
 
-    ed_init(&ed, ble_addr_1);
-    TEST_ASSERT(memcmp(ed.ble_addr, ble_addr_1, BLE_ADV_ADDR_SIZE) == 0);
+    ed_init(&ed, 0x01);
+    TEST_ASSERT(ed.cid == 0x01);
 }
 
 static void test_ed_add_remove(void)
@@ -99,8 +87,8 @@ static void test_ed_add_remove(void)
     ed_t ed_1;
     ed_t ed_2;
 
-    ed_init(&ed_1, ble_addr_1);
-    ed_init(&ed_2, ble_addr_2);
+    ed_init(&ed_1, 0x01);
+    ed_init(&ed_2, 0x02);
     ed_add(&list, &ed_1);
     ed_t *first = (ed_t *)clist_rpeek(&list.list);
     TEST_ASSERT(memcmp(first, &ed_1, sizeof(ed_t)) == 0);
@@ -122,9 +110,9 @@ static void test_ed_list_get_nth(void)
     ed_t ed_1;
     ed_t ed_2;
     ed_t ed_3;
-    ed_init(&ed_1, ble_addr_1);
-    ed_init(&ed_2, ble_addr_2);
-    ed_init(&ed_3, ble_addr_3);
+    ed_init(&ed_1, 0x01);
+    ed_init(&ed_2, 0x02);
+    ed_init(&ed_3, 0x03);
     ed_add(&list, &ed_1);
     ed_add(&list, &ed_2);
     ed_add(&list, &ed_3);
@@ -137,24 +125,24 @@ static void test_ed_list_get_nth(void)
     TEST_ASSERT(memcmp(third, &ed_3, sizeof(ed_t)) == 0);
 }
 
-static void test_ed_list_get_by_ble_addr(void)
+static void test_ed_list_get_by_cid(void)
 {
-    ed_t *none = ed_list_get_by_ble_addr(&list, 0);
+    ed_t *none = ed_list_get_by_cid(&list, 0);
 
     TEST_ASSERT(none == NULL);
     ed_t ed_1;
     ed_t ed_2;
     ed_t ed_3;
-    ed_init(&ed_1, ble_addr_1);
-    ed_init(&ed_2, ble_addr_2);
-    ed_init(&ed_3, ble_addr_3);
+    ed_init(&ed_1, 0x01);
+    ed_init(&ed_2, 0x02);
+    ed_init(&ed_3, 0x03);
     ed_add(&list, &ed_1);
     ed_add(&list, &ed_2);
     ed_add(&list, &ed_3);
     TEST_ASSERT(clist_count(&list.list) == 3);
-    ed_t *first = ed_list_get_by_ble_addr(&list, &ble_addr_1[0]);
-    ed_t *second = ed_list_get_by_ble_addr(&list, ble_addr_2);
-    ed_t *third = ed_list_get_by_ble_addr(&list, ble_addr_3);
+    ed_t *first = ed_list_get_by_cid(&list, 0x01);
+    ed_t *second = ed_list_get_by_cid(&list, 0x02);
+    ed_t *third = ed_list_get_by_cid(&list, 0x03);
     TEST_ASSERT(memcmp(first, &ed_1, sizeof(ed_t)) == 0);
     TEST_ASSERT(memcmp(second, &ed_2, sizeof(ed_t)) == 0);
     TEST_ASSERT(memcmp(third, &ed_3, sizeof(ed_t)) == 0);
@@ -164,7 +152,7 @@ static void test_ed_process_data(void)
 {
     ed_t ed;
 
-    ed_init(&ed, ble_addr_1);
+    ed_init(&ed, 0x01);
     /* set start time since this is usually set in ed_list_process_data */
     ed.start_s = data_ts[0];
     for (uint8_t i = 0; i < TEST_VALUES_NUMOF; i++) {
@@ -187,21 +175,21 @@ static void test_ed_list_process_data(void)
 {
     /* data that will be fully aggregated */
     for (uint8_t i = 0; i < TEST_VALUES_NUMOF; i++) {
-        ed_list_process_data(&list, ble_addr_1, data_ts[i],
+        ed_list_process_data(&list, 0x01, data_ts[i],
                              ebid_slice[data_slice[i]],
                              data_slice[i], data_rssi[i]);
     }
     /* data where ebid will not be reconstructed */
-    ed_list_process_data(&list, ble_addr_2, 0, ebid_slice[0], EBID_SLICE_1,
+    ed_list_process_data(&list, 0x02, 0, ebid_slice[0], EBID_SLICE_1,
                          -70);
-    ed_list_process_data(&list, ble_addr_2, WINDOW_STEP_S * 14, ebid_slice[0],
+    ed_list_process_data(&list, 0x02, WINDOW_STEP_S * 14, ebid_slice[0],
                          EBID_SLICE_1, -70);
     /* data where the exposure time will be insufficient */
-    ed_list_process_data(&list, ble_addr_3, 0, ebid_slice[0], EBID_SLICE_1,
+    ed_list_process_data(&list, 0x03, 0, ebid_slice[0], EBID_SLICE_1,
                          -70);
-    ed_list_process_data(&list, ble_addr_3, WINDOW_STEP_S * 1, ebid_slice[1],
+    ed_list_process_data(&list, 0x03, WINDOW_STEP_S * 1, ebid_slice[1],
                          EBID_SLICE_2, -70);
-    ed_list_process_data(&list, ble_addr_3, WINDOW_STEP_S * 2, ebid_slice[2],
+    ed_list_process_data(&list, 0x03, WINDOW_STEP_S * 2, ebid_slice[2],
                          EBID_SLICE_3, -70);
     ed_list_finish(&list);
     TEST_ASSERT(clist_count(&list.list) == 1);
@@ -213,7 +201,7 @@ Test *tests_ed(void)
         new_TestFixture(test_ed_init),
         new_TestFixture(test_ed_add_remove),
         new_TestFixture(test_ed_list_get_nth),
-        new_TestFixture(test_ed_list_get_by_ble_addr),
+        new_TestFixture(test_ed_list_get_by_cid),
         new_TestFixture(test_ed_process_data),
         new_TestFixture(test_ed_list_process_data),
     };

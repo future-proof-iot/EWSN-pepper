@@ -1,4 +1,4 @@
-APPLICATION = test_edl
+APPLICATION = test_ed
 
 BOARD ?= native
 

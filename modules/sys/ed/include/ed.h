@@ -64,15 +64,15 @@ extern "C" {
  * @brief   Encounter data, structure to track encounters per epoch
  */
 typedef struct ed {
-    clist_node_t list_node;                 /**< list head */
-    rdl_windows_t wins;                     /**< windowed data, before @ref ed_finish is called
-                                                 the value will be the accumulated rssi sum, and after
-                                                 the end of an epoch @ed_finish is called and an averaged
-                                                 valued is computed */
-    uint16_t start_s;                       /**< time of first message, relative to start of epoch [s] */
-    uint16_t end_s;                         /**< time of last message, relative to start of epoch [s] */
-    ebid_t ebid;                            /**< the ebid structure */
-    uint8_t ble_addr[BLE_ADV_ADDR_SIZE];    /**< the ble address */
+    clist_node_t list_node;     /**< list head */
+    rdl_windows_t wins;         /**< windowed data, before @ref ed_finish is called
+                                     the value will be the accumulated rssi sum, and after
+                                     the end of an epoch @ed_finish is called and an averaged
+                                     valued is computed */
+    uint16_t start_s;           /**< time of first message, relative to start of epoch [s] */
+    uint16_t end_s;             /**< time of last message, relative to start of epoch [s] */
+    ebid_t ebid;                /**< the ebid structure */
+    uint32_t cid;               /**< the cid */
 } ed_t;
 
 /**
@@ -110,13 +110,13 @@ static inline void ed_list_init(ed_list_t *ed_list,
  * @brief   Initialize an Encounter Data
  *
  * @param[inout]    ed          the encounter data element to initialize
- * @param[in]       ble_addr    the ble_addr of the encounter to track
+ * @param[in]       cid         the conenction identifier
  */
-static inline void ed_init(ed_t *ed, const uint8_t *ble_addr)
+static inline void ed_init(ed_t *ed, const uint32_t cid)
 {
     assert(ed);
     memset(ed, '\0', sizeof(ed_t));
-    memcpy(&ed->ble_addr, ble_addr, BLE_ADV_ADDR_SIZE);
+    ed->cid = cid;
 }
 
 /**
@@ -152,14 +152,14 @@ void ed_remove(ed_list_t *list, ed_t *ed);
 ed_t *ed_list_get_nth(ed_list_t *list, int pos);
 
 /**
- * @brief   Find the an element in the list by ble address
+ * @brief   Find the an element in the list by cid
  *
  * @param[in]       list        the list to search the element in
- * @param[in]       ble_addr    ble_addr to match
+ * @param[in]       cid         the cid to match
  *
  * @return          the found ed_t, NULL otherwise
  */
-ed_t *ed_list_get_by_ble_addr(ed_list_t *list, const uint8_t *ble_addr);
+ed_t *ed_list_get_by_cid(ed_list_t *list, const uint32_t cid);
 
 /**
  * @brief   Returns the exposure time for a given ed_t element
@@ -182,8 +182,7 @@ uint16_t ed_exposure_time(ed_t *ed);
  * @param[in]       rssi     the rssi of the advertisement packet
  */
 void ed_process_data(ed_t *ed, uint16_t time, const uint8_t *slice,
-                     uint8_t part,
-                     float rssi);
+                     uint8_t part, float rssi);
 
 /**
  * @brief   Process new data by adding it to the matching encounter data in an
@@ -194,15 +193,14 @@ void ed_process_data(ed_t *ed, uint16_t time, const uint8_t *slice,
  *          than @ref CONFIG_ED_BUF_SIZE are already tracked
  *
  * @param[in]       list     the encounter data list
- * @param[in]       ble_addr the ble address of the advertisement data
+ * @param[in]       cid      the connection identifier
  * @param[in]       time     the timestamp in seconds relative to the start of
  *                           the epoch
  * @param[in]       slice    pointer to the advertised euid slice
  * @param[in]       part     the index of the slice to add
  * @param[in]       rssi     the rssi of the advertisement packet
  */
-int ed_list_process_data(ed_list_t *list, const uint8_t *ble_addr,
-                         uint16_t time,
+int ed_list_process_data(ed_list_t *list, const uint32_t cid, uint16_t time,
                          const uint8_t *slice, uint8_t part, float rssi);
 
 /**

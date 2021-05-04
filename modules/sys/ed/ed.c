@@ -58,7 +58,7 @@ ed_t *ed_list_get_nth(ed_list_t *list, int pos)
     return tmp;
 }
 
-ed_t *ed_list_get_by_ble_addr(ed_list_t *list, const uint8_t *ble_addr)
+ed_t *ed_list_get_by_cid(ed_list_t *list, const uint32_t cid)
 {
     ed_t *tmp = (ed_t *)list->list.next;
     unsigned state = irq_disable();
@@ -69,7 +69,7 @@ ed_t *ed_list_get_by_ble_addr(ed_list_t *list, const uint8_t *ble_addr)
     }
     do {
         tmp = (ed_t *)tmp->list_node.next;
-        if (memcmp(tmp->ble_addr, ble_addr, BLE_ADV_ADDR_SIZE) == 0) {
+        if (tmp->cid == cid) {
             irq_restore(state);
             return tmp;
         }
@@ -84,8 +84,7 @@ uint16_t ed_exposure_time(ed_t *ed)
 }
 
 void ed_process_data(ed_t *ed, uint16_t time, const uint8_t *slice,
-                     uint8_t part,
-                     float rssi)
+                     uint8_t part, float rssi)
 {
     if (time > ed->end_s) {
         ed->end_s = time;
@@ -94,16 +93,15 @@ void ed_process_data(ed_t *ed, uint16_t time, const uint8_t *slice,
     rdl_windows_update(&ed->wins, rssi, time);
 }
 
-int ed_list_process_data(ed_list_t *list, const uint8_t *ble_addr,
-                         uint16_t time,
+int ed_list_process_data(ed_list_t *list, const uint32_t cid, uint16_t time,
                          const uint8_t *slice, uint8_t part, float rssi)
 {
-    ed_t *ed = ed_list_get_by_ble_addr(list, ble_addr);
+    ed_t *ed = ed_list_get_by_cid(list, cid);
 
     if (!ed) {
         LOG_DEBUG("[ed]: ble_addr not found in list\n");
         ed = ed_memory_manager_calloc(list->manager);
-        ed_init(ed, ble_addr);
+        ed_init(ed, cid);
         if (!ed) {
             LOG_ERROR("[ed]: no memory to allocate new ed struct\n");
             return -1;
