@@ -23,7 +23,7 @@ void _nimble_scanner_cb(uint8_t type,
     bluetil_ad_t ad = BLUETIL_AD_INIT((uint8_t*) adv, adv_len, adv_len);
 
     // dummy print ts: sender, rssi, adv data
-    printf("t=%ld: rssi = %d, adv_type = %s, ", now, rssi, dbg_parse_ble_addr_type(type));
+    printf("t=%ld: rssi = %d, adv_type = %s, ", now, rssi, dbg_parse_ble_adv_type(type));
     dbg_print_ble_addr(addr);
     dbg_dump_buffer("\t adv_pkt = ", adv, adv_len, '\n');
     
