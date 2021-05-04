@@ -28,6 +28,7 @@
 
 #include "timex.h"
 
+#include "ebid.h"
 #include "desire_ble_pkt.h"
 
 #ifdef __cplusplus
@@ -36,10 +37,6 @@ extern "C" {
 
 #define DESIRE_DEFAULT_SLICE_ROTATION_PERIOD_SEC 20
 #define DESIRE_DEFAULT_EBID_ROTATION_PERIOD_SEC (15 * SEC_PER_MIN)
-
-#ifndef DESIRE_STATIC_EBID
-    #define DESIRE_STATIC_EBID 0
-#endif
 
 
 /**
@@ -52,13 +49,15 @@ void desire_ble_adv_init(void);
  * @brief       Advertises an EBID following Desire Carousel scheme.
  *
  * The EBID is split in 3 slices with an extra XOR slice. Each slice is advertised every second for a duration slice_adv_time_sec.
- * The EBID is regenerated every ebid_adv_time_sec.
+ * Advetisement stops after the tiemout in ebid_adv_time_sec. If called during an ongoing advertisement, it stops it first.
  *
+ * @param[in]       ebid                    The EBID to advertise
  * @param[in]       slice_adv_time_sec      The rotation period (default to use in @ref DESIRE_DEFAULT_SLICE_ROTATION_PERIOD_SEC)
  * @param[in]       ebid_adv_time_sec       Interval in seconds for renewing the EBID (default to use in @ref DESIRE_DEFAULT_EBID_ROTATION_PERIOD_SEC)
  *
  */
-void desire_ble_adv_start(uint16_t slice_adv_time_sec,
+void desire_ble_adv_start(ebid_t *ebid,
+                          uint16_t slice_adv_time_sec,
                           uint16_t ebid_adv_time_sec);
 
 /**

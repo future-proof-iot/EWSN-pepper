@@ -1,5 +1,7 @@
 #include "desire_ble_adv.h"
 
+#include "ble_pkt_dbg.h"
+
 #include "event.h"
 #include "event/timeout.h"
 #include "event/thread.h"
@@ -49,19 +51,15 @@ typedef struct {
     } ticks;
 } ebid_mgr_t;
 static ebid_mgr_t ebid_mgr;
-static void _ebid_generate(ebid_t *ebid, crypto_manager_keys_t *keys,
-                           uint32_t *cid);
-static void _ebid_mgr_init(uint16_t slice_adv_time_sec,
+
+static void dbg_print_ebid_mgr(void);
+
+static void _ebid_mgr_init(ebid_t* ebid, uint16_t slice_adv_time_sec,
                            uint16_t ebid_adv_time_sec);
-static void _ebid_mgr_tick(void);
+static bool _ebid_mgr_tick(void);
 
 void desire_ble_adv_init(void)
 {
-    // init ebid if static mode, generate ebid once on init
-    if (DESIRE_STATIC_EBID == 1) {
-        _ebid_generate(&ebid_mgr.ebid, &ebid_mgr.keys, &ebid_mgr.cid);
-    }
-
     // init event loop ticker thread
     // create a thread that runs the event loop: event_thread_init
     event_queue_init(&_eq);
@@ -73,11 +71,17 @@ void desire_ble_adv_init(void)
                       EVENT_QUEUE_PRIO_MEDIUM);
 }
 
-void desire_ble_adv_start(uint16_t slice_adv_time_sec,
+void desire_ble_adv_start(ebid_t *ebid,
+                          uint16_t slice_adv_time_sec,
                           uint16_t ebid_adv_time_sec)
 {
+    // stop current advetisement if any
     desire_ble_adv_stop();
-    _ebid_mgr_init(slice_adv_time_sec, ebid_adv_time_sec);
+
+    // Init state machine for EBID management
+    _ebid_mgr_init(ebid, slice_adv_time_sec, ebid_adv_time_sec);
+
+    // schedule advertisements
     event_timeout_set(&_update_timeout_evt, TICK_EVENT_INTERVAL);
 }
 
@@ -88,45 +92,38 @@ void desire_ble_adv_stop(void)
     event_timeout_clear(&_update_timeout_evt);
 }
 
-static void print_ebid_mgr(void);
 static void _tick_event_handler(event_t *e)
 {
     (void)e;
+    bool done;
 
     puts("[Tick]");
-    print_ebid_mgr();
+    dbg_print_ebid_mgr();
 
     ble_advertise_once(&(ebid_mgr.ble_adv_payload));
 
     // if must change ebid, regenerate ebid
-    _ebid_mgr_tick();
+    done = _ebid_mgr_tick();
 
-    // schedule next update event
-    event_timeout_set(&_update_timeout_evt, TICK_EVENT_INTERVAL);
+    // schedule next update event if advertisement duration not reached
+    if(!done) {
+        event_timeout_set(&_update_timeout_evt, TICK_EVENT_INTERVAL);
+    }
 }
 
 
 /// EBID management module internals
-static inline void dump_buffer(const char *prefix, uint8_t *buf, size_t size,
-                               char suffix)
-{
-    printf("%s", prefix);
-    for (unsigned int i = 0; i < size; i++) {
-        printf("%.2X", buf[i]);
-        putchar((i < (size - 1))?':':suffix);
-    }
-}
-static void print_ebid_mgr(void)
+static void dbg_print_ebid_mgr(void)
 {
     printf("Current Ebid Information:\n");
-    dump_buffer("\t ebid = ", ebid_get(&ebid_mgr.ebid), EBID_SIZE, '\n');
+    dbg_dump_buffer("\t ebid = ", ebid_get(&ebid_mgr.ebid), EBID_SIZE, '\n');
     printf("\t cid = %lX, sid=%d\n", ebid_mgr.cid, ebid_mgr.sid);
-    dump_buffer("\t current_ebid_slice = ", ebid_mgr.current_ebid_slice,
-                EBID_SLICE_SIZE_LONG, '\n');
+    dbg_dump_buffer("\t current_ebid_slice = ", ebid_mgr.current_ebid_slice,
+                    EBID_SLICE_SIZE_LONG, '\n');
 
     printf("Current BLE Adv Service Data Payload:\n");
-    dump_buffer("\t ble_adv_payload = ", ebid_mgr.ble_adv_payload.bytes,
-                DESIRE_ADV_PAYLOAD_SIZE, '\n');
+    dbg_dump_buffer("\t ble_adv_payload = ", ebid_mgr.ble_adv_payload.bytes,
+                    DESIRE_ADV_PAYLOAD_SIZE, '\n');
 
     printf("Current timings\n");
     printf("\t ticks: slice=%ld, ebid=%ld", ebid_mgr.ticks.slice,
@@ -136,33 +133,13 @@ static void print_ebid_mgr(void)
 
 }
 
-static void _ebid_generate(ebid_t *ebid, crypto_manager_keys_t *keys,
-                           uint32_t *cid)
-{
-    int ret;
 
-    ebid_init(ebid);
-
-    ret = crypto_manager_gen_keypair(keys);
-    assert(ret == 0);
-
-    ret = ebid_generate(ebid, keys);
-    assert(ret == 0);
-
-    *cid = random_uint32() & MASK_CID;
-
-    (void)ret;
-}
-
-static void _ebid_mgr_init(uint16_t slice_adv_time_sec,
+static void _ebid_mgr_init(ebid_t* ebid, uint16_t slice_adv_time_sec,
                            uint16_t ebid_adv_time_sec)
 {
-    // if not static i.e dynamic, regenerate ebid and a cid
-    // Note: crypto_manager_gen_keypair is called, this may not be required (only at init?)
-    if (DESIRE_STATIC_EBID == 0) {
-        _ebid_generate(&ebid_mgr.ebid, &ebid_mgr.keys, &ebid_mgr.cid);
-    }
-
+    // Generate a random CID that remains the same for the given EBID during the advertisement period
+    ebid_mgr.cid = random_uint32() & MASK_CID;
+    ebid_mgr.ebid = *ebid; // TODO a memcpy
     ebid_mgr.sid = 0;
     ebid_mgr.current_ebid_slice = ebid_get_slice1(&ebid_mgr.ebid);
 
@@ -175,8 +152,10 @@ static void _ebid_mgr_init(uint16_t slice_adv_time_sec,
     ebid_mgr.ticks.ebid = 0;
 }
 
-static void _ebid_mgr_tick(void)
+static bool _ebid_mgr_tick(void)
 {
+    bool done = false;
+
     ebid_mgr.ticks.ebid++;
     ebid_mgr.ticks.slice++;
 
@@ -211,11 +190,11 @@ static void _ebid_mgr_tick(void)
     }
     else {
         // EBID expired, reset and regenerate EBID
-        // TODO: check if key pairs shoud be regenerated on each EPOCH??, if not
-        puts(">>>> EBID Renewal Event");
-        _ebid_mgr_init(ebid_mgr.limits.slice_adv_time_sec,
-                       ebid_mgr.limits.ebid_adv_time_sec);
+        puts(">>>> EBID Advetismend Ended");
+        done = true;
     }
+
+    return done;
 }
 
 // BLE Advetisement management: one shot advetise by settting adv duration to minimum

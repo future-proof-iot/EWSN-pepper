@@ -52,7 +52,7 @@ extern "C" {
  * @brief   The Desire Service data in the BLE Advertisement packet.
  */
 typedef union __attribute__((packed)) {
-    struct {
+    struct __attribute__((packed)) {
         uint16_t service_uuid_16;
         // Header (big endian)
         uint32_t sid_cid;
