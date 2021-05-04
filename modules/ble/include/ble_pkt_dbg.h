@@ -27,7 +27,7 @@ static inline void dbg_reverse_dump_buffer(const char *prefix,
                                            char suffix)
 {
     printf("%s", prefix);
-    for (int i = size-1; i >= 0; i--) {
+    for (int i = size - 1; i >= 0; i--) {
         printf("%.2X", buf[i]);
         putchar((i > 0)?':':suffix);
     }
@@ -39,11 +39,11 @@ static inline void dbg_reverse_dump_buffer(const char *prefix,
 static inline char *dbg_parse_ble_addr_type(uint8_t addr_type)
 {
     switch (addr_type) {
-    case BLE_ADDR_PUBLIC:       return "(PUBLIC)";   break;
-    case BLE_ADDR_RANDOM:       return "(RANDOM)";   break;
-    case BLE_ADDR_PUBLIC_ID:    return "(PUB_ID)";   break;
-    case BLE_ADDR_RANDOM_ID:    return "(RAND_ID)";  break;
-    default:                    return "(UNKNOWN)";  break;
+    case BLE_ADDR_PUBLIC:       return "(PUBLIC)";
+    case BLE_ADDR_RANDOM:       return "(RANDOM)";
+    case BLE_ADDR_PUBLIC_ID:    return "(PUB_ID)";
+    case BLE_ADDR_RANDOM_ID:    return "(RAND_ID)";
+    default:                    return "(UNKNOWN)";
     }
 }
 
