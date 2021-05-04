@@ -61,7 +61,7 @@ void desire_ble_scan_init(void);
  *
  * Triggers a scan, and filters Desire packets, then reports decoded Desire payload.
  *
- * @param[in]       scan_duration_us    The scan window duration in micorseconds
+ * @param[in]       scan_duration_us    The scan window duration in microseconds
  * @param[in]       detection_cb        Callback for each detected packet (offload asap).
  *
  */

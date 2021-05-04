@@ -8,6 +8,7 @@
 #include "nimble/hci_common.h"
 
 #include "ble_pkt_dbg.h"
+#include "log.h"
 
 detection_cb_t _detection_cb = NULL;
 
@@ -23,10 +24,10 @@ void _nimble_scanner_cb(uint8_t type,
     bluetil_ad_t ad = BLUETIL_AD_INIT((uint8_t*) adv, adv_len, adv_len);
 
     // dummy print ts: sender, rssi, adv data
-    printf("t=%ld: rssi = %d, adv_type = %s, ", now, rssi, dbg_parse_ble_adv_type(type));
+    LOG_DEBUG("t=%ld: rssi = %d, adv_type = %s, ", now, rssi, dbg_parse_ble_adv_type(type));
     dbg_print_ble_addr(addr);
     dbg_dump_buffer("\t adv_pkt = ", adv, adv_len, '\n');
-    
+
 
     // filter on type: BLE_HCI_ADV_TYPE_ADV_NONCONN_IND
     if (type != BLE_HCI_ADV_TYPE_ADV_NONCONN_IND) {
@@ -38,16 +39,16 @@ void _nimble_scanner_cb(uint8_t type,
 
     if (!bluetil_ad_find_and_cmp(&ad, BLE_GAP_AD_UUID16_COMP, &desire_uuid,
                                  sizeof(uint16_t))) {
-        printf("[Miss] DESIRE_SERVICE_UUID16 not matched in adv service uuid\n");
+        LOG_DEBUG("[Miss] DESIRE_SERVICE_UUID16 not matched in adv service uuid\n");
         return;
     }
 
-    // filter desire service data field 
+    // filter desire service data field
     desire_ble_adv_payload_t* desire_adv_payload;
     bluetil_ad_data_t field ;//= {.data=desire_adv_payload.bytes, .len=DESIRE_ADV_PAYLOAD_SIZE};
 
     if (BLUETIL_AD_OK == bluetil_ad_find(&ad, BLE_GAP_AD_SERVICE_DATA_UUID16, &field)) {
-        printf("[Hit] Desire adv packet found, payload decoded\n");
+        LOG_DEBUG("[Hit] Desire adv packet found, payload decoded\n");
         desire_adv_payload = (desire_ble_adv_payload_t*) field.data;
         // TODO check UUID of desire packet to DESIRE_SERVICE_UUID16
         // Callback
@@ -55,7 +56,7 @@ void _nimble_scanner_cb(uint8_t type,
             _detection_cb(now, addr, rssi, desire_adv_payload);
         }
     } else {
-        printf(
+        LOG_DEBUG(
             "[Miss] DESIRE_SERVICE_UUID16 found in adv service uuid but missing or malformed service data field\n");
     }
 }
@@ -75,7 +76,7 @@ void desire_ble_scan_init(void)
     int ret;
 
     ret = nimble_scanner_init(&scan_params, _nimble_scanner_cb);
-    printf("nimble_scanner_init ret =%d\n", ret);
+    LOG_DEBUG("nimble_scanner_init ret =%d\n", ret);
     assert(ret == NIMBLE_SCANNER_OK);
 
 }
@@ -92,13 +93,13 @@ void desire_ble_scan(uint32_t scan_duration_us,
 
     // start scan
     ret = nimble_scanner_start();
-    printf("nimble_scanner_start ret =%d\n", ret);
+    LOG_DEBUG("nimble_scanner_start ret =%d\n", ret);
     assert(ret == NIMBLE_SCANNER_OK);
 
     // sleep
-    printf("xtimer sleep for %ld usec\n", scan_duration_us);
+    LOG_DEBUG("xtimer sleep for %ld usec\n", scan_duration_us);
     xtimer_usleep(scan_duration_us);
-    printf("Done sleeping\n");
+    LOG_DEBUG("Done sleeping\n");
 
     // stop scan
     nimble_scanner_stop();
