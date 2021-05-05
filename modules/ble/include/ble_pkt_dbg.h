@@ -71,5 +71,5 @@ static inline void dbg_print_ble_addr(const ble_addr_t *addr)
 }
 #endif
 
-#endif /* NET_BLUETIL_AD_H */
+#endif /* BLE_PKT_DBG_H */
 /** @} */

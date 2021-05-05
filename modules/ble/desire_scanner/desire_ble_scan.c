@@ -89,7 +89,7 @@ void desire_ble_scan(uint32_t scan_duration_ms,
     nimble_scanner_stop();
 
     _detection_cb = detection_cb;
-    nimble_scan_set_adv_duration(scan_duration_ms);
+    nimble_scanner_set_scan_duration(scan_duration_ms);
 
     // trigger new scan
     int ret = nimble_scanner_start();

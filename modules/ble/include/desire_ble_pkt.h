@@ -126,5 +126,5 @@ static inline int8_t ble_current_tx_pwr(void)
 }
 #endif
 
-#endif /* DESIRE_BLE_ADV_H */
+#endif /* BLE_PKT_DBG_H */
 /** @} */
