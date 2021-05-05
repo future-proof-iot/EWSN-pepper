@@ -8,6 +8,9 @@ EXTERNAL_MODULE_DIRS += $(MODULE_EPOCH_DIR)/../rdl_window
 USEMODULE += ed
 EXTERNAL_MODULE_DIRS += $(MODULE_EPOCH_DIR)/../ed
 
+USEMODULE += crypto_manager
+EXTERNAL_MODULE_DIRS += $(MODULE_EPOCH_DIR)/../crypto_manager
+
 USEMODULE += fmt
 USEMODULE += base64
 
