@@ -28,6 +28,7 @@
 #ifndef EBID_H
 #define EBID_H
 
+#include <string.h>
 #include <stdint.h>
 #include <stdbool.h>
 
