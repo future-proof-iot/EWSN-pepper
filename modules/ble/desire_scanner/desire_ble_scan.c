@@ -47,10 +47,10 @@ static void _nimble_scanner_cb(uint8_t type, const ble_addr_t *addr,
     }
 
     // filter desire service data field
-    desire_ble_adv_payload_t* desire_adv_payload;
     bluetil_ad_data_t field ;//= {.data=desire_adv_payload.bytes, .len=DESIRE_ADV_PAYLOAD_SIZE};
 
     if (BLUETIL_AD_OK == bluetil_ad_find(&ad, BLE_GAP_AD_SERVICE_DATA_UUID16, &field)) {
+        desire_ble_adv_payload_t* desire_adv_payload;
         DEBUG("[Hit] Desire adv packet found, payload decoded\n");
         desire_adv_payload = (desire_ble_adv_payload_t*) field.data;
         // TODO check UUID of desire packet to DESIRE_SERVICE_UUID16
