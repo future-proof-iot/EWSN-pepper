@@ -74,9 +74,9 @@ void epoch_finish(epoch_data_t *epoch, ed_list_t *list,
 {
     /* process all data */
     top_ed_list_t top;
-
     memset(&top, '\0', sizeof(top));
 
+    /* finish list processing */
     clist_foreach(&list->list, _add_to_top_list, &top);
     for (uint8_t i = 0; i < CONFIG_EPOCH_MAX_ENCOUNTERS; i++) {
         if (top.top[i].duration != 0) {
@@ -109,14 +109,12 @@ void epoch_serialize_printf(epoch_data_t *epoch)
             turo_dict_key(&ctx, "pet");
             turo_array_open(&ctx);
             uint8_t b64_buff[64];
-            size_t b64_len;
+            size_t b64_len = sizeof(b64_buff);
             base64_encode(epoch->contacts[i].pet.et, PET_SIZE, b64_buff,
                           &b64_len);
-            b64_buff[b64_len] = '\0';
             turo_string(&ctx, (char *)b64_buff);
             base64_encode(epoch->contacts[i].pet.rt, PET_SIZE, b64_buff,
                           &b64_len);
-            b64_buff[b64_len] = '\0';
             turo_string(&ctx, (char *)b64_buff);
             turo_array_close(&ctx);
             turo_dict_key(&ctx, "duration");
@@ -137,4 +135,5 @@ void epoch_serialize_printf(epoch_data_t *epoch)
     }
     turo_array_close(&ctx);
     turo_dict_close(&ctx);
+    print_str("\n");
 }
