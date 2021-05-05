@@ -9,6 +9,8 @@
 #include "random.h"
 #include "assert.h"
 
+#include "ztimer.h"
+
 #include "net/bluetil/ad.h"
 #include "nimble/hci_common.h"
 
@@ -16,13 +18,14 @@
 #include "host/ble_hs.h"
 #include "services/gap/ble_svc_gap.h"
 
-
+#define ENABLE_DEBUG    0
+#include "debug.h"
 // BLE Advetisement
 #define BLE_NIMBLE_ADV_DURATION_MS 10
 static void ble_advertise_once(desire_ble_adv_payload_t *adv_payload);
 
 // Ticker Event thread
-#define TICK_EVENT_INTERVAL (1 * US_PER_SEC)
+#define TICK_EVENT_INTERVAL (1 * MS_PER_SEC)
 static event_queue_t _eq;
 static event_t _update_evt;
 static event_timeout_t _update_timeout_evt;
@@ -64,7 +67,8 @@ void desire_ble_adv_init(void)
     // create a thread that runs the event loop: event_thread_init
     event_queue_init(&_eq);
     _update_evt.handler = _tick_event_handler;
-    event_timeout_init(&_update_timeout_evt, &_eq, &_update_evt);
+    event_timeout_ztimer_init(&_update_timeout_evt, ZTIMER_MSEC, &_eq,
+                              &_update_evt);
 
     // Thread that will run an event loop (event_loop) for handling TICK_EVENT_INTERVAL second tick
     event_thread_init(&_eq, event_thread_stack, sizeof(event_thread_stack),
@@ -97,8 +101,10 @@ static void _tick_event_handler(event_t *e)
     (void)e;
     bool done;
 
-    puts("[Tick]");
-    dbg_print_ebid_mgr();
+    DEBUG("[Tick]\n");
+    if (IS_ACTIVE(ENABLE_DEBUG)) {
+        dbg_print_ebid_mgr();
+    }
 
     ble_advertise_once(&(ebid_mgr.ble_adv_payload));
 
@@ -115,20 +121,20 @@ static void _tick_event_handler(event_t *e)
 /// EBID management module internals
 static void dbg_print_ebid_mgr(void)
 {
-    printf("Current Ebid Information:\n");
+    DEBUG("Current Ebid Information:\n");
     dbg_dump_buffer("\t ebid = ", ebid_get(&ebid_mgr.ebid), EBID_SIZE, '\n');
-    printf("\t cid = %lX, sid=%d\n", ebid_mgr.cid, ebid_mgr.sid);
+    DEBUG("\t cid = %lX, sid=%d\n", ebid_mgr.cid, ebid_mgr.sid);
     dbg_dump_buffer("\t current_ebid_slice = ", ebid_mgr.current_ebid_slice,
                     EBID_SLICE_SIZE_LONG, '\n');
 
-    printf("Current BLE Adv Service Data Payload:\n");
+    DEBUG("Current BLE Adv Service Data Payload:\n");
     dbg_dump_buffer("\t ble_adv_payload = ", ebid_mgr.ble_adv_payload.bytes,
                     DESIRE_ADV_PAYLOAD_SIZE, '\n');
 
-    printf("Current timings\n");
-    printf("\t ticks: slice=%ld, ebid=%ld", ebid_mgr.ticks.slice,
+    DEBUG("Current timings\n");
+    DEBUG("\t ticks: slice=%ld, ebid=%ld", ebid_mgr.ticks.slice,
            ebid_mgr.ticks.ebid);
-    printf("\t limits: slice=%d, ebid=%d\n", ebid_mgr.limits.slice_adv_time_sec,
+    DEBUG("\t limits: slice=%d, ebid=%d\n", ebid_mgr.limits.slice_adv_time_sec,
            ebid_mgr.limits.ebid_adv_time_sec);
 
 }
@@ -163,7 +169,7 @@ static bool _ebid_mgr_tick(void)
         // EBID did not expire, check the slice
         if (ebid_mgr.ticks.slice >= ebid_mgr.limits.slice_adv_time_sec) {
             ebid_mgr.ticks.slice = 0;
-            puts(">>>> SLICE Renewal Event");
+            DEBUG(">>>> SLICE Renewal Event\n");
             // slice expired, switch to new slice and update metadata: current slice and adv payload (service data)
             ebid_mgr.sid = ((ebid_mgr.sid + 1) % 4);
             switch (ebid_mgr.sid) {
@@ -190,7 +196,7 @@ static bool _ebid_mgr_tick(void)
     }
     else {
         // EBID expired, reset and regenerate EBID
-        puts(">>>> EBID Advetismend Ended");
+        DEBUG(">>>> EBID Advetismend Ended\n");
         done = true;
     }
 

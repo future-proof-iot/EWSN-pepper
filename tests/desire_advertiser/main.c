@@ -45,7 +45,7 @@ static ebid_t ebid;
 
 static void generate_ebid(ebid_t* ebid)
 {
-    // static ebid 
+    // static ebid
     ebid_init(ebid);
 
     ebid_set_slice1(ebid, desire_ebid_slice_1);
@@ -59,19 +59,19 @@ static void print_ebid(ebid_t* ebid) {
     dbg_dump_buffer("\t slice_1 = ", ebid_get_slice1(ebid), EBID_SLICE_SIZE_LONG, '\n');
     dbg_dump_buffer("\t slice_2 = ", ebid_get_slice2(ebid), EBID_SLICE_SIZE_LONG, '\n');
     dbg_dump_buffer("\t slice_3 = ", ebid_get_slice3(ebid), EBID_SLICE_SIZE_LONG, '\n');
-    dbg_dump_buffer("\t slice_xor = ", ebid_get_xor(ebid), EBID_SLICE_SIZE_LONG, '\n'); 
+    dbg_dump_buffer("\t slice_xor = ", ebid_get_xor(ebid), EBID_SLICE_SIZE_LONG, '\n');
 }
 
 /* CLI handlers */
 
 int _cmd_desire_adv_start(int argc, char **argv)
 {
-    uint16_t slice_adv_time_sec = DESIRE_DEFAULT_SLICE_ROTATION_PERIOD_SEC; 
-    uint16_t ebid_adv_time_sec = DESIRE_DEFAULT_EBID_ROTATION_PERIOD_SEC;
+    uint16_t slice_adv_time_sec = CONFIG_SLICE_ROTATION_T_S;
+    uint16_t ebid_adv_time_sec = CONFIG_EBID_ROTATION_T_S;
 
     if ((argc == 2) && (memcmp(argv[1], "help", 4) == 0)) {
         printf("usage: %s <slice advertisment duration in sec> <ebid advertisment duration in minutes>\n", argv[0]);
-        printf("default: %s %d %ld", argv[0], DESIRE_DEFAULT_SLICE_ROTATION_PERIOD_SEC, DESIRE_DEFAULT_EBID_ROTATION_PERIOD_SEC/60);
+        printf("default: %s %d %ld", argv[0], CONFIG_SLICE_ROTATION_T_S, CONFIG_EBID_ROTATION_T_S/60);
         return 0;
     }
     if (argc >= 3) {
@@ -85,18 +85,18 @@ int _cmd_desire_adv_start(int argc, char **argv)
 }
 
 int _cmd_desire_adv_stop(int argc, char **argv)
-{   
+{
     (void)argc;
     (void)argv;
 
     desire_ble_adv_stop();
     printf("Stopped ongoing advertisements (if any)\n");
- 
+
     return 0;
 }
 
 int _cmd_desire_get_ebid(int argc, char **argv)
-{   
+{
     (void)argc;
     (void)argv;
     print_ebid(&ebid);

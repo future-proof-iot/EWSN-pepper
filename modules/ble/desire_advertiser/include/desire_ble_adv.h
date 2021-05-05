@@ -35,9 +35,12 @@
 extern "C" {
 #endif
 
-#define DESIRE_DEFAULT_SLICE_ROTATION_PERIOD_SEC 20
-#define DESIRE_DEFAULT_EBID_ROTATION_PERIOD_SEC (15 * SEC_PER_MIN)
-
+#ifndef CONFIG_SLICE_ROTATION_T_S
+#define CONFIG_SLICE_ROTATION_T_S 20
+#endif
+#ifndef CONFIG_EBID_ROTATION_T_S
+#define CONFIG_EBID_ROTATION_T_S (15 * SEC_PER_MIN)
+#endif
 
 /**
  * @brief       Initialize the advertising module internal structure and advertising thread.
@@ -52,8 +55,8 @@ void desire_ble_adv_init(void);
  * Advetisement stops after the tiemout in ebid_adv_time_sec. If called during an ongoing advertisement, it stops it first.
  *
  * @param[in]       ebid                    The EBID to advertise
- * @param[in]       slice_adv_time_sec      The rotation period (default to use in @ref DESIRE_DEFAULT_SLICE_ROTATION_PERIOD_SEC)
- * @param[in]       ebid_adv_time_sec       Interval in seconds for renewing the EBID (default to use in @ref DESIRE_DEFAULT_EBID_ROTATION_PERIOD_SEC)
+ * @param[in]       slice_adv_time_sec      The rotation period (default to use in @ref CONFIG_SLICE_ROTATION_T_S)
+ * @param[in]       ebid_adv_time_sec       Interval in seconds for renewing the EBID (default to use in @ref CONFIG_EBID_ROTATION_T_S)
  *
  */
 void desire_ble_adv_start(ebid_t *ebid,

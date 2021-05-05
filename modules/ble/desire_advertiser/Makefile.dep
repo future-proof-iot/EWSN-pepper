@@ -14,5 +14,7 @@ CFLAGS += -DEBID_FIXED_KEYS=0
 EXTERNAL_MODULE_DIRS += $(MODULE_DESIRE_ADVERTISER_DIR)/../../sys/ebid
 
 # event module
-USEMODULE += event_timeout
+USEMODULE += event_timeout_ztimer
 USEMODULE += event_thread
+
+USEMODULE += ztimer_msec
