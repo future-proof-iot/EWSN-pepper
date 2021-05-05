@@ -1,0 +1,2 @@
+USEMODULE += ed
+EXTERNAL_MODULE_DIRS += $(CURDIR)/../../modules/sys/ed

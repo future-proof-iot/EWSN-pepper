@@ -1,0 +1,2 @@
+USEMODULE += epoch
+EXTERNAL_MODULE_DIRS += $(CURDIR)/../../modules/sys/epoch
