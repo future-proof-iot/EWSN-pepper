@@ -50,7 +50,7 @@ extern "C" {
  *          the amount of encounters that can be tracked per epoch
  */
 #ifndef CONFIG_ED_BUF_SIZE
-#define CONFIG_ED_BUF_SIZE      (20U)
+#define CONFIG_ED_BUF_SIZE      (50U)
 #endif
 
 /**
