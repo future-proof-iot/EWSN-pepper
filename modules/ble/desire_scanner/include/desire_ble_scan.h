@@ -27,7 +27,6 @@
 #include <stdbool.h>
 
 #include "timex.h"
-#include "event.h"
 
 #include "host/ble_hs.h"
 #include "desire_ble_pkt.h"
@@ -55,7 +54,7 @@ typedef void (*detection_cb_t)(uint32_t ts,
  * @brief       Initialize the scanning module internal structure and scanning thread.
  *
  */
-void desire_ble_scan_init(event_queue_t *queue);
+void desire_ble_scan_init(void);
 
 /**
  * @brief       Scans Desire packets and reports detection blocking call.
@@ -69,6 +68,12 @@ void desire_ble_scan_init(event_queue_t *queue);
 void desire_ble_scan(uint32_t scan_duration_ms,
                      detection_cb_t detection_cb);
 
+
+/**
+ * @brief       Sops any ongoing scan.
+ *
+ */
+void desire_ble_scan_stop(void);
 
 
 #ifdef __cplusplus

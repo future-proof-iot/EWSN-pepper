@@ -88,7 +88,7 @@ int main(void)
     ed_list_init(&ed_list, &manager);
     /* setup adv and scanning */
     desire_ble_adv_init();
-    desire_ble_scan_init(EVENT_PRIO_MEDIUM);
+    desire_ble_scan_init();
     /* setup end of epoch timeout event */
     event_timeout_ztimer_init(&epoch_end, ZTIMER_MSEC, EVENT_PRIO_HIGHEST,
                               &_end_of_epoch);

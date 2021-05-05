@@ -3,7 +3,6 @@
 
 #include "shell.h"
 #include "shell_commands.h"
-#include "event/thread.h"
 
 #include "desire_ble_scan.h"
 #include "ble_pkt_dbg.h"
@@ -45,8 +44,17 @@ int _cmd_desire_scan(int argc, char **argv)
     return 0;
 }
 
+int _cmd_desire_stop(int argc, char **argv)
+{
+    desire_ble_scan_stop();
+
+    (void)argc;
+    (void)argv;
+    return 0;
+}
 static const shell_command_t _commands[] = {
     { "scan", "trigger a BLE scan of Desire packets", _cmd_desire_scan },
+    { "stops", "stops scanning of Desire packets", _cmd_desire_stop },
     { NULL, NULL, NULL }
 };
 
@@ -55,7 +63,7 @@ int main(void)
     puts("Desire BLE Scanner Test Application");
 
     /* initialize the desire scanner */
-    desire_ble_scan_init(EVENT_PRIO_MEDIUM);
+    desire_ble_scan_init();
 
     /* start shell */
     char line_buf[SHELL_DEFAULT_BUFSIZE];

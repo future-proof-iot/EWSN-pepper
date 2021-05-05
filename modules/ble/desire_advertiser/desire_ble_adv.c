@@ -34,8 +34,6 @@ static char event_thread_stack[THREAD_STACKSIZE_MAIN];
 
 // EBID generation and slicing management
 typedef struct {
-    /* Crypto key pairs */
-    crypto_manager_keys_t keys;
     /* Current EBID information */
     ebid_t ebid;
     uint32_t cid;

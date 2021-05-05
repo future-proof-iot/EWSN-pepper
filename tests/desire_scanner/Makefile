@@ -12,6 +12,5 @@ EXTERNAL_MODULE_DIRS += $(CURDIR)/../../modules/ble/desire_scanner
 # Shell module for tests
 USEMODULE += shell
 USEMODULE += shell_commands
-USEMODULE += event_thread_medium
 
 include $(RIOTBASE)/Makefile.include

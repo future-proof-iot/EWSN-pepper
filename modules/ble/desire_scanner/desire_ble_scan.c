@@ -1,7 +1,6 @@
 #include "desire_ble_scan.h"
 #include "nimble_scanner.h"
 #include "ztimer.h"
-#include "event/timeout.h"
 
 #include "net/bluetil/ad.h"
 #include "host/ble_hs.h"
@@ -13,15 +12,6 @@
 #include "debug.h"
 
 static detection_cb_t _detection_cb = NULL;
-static event_timeout_t _scanner_stop_timeout;
-
-static void _scanner_stop_handler(event_t* event)
-{
-    (void) event;
-    nimble_scanner_stop();
-    _detection_cb = NULL;
-}
-static event_t _scanner_stop = { .handler = _scanner_stop_handler };
 
 static void _nimble_scanner_cb(uint8_t type, const ble_addr_t *addr,
                                int8_t rssi, const uint8_t *adv,
@@ -74,7 +64,7 @@ static void _nimble_scanner_cb(uint8_t type, const ble_addr_t *addr,
     }
 }
 
-void desire_ble_scan_init(event_queue_t *queue)
+void desire_ble_scan_init(void)
 {
     //FIXME investigate window spec: .itvl, .window
     struct ble_gap_disc_params scan_params = {
@@ -90,18 +80,25 @@ void desire_ble_scan_init(event_queue_t *queue)
     ret = nimble_scanner_init(&scan_params, _nimble_scanner_cb);
     DEBUG("nimble_scanner_init ret =%d\n", ret);
     assert(ret == NIMBLE_SCANNER_OK);
-
-    event_timeout_ztimer_init(&_scanner_stop_timeout, ZTIMER_MSEC, queue,
-                              &_scanner_stop);
 }
 
 void desire_ble_scan(uint32_t scan_duration_ms,
                      detection_cb_t detection_cb)
 {
+    // stop prevous ongoing scan if any
+    nimble_scanner_stop();
+
     _detection_cb = detection_cb;
+    nimble_scan_set_adv_duration(scan_duration_ms);
+
+    // trigger new scan
     int ret = nimble_scanner_start();
     DEBUG("nimble_scanner_start ret =%d\n", ret);
     assert(ret == NIMBLE_SCANNER_OK);
     (void) ret;
-    event_timeout_set(&_scanner_stop_timeout, scan_duration_ms);
+}
+
+void desire_ble_scan_stop(void)
+{
+    nimble_scanner_stop();
 }
