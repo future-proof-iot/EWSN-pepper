@@ -3,6 +3,9 @@
 
 #include "ztimer.h"
 
+#include "shell.h"
+#include "shell_commands.h"
+
 #include "ebid.h"
 #include "crypto_manager.h"
 #include "epoch.h"
@@ -22,18 +25,29 @@ static ebid_t ebid;
 static uint32_t start_time;
 static event_timeout_t epoch_end;
 
+void _dump_buffer(uint8_t *buf, size_t len, const char* prefix)
+{
+    if (prefix != NULL) {
+        DEBUG("%s", prefix);
+    }
+    for (uint8_t i = 0; i < len; i++) {
+        DEBUG("%02x ", buf[i]);
+    }
+    DEBUG_PUTS("");
+}
+
 static void _detection_cb(uint32_t ts, const ble_addr_t *addr, int8_t rssi,
-                  const desire_ble_adv_payload_t *adv_payload)
+                          const desire_ble_adv_payload_t *adv_payload)
 {
     uint32_t cid;
     uint8_t sid;
     decode_sid_cid(adv_payload->data.sid_cid, &sid, &cid);
     (void) addr;
-    DEBUG("[desire]: adv_data %"PRIu32": t=%"PRIu32", RSSI=%d, sid=%d \n",
+    DEBUG("[desire]: adv_data %"PRIx32": t=%"PRIu32", RSSI=%d, sid=%d \n",
            cid, ts, rssi, sid);
     /* process data */
-    ed_list_process_data(&ed_list, cid, ts / MS_PER_SEC - start_time, adv_payload->data.ebid_slice,
-                         sid, (float) rssi);
+    ed_list_process_data(&ed_list, cid, ts / MS_PER_SEC - start_time,
+                         adv_payload->data.ebid_slice, sid, (float) rssi);
 }
 
 static void _boostrap_new_epoch(void)
@@ -60,7 +74,9 @@ static void _boostrap_new_epoch(void)
 static void _serialize_epoch_handler(event_t * event)
 {
     (void) event;
-    //epoch_serialize_printf(&epoch_data);
+    epoch_serialize_printf(&epoch_data);
+    /* reset epoch data */
+    epoch_init(&epoch_data, start_time);
 }
 static event_t _serialize_epoch = { .handler=_serialize_epoch_handler};
 
@@ -72,8 +88,8 @@ static void _end_of_epoch_handler(event_t * event)
     desire_ble_adv_stop();
     /* process epoch data */
     DEBUG_PUTS("[desire]: process all epoch data");
+    ed_list_finish(&ed_list);
     epoch_finish(&epoch_data, &ed_list, &keys);
-    epoch_serialize_printf(&epoch_data);
     /* post epoch data process event */
     event_post(EVENT_PRIO_MEDIUM, &_serialize_epoch);
     /* bootstrap new epoch */
@@ -94,6 +110,10 @@ int main(void)
                               &_end_of_epoch);
     /* bootstrap new epoch */
     _boostrap_new_epoch();
+
+    /* start shell */
+    char line_buf[SHELL_DEFAULT_BUFSIZE];
+    shell_run(NULL, line_buf, SHELL_DEFAULT_BUFSIZE);
 
     return 0;
 }
