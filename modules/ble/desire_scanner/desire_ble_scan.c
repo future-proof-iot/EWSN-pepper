@@ -1,32 +1,45 @@
 #include "desire_ble_scan.h"
-
 #include "nimble_scanner.h"
-#include "xtimer.h"
+#include "ztimer.h"
+#include "event/timeout.h"
 
 #include "net/bluetil/ad.h"
 #include "host/ble_hs.h"
 #include "nimble/hci_common.h"
 
 #include "ble_pkt_dbg.h"
-#include "log.h"
 
-detection_cb_t _detection_cb = NULL;
+#define ENABLE_DEBUG    0
+#include "debug.h"
 
-void _nimble_scanner_cb(uint8_t type,
-                        const ble_addr_t *addr, int8_t rssi,
-                        const uint8_t *adv, size_t adv_len)
+static detection_cb_t _detection_cb = NULL;
+static event_timeout_t _scanner_stop_timeout;
+
+static void _scanner_stop_handler(event_t* event)
+{
+    (void) event;
+    nimble_scanner_stop();
+    _detection_cb = NULL;
+}
+static event_t _scanner_stop = { .handler = _scanner_stop_handler };
+
+static void _nimble_scanner_cb(uint8_t type, const ble_addr_t *addr,
+                               int8_t rssi, const uint8_t *adv,
+                               size_t adv_len)
 {
     assert(addr);
     assert(adv_len <= BLE_ADV_PDU_LEN);
 
-    uint32_t now = xtimer_now().ticks32;
+    uint32_t now = ztimer_now(ZTIMER_MSEC);
 
     bluetil_ad_t ad = BLUETIL_AD_INIT((uint8_t*) adv, adv_len, adv_len);
 
     // dummy print ts: sender, rssi, adv data
-    LOG_DEBUG("t=%ld: rssi = %d, adv_type = %s, ", now, rssi, dbg_parse_ble_adv_type(type));
-    dbg_print_ble_addr(addr);
-    dbg_dump_buffer("\t adv_pkt = ", adv, adv_len, '\n');
+    DEBUG("t=%ld: rssi = %d, adv_type = %s, ", now, rssi, dbg_parse_ble_adv_type(type));
+    if (IS_ACTIVE(ENABLE_DEBUG)) {
+        dbg_print_ble_addr(addr);
+        dbg_dump_buffer("\t adv_pkt = ", adv, adv_len, '\n');
+    }
 
 
     // filter on type: BLE_HCI_ADV_TYPE_ADV_NONCONN_IND
@@ -39,7 +52,7 @@ void _nimble_scanner_cb(uint8_t type,
 
     if (!bluetil_ad_find_and_cmp(&ad, BLE_GAP_AD_UUID16_COMP, &desire_uuid,
                                  sizeof(uint16_t))) {
-        LOG_DEBUG("[Miss] DESIRE_SERVICE_UUID16 not matched in adv service uuid\n");
+        DEBUG("[Miss] DESIRE_SERVICE_UUID16 not matched in adv service uuid\n");
         return;
     }
 
@@ -48,7 +61,7 @@ void _nimble_scanner_cb(uint8_t type,
     bluetil_ad_data_t field ;//= {.data=desire_adv_payload.bytes, .len=DESIRE_ADV_PAYLOAD_SIZE};
 
     if (BLUETIL_AD_OK == bluetil_ad_find(&ad, BLE_GAP_AD_SERVICE_DATA_UUID16, &field)) {
-        LOG_DEBUG("[Hit] Desire adv packet found, payload decoded\n");
+        DEBUG("[Hit] Desire adv packet found, payload decoded\n");
         desire_adv_payload = (desire_ble_adv_payload_t*) field.data;
         // TODO check UUID of desire packet to DESIRE_SERVICE_UUID16
         // Callback
@@ -56,12 +69,12 @@ void _nimble_scanner_cb(uint8_t type,
             _detection_cb(now, addr, rssi, desire_adv_payload);
         }
     } else {
-        LOG_DEBUG(
+        DEBUG(
             "[Miss] DESIRE_SERVICE_UUID16 found in adv service uuid but missing or malformed service data field\n");
     }
 }
 
-void desire_ble_scan_init(void)
+void desire_ble_scan_init(event_queue_t *queue)
 {
     //FIXME investigate window spec: .itvl, .window
     struct ble_gap_disc_params scan_params = {
@@ -72,38 +85,23 @@ void desire_ble_scan_init(void)
         .passive = 0,                               /* no passive scanning */
         .filter_duplicates = 0,                     /* no duplicate filtering */
     };
-
     int ret;
 
     ret = nimble_scanner_init(&scan_params, _nimble_scanner_cb);
-    LOG_DEBUG("nimble_scanner_init ret =%d\n", ret);
+    DEBUG("nimble_scanner_init ret =%d\n", ret);
     assert(ret == NIMBLE_SCANNER_OK);
 
+    event_timeout_ztimer_init(&_scanner_stop_timeout, ZTIMER_MSEC, queue,
+                              &_scanner_stop);
 }
 
-
-void desire_ble_scan(uint32_t scan_duration_us,
+void desire_ble_scan(uint32_t scan_duration_ms,
                      detection_cb_t detection_cb)
 {
-    int ret;
-
     _detection_cb = detection_cb;
-
-    //assert(nimble_scanner_status() == NIMBLE_SCANNER_STOPPED);
-
-    // start scan
-    ret = nimble_scanner_start();
-    LOG_DEBUG("nimble_scanner_start ret =%d\n", ret);
+    int ret = nimble_scanner_start();
+    DEBUG("nimble_scanner_start ret =%d\n", ret);
     assert(ret == NIMBLE_SCANNER_OK);
-
-    // sleep
-    LOG_DEBUG("xtimer sleep for %ld usec\n", scan_duration_us);
-    xtimer_usleep(scan_duration_us);
-    LOG_DEBUG("Done sleeping\n");
-
-    // stop scan
-    nimble_scanner_stop();
-    _detection_cb = NULL;
-
-    (void)ret;
+    (void) ret;
+    event_timeout_set(&_scanner_stop_timeout, scan_duration_ms);
 }
