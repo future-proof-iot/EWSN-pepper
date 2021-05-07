@@ -53,14 +53,13 @@ static void _nimble_scanner_cb(uint8_t type, const ble_addr_t *addr,
         desire_ble_adv_payload_t* desire_adv_payload;
         DEBUG("[Hit] Desire adv packet found, payload decoded\n");
         desire_adv_payload = (desire_ble_adv_payload_t*) field.data;
-        // TODO check UUID of desire packet to DESIRE_SERVICE_UUID16
-        // Callback
-        if (_detection_cb != NULL) {
+        // Callback if UUID of desire packet matches to DESIRE_SERVICE_UUID16
+        if ((desire_adv_payload->data.service_uuid_16 == DESIRE_SERVICE_UUID16) && (_detection_cb != NULL)) {
             _detection_cb(now, addr, rssi, desire_adv_payload);
         }
     } else {
         DEBUG(
-            "[Miss] DESIRE_SERVICE_UUID16 found in adv service uuid but missing or malformed service data field\n");
+            "[Miss] DESIRE_SERVICE_UUID16 found in adv service uuid but missing or malformed in service data field\n");
     }
 }
 
