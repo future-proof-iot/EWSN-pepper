@@ -11,7 +11,7 @@
  * @{
  *
  * @file
- * @brief       Crypto Manager Implementation using WolfCrypt
+ * @brief       Crypto Manager Implementation using C25519
  *
  * This modules generates a C25519 based key pair. It will also generate
  * Private Encounter Tokens (PET).
@@ -27,7 +27,8 @@
 
 #include "kernel_defines.h"
 #include "hashes/sha256.h"
-#include "wolfssl/wolfcrypt/curve25519.h"
+#include "c25519.h"
+#include "random.h"
 
 #define ENABLE_DEBUG    0
 #include "debug.h"
@@ -35,24 +36,10 @@
 int crypto_manager_gen_keypair(crypto_manager_keys_t *keys)
 {
     assert(keys);
-    int ret;
-
-    WC_RNG rng;
-    curve25519_key key;
-
-    wc_InitRng(&rng);
-    wc_curve25519_init(&key);
-    ret = wc_curve25519_make_key(&rng, CURVE25519_KEYSIZE, &key);
-    if (ret) {
-        goto exit;
-    }
-    uint32_t key_size = CURVE25519_KEYSIZE;
-    ret = wc_curve25519_export_key_raw_ex(&key, keys->sk, (word32 *)&key_size,
-                                          keys->pk, (word32 *)&key_size,
-                                          EC25519_LITTLE_ENDIAN);
-exit:
-    wc_FreeRng(&rng);
-    return ret;
+    random_bytes(keys->sk, C25519_KEY_SIZE);
+    c25519_prepare(keys->sk);
+    c25519_smult(keys->pk, c25519_base_x, keys->sk);
+    return 0;
 }
 
 int crypto_manager_shared_secret(uint8_t *sk, uint8_t *pk, uint8_t *secret)
@@ -74,31 +61,7 @@ int crypto_manager_shared_secret(uint8_t *sk, uint8_t *pk, uint8_t *secret)
         DEBUG("\n");
     }
 
-    curve25519_key sec;
-    curve25519_key pub;
-    int ret = 0;
-    size_t secret_len = CURVE25519_KEYSIZE;
-
-    wc_curve25519_init(&sec);
-    wc_curve25519_init(&pub);
-
-    ret = wc_curve25519_import_private_ex(sk, CURVE25519_KEYSIZE, &sec,
-                                          EC25519_LITTLE_ENDIAN);
-    if (ret) {
-        DEBUG("[crypto_manager]: failed private key import");
-        goto exit;
-    }
-    ret = wc_curve25519_import_public_ex(pk, CURVE25519_KEYSIZE, &pub,
-                                         EC25519_LITTLE_ENDIAN);
-    if (ret) {
-        DEBUG("[crypto_manager]: failed public key import");
-        goto exit;
-    }
-    ret = wc_curve25519_shared_secret_ex(&sec, &pub, secret, &secret_len,
-                                         EC25519_LITTLE_ENDIAN);
-exit:
-    wc_curve25519_free(&sec);
-    wc_curve25519_free(&pub);
+    c25519_smult(secret, pk, sk);
 
     if (IS_ACTIVE(ENABLE_DEBUG)) {
         DEBUG("[crypto_manager]: shared secret: ");
@@ -108,7 +71,7 @@ exit:
         DEBUG("\n");
     }
 
-    return ret;
+    return 0;
 }
 
 int crypto_manager_gen_pet(crypto_manager_keys_t *keys, uint8_t *pk,
@@ -140,7 +103,7 @@ int crypto_manager_gen_pets(crypto_manager_keys_t *keys, uint8_t *ebid,
     assert(keys && ebid && pet);
 
     int8_t pk_gt_ebid = -1;
-    for (uint8_t i = 0; i < CURVE25519_KEYSIZE; i ++) {
+    for (uint8_t i = 0; i < C25519_KEY_SIZE; i ++) {
         if (keys->pk[i] > ebid[i]) {
             pk_gt_ebid = 1;
             break;

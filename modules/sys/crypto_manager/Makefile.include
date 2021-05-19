@@ -2,3 +2,4 @@ USEMODULE_INCLUDES_crypto_manager := $(LAST_MAKEFILEDIR)/include
 USEMODULE_INCLUDES += $(USEMODULE_INCLUDES_crypto_manager)
 
 PSEUDOMODULES += crypto_manager_wolfssl
+PSEUDOMODULES += crypto_manager_c25519
