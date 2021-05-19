@@ -119,6 +119,8 @@ void epoch_serialize_printf(epoch_data_t *epoch)
             turo_array_close(&ctx);
             turo_dict_key(&ctx, "duration");
             turo_u32(&ctx, epoch->contacts[i].duration);
+            turo_dict_key(&ctx, "Gtx");
+            turo_u32(&ctx, CONFIG_TX_COMPENSATION_GAIN - epoch->contacts[i].obf);
             turo_dict_key(&ctx, "windows");
             turo_array_open(&ctx);
             for (uint8_t j = 0; j < WINDOWS_PER_EPOCH; j++) {

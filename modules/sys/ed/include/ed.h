@@ -54,10 +54,38 @@ extern "C" {
 #endif
 
 /**
+ * @brief   Obfuscate the RSSI values before storing
+ */
+#ifndef CONFIG_ED_OBFUSCATE_RSSI
+#define CONFIG_ED_OBFUSCATE_RSSI      1
+#endif
+
+/**
+ * @brief   Obfuscate max value
+ */
+#ifndef CONFIG_ED_OBFUSCATE_MAX
+#define CONFIG_ED_OBFUSCATE_MAX     (100U)
+#endif
+
+/**
  * @brief   Step between windows in seconds
  */
 #ifndef MIN_EXPOSURE_TIME_S
 #define MIN_EXPOSURE_TIME_S     (10 * 60LU)
+#endif
+
+/**
+ * @brief   Transmission compensation gain
+ */
+#ifndef CONFIG_TX_COMPENSATION_GAIN
+#define CONFIG_TX_COMPENSATION_GAIN    (0U)
+#endif
+
+/**
+ * @brief    Receiption compensation gain
+ */
+#ifndef CONFIG_RX_COMPENSATION_GAIN
+#define CONFIG_RX_COMPENSATION_GAIN    (0U)
 #endif
 
 /**
@@ -69,6 +97,7 @@ typedef struct ed {
                                      the value will be the accumulated rssi sum, and after
                                      the end of an epoch @ed_finish is called and an averaged
                                      valued is computed */
+    int16_t obf;                /**< obfuscation value or calibrated noise (CN) in DESIRE */
     uint16_t start_s;           /**< time of first message, relative to start of epoch [s] */
     uint16_t end_s;             /**< time of last message, relative to start of epoch [s] */
     ebid_t ebid;                /**< the ebid structure */
@@ -89,21 +118,25 @@ typedef struct ed_memory_manager {
 typedef struct ed_list {
     clist_node_t list;              /**< list head */
     ed_memory_manager_t *manager;   /**< pointer to the encounter data memory manager */
+    ebid_t* ebid;                   /**< pointer to the current epoch local ebid */
 } ed_list_t;
 
 /**
  * @brief   Initialize an Encounter Data List
  *
  * @param[inout]    ed_list     the encounter data list to initialize
- * @param[in]       manafer     the already initialized memory manager
+ * @param[in]       manager     the already initialized memory manager
+ * @param[in]       ebid        the current epoch epid
  */
 static inline void ed_list_init(ed_list_t *ed_list,
-                                ed_memory_manager_t *manager)
+                                ed_memory_manager_t *manager,
+                                ebid_t *ebid)
 {
     assert(ed_list);
     memset(ed_list, '\0', sizeof(ed_list_t));
     ed_list->list.next = NULL;
     ed_list->manager = manager;
+    ed_list->ebid = ebid;
 }
 
 /**
@@ -171,18 +204,32 @@ ed_t *ed_list_get_by_cid(ed_list_t *list, const uint32_t cid);
 uint16_t ed_exposure_time(ed_t *ed);
 
 /**
- * @brief   Process additional data for an encounter extracted from an
- *          advertisement packet
+ * @brief   Add ebid slice from advertisement data and attemp to reconstruct
+ *
+ * @note    Once a full EBID is received or reconstructed the start time for
+ *          for the ed_t data is set to time.
  *
  * @param[in]       ed       the encounter matching the data
  * @param[in]       time     the timestamp in seconds relative to the start of
  *                           the epoch
  * @param[in]       slice    pointer to the advertised euid slice
  * @param[in]       part     the index of the slice to add
+ *
+ * @return  0 if whole ebid has been received
+ */
+int ed_add_slice(ed_t *ed, uint16_t time, const uint8_t *slice, uint8_t part,
+                 ebid_t *ebid_local);
+
+/**
+ * @brief   Process additional data for an encounter extracted from an
+ *          advertisement packet
+ *
+ * @param[in]       ed       the encounter matching the data
+ * @param[in]       time     the timestamp in seconds relative to the start of
+ *                           the epoch
  * @param[in]       rssi     the rssi of the advertisement packet
  */
-void ed_process_data(ed_t *ed, uint16_t time, const uint8_t *slice,
-                     uint8_t part, float rssi);
+void ed_process_data(ed_t *ed, uint16_t time, float rssi);
 
 /**
  * @brief   Process new data by adding it to the matching encounter data in an
@@ -202,6 +249,16 @@ void ed_process_data(ed_t *ed, uint16_t time, const uint8_t *slice,
  */
 int ed_list_process_data(ed_list_t *list, const uint32_t cid, uint16_t time,
                          const uint8_t *slice, uint8_t part, float rssi);
+
+/**
+ * @brief   Set the obfuscation value for the encounter data
+ *
+ * @pre     Both ebid must be full reconstructed, so ed->ebid and ebid
+ *
+ * @param[inout]    ed          the encounter data
+ * @param[in]       ebid        the local ebid
+ */
+void ed_set_obf_value(ed_t *ed, ebid_t *ebid);
 
 /**
  * @brief   Process all tracked encounters
