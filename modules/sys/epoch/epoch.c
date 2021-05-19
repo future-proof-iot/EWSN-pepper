@@ -69,8 +69,16 @@ static int _add_to_top_list(clist_node_t *node, void *arg)
     return 0;
 }
 
-void epoch_finish(epoch_data_t *epoch, ed_list_t *list,
-                  crypto_manager_keys_t *keys)
+void epoch_init(epoch_data_t *epoch, uint16_t timestamp,
+                              crypto_manager_keys_t* keys)
+{
+    memset(epoch, '\0', sizeof(epoch_data_t));
+    epoch->keys = keys;
+    epoch->timestamp = timestamp;
+    crypto_manager_gen_keypair(keys);
+}
+
+void epoch_finish(epoch_data_t *epoch, ed_list_t *list)
 {
     /* process all data */
     top_ed_list_t top;
@@ -83,8 +91,10 @@ void epoch_finish(epoch_data_t *epoch, ed_list_t *list,
             epoch->contacts[i].duration = top.top[i].duration;
             memcpy(epoch->contacts[i].wins, &top.top[i].ed->wins,
                    sizeof(rdl_windows_t));
-            crypto_manager_gen_pets(keys, top.top[i].ed->ebid.parts.ebid.u8,
+            crypto_manager_gen_pets(epoch->keys,
+                                    top.top[i].ed->ebid.parts.ebid.u8,
                                     &epoch->contacts[i].pet);
+            epoch->contacts[i].obf = top.top[i].ed->obf;
         }
     }
 

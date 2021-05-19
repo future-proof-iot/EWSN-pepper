@@ -15,7 +15,6 @@ static void setUp(void)
 {
     random_init(0);
     ed_memory_manager_init(&manager);
-    ed_list_init(&list, &manager);
 }
 
 static void tearDown(void)
@@ -23,21 +22,16 @@ static void tearDown(void)
     /* Finalize */
 }
 
-static void test_epoch_init(void)
-{
-    epoch_data_t epoch;
-
-    epoch_init(&epoch, 10);
-    TEST_ASSERT(epoch.timestamp == 10);
-}
-
 static void test_epoch_finalize(void)
 {
     epoch_data_t epoch;
 
-    epoch_init(&epoch, 10);
     crypto_manager_keys_t keys;
     crypto_manager_gen_keypair(&keys);
+    epoch_init(&epoch, 10, &keys);
+    ebid_t ebid;
+    ebid_generate(&ebid, &keys);
+    ed_list_init(&list, &manager, &ebid);
 
     /* fake ed_list */
     for (uint8_t i = 0; i < TEST_CONTACTS; i++) {
@@ -56,7 +50,7 @@ static void test_epoch_finalize(void)
     }
     ed_list_finish(&list);
     TEST_ASSERT(clist_count(&list.list) == TEST_CONTACTS);
-    epoch_finish(&epoch, &list, &keys);
+    epoch_finish(&epoch, &list);
     for (uint8_t i = 0; i < CONFIG_EPOCH_MAX_ENCOUNTERS; i++) {
         TEST_ASSERT(epoch.contacts[i].duration >= \
                     (MIN_EXPOSURE_TIME_S + TEST_CONTACTS -
@@ -68,7 +62,6 @@ static void test_epoch_finalize(void)
 Test *tests_epoch_all(void)
 {
     EMB_UNIT_TESTFIXTURES(fixtures) {
-        new_TestFixture(test_epoch_init),
         new_TestFixture(test_epoch_finalize),
     };
 
