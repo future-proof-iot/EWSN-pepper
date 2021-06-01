@@ -23,6 +23,9 @@
 
 #include "irq.h"
 #include "ed.h"
+#ifndef LOG_LEVEL
+#define LOG_LEVEL   LOG_INFO
+#endif
 #include "log.h"
 
 void ed_add(ed_list_t *list, ed_t *ed)
@@ -83,13 +86,69 @@ uint16_t ed_exposure_time(ed_t *ed)
     return ed->end_s - ed->start_s;
 }
 
-void ed_process_data(ed_t *ed, uint16_t time, const uint8_t *slice,
-                     uint8_t part, float rssi)
+void ed_set_obf_value(ed_t *ed, ebid_t *ebid)
+{
+    bool local_gt_remote = false;
+
+    /* compare local ebid and the remote one to see which one
+       is greater */
+    for (uint8_t i = 0; i < EBID_SIZE; i++) {
+        if (ebid->parts.ebid.u8[i] > ed->ebid.parts.ebid.u8[i]) {
+            local_gt_remote = true;
+            break;
+        }
+        else if (ebid->parts.ebid.u8[i] < ed->ebid.parts.ebid.u8[i]) {
+            break;
+        }
+    }
+    /* calculate obf depending on which ebid is greater */
+    if (local_gt_remote) {
+        ed->obf = (ebid->parts.ebid.u8[0] << 8) | ebid->parts.ebid.u8[1];
+    }
+    else {
+        ed->obf = (ed->ebid.parts.ebid.u8[0] << 8) | ed->ebid.parts.ebid.u8[1];
+    }
+    ed->obf %= CONFIG_ED_OBFUSCATE_MAX;
+}
+
+int ed_add_slice(ed_t *ed, uint16_t time, const uint8_t *slice, uint8_t part,
+                 ebid_t *ebid_local)
+{
+    if (ed->ebid.status.status != EBID_HAS_ALL) {
+        if (part == EBID_SLICE_3) {
+            /* DESIRE sends sends the third slice with front padding so
+               ignore first 4 bytes:
+               https://gitlab.inria.fr/aboutet1/test-bluetooth/-/blob/master/app/src/main/java/fr/inria/desire/ble/models/AdvPayload.kt#L54
+             */
+            slice += EBID_SLICE_SIZE_PAD;
+        }
+        ebid_set_slice(&ed->ebid, slice, part);
+        if (ebid_reconstruct(&ed->ebid) == 0) {
+            ed_set_obf_value(ed, ebid_local);
+            ed->start_s = time;
+            LOG_INFO("[ed]: saw ebid: [");
+            for (uint8_t i = 0; i < EBID_SIZE; i++) {
+                LOG_INFO("%d, ", ed->ebid.parts.ebid.u8[i]);
+            }
+            LOG_INFO("]\n");
+            return 0;
+        }
+        return -1;
+    }
+    else {
+        return 0;
+    }
+}
+
+void ed_process_data(ed_t *ed, uint16_t time, float rssi)
 {
     if (time > ed->end_s) {
         ed->end_s = time;
     }
-    ebid_set_slice(&ed->ebid, slice, part);
+    if (IS_ACTIVE(CONFIG_ED_OBFUSCATE_RSSI)) {
+        /* obfuscate rssi value */
+        rssi = rssi - ed->obf - CONFIG_RX_COMPENSATION_GAIN;
+    }
     rdl_windows_update(&ed->wins, rssi, time);
 }
 
@@ -107,22 +166,20 @@ int ed_list_process_data(ed_list_t *list, const uint32_t cid, uint16_t time,
             return -1;
         }
         ed_add(list, ed);
-        ed->start_s = time;
     }
-    ed_process_data(ed, time, slice, part, rssi);
+    /* only add data once ebid was reconstructed */
+    if (ed_add_slice(ed, time, slice, part, list->ebid) == 0) {
+        ed_process_data(ed, time, rssi);
+    }
     return 0;
 }
 int ed_finish(ed_t *ed)
 {
+    /* if exposure time was enough then the ebid must have been
+       reconstructed */
     if (ed_exposure_time(ed) >= MIN_EXPOSURE_TIME_S) {
-        if (ebid_reconstruct(&ed->ebid) == 0) {
-            rdl_windows_finalize(&ed->wins);
-            return 0;
-        }
-        LOG_DEBUG("[ed]: cant reconstruct ebid\n");
-    }
-    else {
-        LOG_DEBUG("[ed]: not enough exposure\n");
+        rdl_windows_finalize(&ed->wins);
+        return 0;
     }
 
     return -1;

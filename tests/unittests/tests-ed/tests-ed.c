@@ -55,8 +55,16 @@ static const uint8_t ebid[EBID_SIZE] = {
     0xf6, 0xd9, 0x07, 0x11, 0x3d, 0xce, 0x90, 0x25,
 };
 
+static const uint8_t local_ebid_1[EBID_SIZE] = {
+    0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27,
+    0x28, 0x29, 0x20, 0x2e, 0x10, 0x11, 0x12, 0x13,
+    0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x20, 0xfe,
+    0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17
+};
+
 static ed_list_t list;
 static ed_memory_manager_t manager;
+static ebid_t local_ebid;
 
 static float _2_dec_round(float value)
 {
@@ -65,8 +73,11 @@ static float _2_dec_round(float value)
 
 static void setUp(void)
 {
+    ebid_init(&local_ebid);
+    memcpy(local_ebid.parts.ebid.u8, local_ebid_1, EBID_SIZE);
+    local_ebid.status.status = EBID_HAS_ALL;
     ed_memory_manager_init(&manager);
-    ed_list_init(&list, &manager);
+    ed_list_init(&list, &manager, &local_ebid);
 }
 
 static void tearDown(void)
@@ -148,6 +159,16 @@ static void test_ed_list_get_by_cid(void)
     TEST_ASSERT(memcmp(third, &ed_3, sizeof(ed_t)) == 0);
 }
 
+static void test_ed_set_obf_value(void)
+{
+    ed_t ed;
+    ed_init(&ed, 0x01);
+    memcpy(ed.ebid.parts.ebid.u8, ebid, EBID_SIZE);
+    ed.ebid.status.status = EBID_HAS_ALL;
+    ed_set_obf_value(&ed, &local_ebid);
+    TEST_ASSERT(ed.obf == (0x5c24 % CONFIG_ED_OBFUSCATE_MAX));
+}
+
 static void test_ed_process_data(void)
 {
     ed_t ed;
@@ -155,9 +176,10 @@ static void test_ed_process_data(void)
     ed_init(&ed, 0x01);
     /* set start time since this is usually set in ed_list_process_data */
     ed.start_s = data_ts[0];
+    /* don't offuscate data, easier to test */
+    ed.obf = 0;
     for (uint8_t i = 0; i < TEST_VALUES_NUMOF; i++) {
-        ed_process_data(&ed, data_ts[i], ebid_slice[data_slice[i]],
-                        data_slice[i], data_rssi[i]);
+        ed_process_data(&ed, data_ts[i], data_rssi[i]);
     }
     TEST_ASSERT(ed_finish(&ed) == 0);
     for (uint8_t i = 0; i < WINDOWS_PER_EPOCH; i++) {
@@ -168,12 +190,29 @@ static void test_ed_process_data(void)
     uint16_t expected_exposure_time = data_ts[TEST_VALUES_NUMOF - 1] -
                                       data_ts[0];
     TEST_ASSERT(ed_exposure_time(&ed) == expected_exposure_time);
+}
+
+static void test_ed_add_slice(void)
+{
+    ed_t ed;
+    ed_init(&ed, 0x01);
+    ed_add_slice(&ed, data_ts[0], ebid_slice[0], EBID_SLICE_1, &local_ebid);
+    ed_add_slice(&ed, data_ts[1], ebid_slice[1], EBID_SLICE_2, &local_ebid);
+    uint8_t pad_slice3[EBID_SLICE_SIZE_LONG];
+    memset(pad_slice3, '\0', EBID_SLICE_SIZE_LONG);
+    memcpy(pad_slice3 + EBID_SLICE_SIZE_PAD, ebid_slice[2], EBID_SLICE_SIZE_SHORT);
+    ed_add_slice(&ed, data_ts[2], pad_slice3, EBID_SLICE_3, &local_ebid);
     TEST_ASSERT(memcmp(ebid, ed.ebid.parts.ebid.u8, EBID_SIZE) == 0);
+    TEST_ASSERT(ed.obf == (0x5c24 % CONFIG_ED_OBFUSCATE_MAX));
 }
 
 static void test_ed_list_process_data(void)
 {
     /* data that will be fully aggregated */
+    ed_list_process_data(&list, 0x01, 0, ebid_slice[2], EBID_SLICE_3,
+                         -70);
+    ed_list_process_data(&list, 0x01, 0, ebid_slice[1], EBID_SLICE_2,
+                         -70);
     for (uint8_t i = 0; i < TEST_VALUES_NUMOF; i++) {
         ed_list_process_data(&list, 0x01, data_ts[i],
                              ebid_slice[data_slice[i]],
@@ -203,6 +242,8 @@ Test *tests_ed_all(void)
         new_TestFixture(test_ed_list_get_nth),
         new_TestFixture(test_ed_list_get_by_cid),
         new_TestFixture(test_ed_process_data),
+        new_TestFixture(test_ed_add_slice),
+        new_TestFixture(test_ed_set_obf_value),
         new_TestFixture(test_ed_list_process_data),
     };
 

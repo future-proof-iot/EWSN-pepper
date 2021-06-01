@@ -21,10 +21,10 @@
 #include <string.h>
 #include <assert.h>
 
+#include "irq.h"
 #include "epoch.h"
 #include "fmt.h"
 #include "log.h"
-#include "base64.h"
 #include "test_utils/result_output.h"
 
 typedef struct top_ed {
@@ -69,8 +69,16 @@ static int _add_to_top_list(clist_node_t *node, void *arg)
     return 0;
 }
 
-void epoch_finish(epoch_data_t *epoch, ed_list_t *list,
-                  crypto_manager_keys_t *keys)
+void epoch_init(epoch_data_t *epoch, uint16_t timestamp,
+                              crypto_manager_keys_t* keys)
+{
+    memset(epoch, '\0', sizeof(epoch_data_t));
+    epoch->keys = keys;
+    epoch->timestamp = timestamp;
+    crypto_manager_gen_keypair(keys);
+}
+
+void epoch_finish(epoch_data_t *epoch, ed_list_t *list)
 {
     /* process all data */
     top_ed_list_t top;
@@ -83,8 +91,10 @@ void epoch_finish(epoch_data_t *epoch, ed_list_t *list,
             epoch->contacts[i].duration = top.top[i].duration;
             memcpy(epoch->contacts[i].wins, &top.top[i].ed->wins,
                    sizeof(rdl_windows_t));
-            crypto_manager_gen_pets(keys, top.top[i].ed->ebid.parts.ebid.u8,
+            crypto_manager_gen_pets(epoch->keys,
+                                    top.top[i].ed->ebid.parts.ebid.u8,
                                     &epoch->contacts[i].pet);
+            epoch->contacts[i].obf = top.top[i].ed->obf;
         }
     }
 
@@ -93,10 +103,24 @@ void epoch_finish(epoch_data_t *epoch, ed_list_t *list,
     }
 }
 
+static void turo_array_hex(turo_t *ctx, uint8_t *vals, size_t size)
+{
+    if (ctx->state == 1) {
+        print_str(",");
+    }
+    ctx->state = 1;
+    while (size > 0) {
+       print_byte_hex(*vals);
+        vals++;
+        size--;
+    }
+}
+
 void epoch_serialize_printf(epoch_data_t *epoch)
 {
     turo_t ctx;
 
+    unsigned int state = irq_disable();
     turo_init(&ctx);
     turo_dict_open(&ctx);
     turo_dict_key(&ctx, "epoch");
@@ -107,18 +131,17 @@ void epoch_serialize_printf(epoch_data_t *epoch)
         if (epoch->contacts[i].duration != 0) {
             turo_dict_open(&ctx);
             turo_dict_key(&ctx, "pet");
-            turo_array_open(&ctx);
-            uint8_t b64_buff[64];
-            size_t b64_len = sizeof(b64_buff);
-            base64_encode(epoch->contacts[i].pet.et, PET_SIZE, b64_buff,
-                          &b64_len);
-            turo_string(&ctx, (char *)b64_buff);
-            base64_encode(epoch->contacts[i].pet.rt, PET_SIZE, b64_buff,
-                          &b64_len);
-            turo_string(&ctx, (char *)b64_buff);
-            turo_array_close(&ctx);
+            turo_dict_open(&ctx);
+            turo_dict_key(&ctx, "etl");
+            turo_array_hex(&ctx, epoch->contacts[i].pet.et, PET_SIZE);
+            turo_dict_key(&ctx, "rtl");
+            turo_array_hex(&ctx, epoch->contacts[i].pet.rt, PET_SIZE);
+            turo_dict_close(&ctx);
+            turo_dict_close(&ctx);
             turo_dict_key(&ctx, "duration");
             turo_u32(&ctx, epoch->contacts[i].duration);
+            turo_dict_key(&ctx, "Gtx");
+            turo_u32(&ctx, CONFIG_TX_COMPENSATION_GAIN - epoch->contacts[i].obf);
             turo_dict_key(&ctx, "windows");
             turo_array_open(&ctx);
             for (uint8_t j = 0; j < WINDOWS_PER_EPOCH; j++) {
@@ -136,4 +159,5 @@ void epoch_serialize_printf(epoch_data_t *epoch)
     turo_array_close(&ctx);
     turo_dict_close(&ctx);
     print_str("\n");
+    irq_restore(state);
 }

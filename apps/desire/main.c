@@ -18,6 +18,7 @@
 #include "debug.h"
 
 static epoch_data_t epoch_data;
+static epoch_data_t epoch_data_serialize;
 static ed_list_t ed_list;
 static ed_memory_manager_t manager;
 static crypto_manager_keys_t keys;
@@ -55,10 +56,17 @@ static void _boostrap_new_epoch(void)
     start_time = ztimer_now(ZTIMER_MSEC) / MS_PER_SEC;
     DEBUG("[desire]: new epoch t=%"PRIu32"\n", start_time);
     /* generate new keys */
-    DEBUG_PUTS("[desire]: generating new keys");
-    crypto_manager_gen_keypair(&keys);
+    DEBUG_PUTS("[desire]: starting new epoch");
+    /* reset epoch data */
+    epoch_init(&epoch_data, start_time, &keys);
+    /* update local ebid */
     ebid_init(&ebid);
     ebid_generate(&ebid, &keys);
+    DEBUG("[desire]: local ebid: [");
+    for (uint8_t i = 0; i < EBID_SIZE; i++) {
+        DEBUG("%d, ", ebid.parts.ebid.u8[i]);
+    }
+    DEBUG("]\n");
     /* start advertisement */
     DEBUG_PUTS("[desire]: start adv");
     desire_ble_adv_start(&ebid, CONFIG_SLICE_ROTATION_T_S,
@@ -74,9 +82,7 @@ static void _boostrap_new_epoch(void)
 static void _serialize_epoch_handler(event_t * event)
 {
     (void) event;
-    epoch_serialize_printf(&epoch_data);
-    /* reset epoch data */
-    epoch_init(&epoch_data, start_time);
+    epoch_serialize_printf(&epoch_data_serialize);
 }
 static event_t _serialize_epoch = { .handler=_serialize_epoch_handler};
 
@@ -89,8 +95,9 @@ static void _end_of_epoch_handler(event_t * event)
     /* process epoch data */
     DEBUG_PUTS("[desire]: process all epoch data");
     ed_list_finish(&ed_list);
-    epoch_finish(&epoch_data, &ed_list, &keys);
-    /* post epoch data process event */
+    epoch_finish(&epoch_data, &ed_list);
+    /* post epoch data process event, TODO: remove this extra variable*/
+    memcpy(&epoch_data_serialize, &epoch_data, sizeof(epoch_data_t));
     event_post(EVENT_PRIO_MEDIUM, &_serialize_epoch);
     /* bootstrap new epoch */
     _boostrap_new_epoch();
@@ -101,7 +108,7 @@ int main(void)
 {
     /* initiate encounter management */
     ed_memory_manager_init(&manager);
-    ed_list_init(&ed_list, &manager);
+    ed_list_init(&ed_list, &manager, &ebid);
     /* setup adv and scanning */
     desire_ble_adv_init();
     desire_ble_scan_init();
