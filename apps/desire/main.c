@@ -62,6 +62,11 @@ static void _boostrap_new_epoch(void)
     /* update local ebid */
     ebid_init(&ebid);
     ebid_generate(&ebid, &keys);
+    DEBUG("[desire]: local ebid: [");
+    for (uint8_t i = 0; i < EBID_SIZE; i++) {
+        DEBUG("%d, ", ebid.parts.ebid.u8[i]);
+    }
+    DEBUG("]\n");
     /* start advertisement */
     DEBUG_PUTS("[desire]: start adv");
     desire_ble_adv_start(&ebid, CONFIG_SLICE_ROTATION_T_S,
