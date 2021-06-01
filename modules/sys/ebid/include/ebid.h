@@ -43,19 +43,24 @@ extern "C" {
  *
  * An EBID is generated from a 32byte c25519 public key
  */
-#define EBID_SIZE               C25519_KEY_SIZE
+#define EBID_SIZE                       C25519_KEY_SIZE
 /**
  * @brief   EBID long slice size
  *
  * A 32 byte EBID is divided in two 12byte slices and one 8byte slice
  */
-#define EBID_SLICE_SIZE_LONG         12
+#define EBID_SLICE_SIZE_LONG            12
+/**
+ * @brief   EBID short slice size padding
+ *
+ */
+#define EBID_SLICE_SIZE_PAD       4
 /**
  * @brief   EBID short slice size
  *
-* A 32 byte EBID is divided in two 12byte slices and one 8byte slice
+ * A 32 byte EBID is divided in two 12byte slices and one 8byte slice
  */
-#define EBID_SLICE_SIZE_SHORT   8
+#define EBID_SLICE_SIZE_SHORT           8
 
 /**
  * @name EBID status flags
@@ -91,7 +96,10 @@ typedef union __attribute__((packed)) {
     struct __attribute__((packed)) {
         uint8_t ebid_1[EBID_SLICE_SIZE_LONG];       /**< first 12 byte slice */
         uint8_t ebid_2[EBID_SLICE_SIZE_LONG];       /**< second 12 byte slice */
-        uint8_t ebid_3[EBID_SLICE_SIZE_LONG];       /**< third 8 byte slice, last 4 bytes are don't care */
+        union {
+            uint8_t ebid_3[EBID_SLICE_SIZE_SHORT];          /**< third 8 byte slice */
+            uint8_t ebid_3_padded[EBID_SLICE_SIZE_LONG];    /**< third 8 byte slice, last 4 bytes are don't care */
+        };
     } slice;
     uint8_t u8[EBID_SIZE];                          /**< the complete EBID in an uint8_t buffer */
 } ebid_values_t;

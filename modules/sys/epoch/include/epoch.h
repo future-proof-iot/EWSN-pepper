@@ -46,6 +46,7 @@ typedef struct contact_data {
     uint16_t duration;                      /**< encounter duration */
     pet_t pet;                              /**< pet pair */
     rdl_window_t wins[WINDOWS_PER_EPOCH];   /**< individual windows */
+    int16_t obf;                            /**< obfuscation value */
 } contact_data_t;
 
 /**
@@ -54,31 +55,27 @@ typedef struct contact_data {
 typedef struct epoch_data {
     uint16_t timestamp;                                     /**< epoch timestamp */
     contact_data_t contacts[CONFIG_EPOCH_MAX_ENCOUNTERS];   /**< possible contacts */
+    crypto_manager_keys_t *keys;                            /**< keys */
 } epoch_data_t;
 
 /**
- * @brief   Initialize an @ref epoch_data_t structure
+ * @brief   Start of an epoch
  *
  * @param[inout]    epoch       the epoch data element to initialize
  * @param[in]       timestamp   a timestamp in seconds relative to the service
  *                              start time
+ * @param[in]       keys        the crypto keys for this epoch
  */
-static inline void epoch_init(epoch_data_t *epoch, uint16_t timestamp)
-{
-    memset(epoch, '\0', sizeof(epoch_data_t));
-    epoch->timestamp = timestamp;
-}
-
+void epoch_init(epoch_data_t *epoch, uint16_t timestamp,
+                              crypto_manager_keys_t* keys);
 /**
  * @brief   To be called at the end of an epoch to process all encounter data
  *
  * @param[inout]    epoch       the epoch data to finalize
  * @param[inout]    list        the data from all encounters during an epoch,
  *                              the list is cleaned after this function is called
- * @param[in]       keys        the crypto keys for this epoch
  */
-void epoch_finish(epoch_data_t *epoch, ed_list_t *list,
-                  crypto_manager_keys_t *keys);
+void epoch_finish(epoch_data_t *epoch, ed_list_t *list);
 
 /**
  * @brief   Serialize (JSON) an print epoch data

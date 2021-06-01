@@ -55,7 +55,7 @@ static ebid_mgr_t ebid_mgr;
 
 static void dbg_print_ebid_mgr(void);
 
-static void _ebid_mgr_init(ebid_t* ebid, uint16_t slice_adv_time_sec,
+static void _ebid_mgr_init(ebid_t *ebid, uint16_t slice_adv_time_sec,
                            uint16_t ebid_adv_time_sec);
 static bool _ebid_mgr_tick(void);
 
@@ -110,7 +110,7 @@ static void _tick_event_handler(event_t *e)
     done = _ebid_mgr_tick();
 
     // schedule next update event if advertisement duration not reached
-    if(!done) {
+    if (!done) {
         event_timeout_set(&_update_timeout_evt, TICK_EVENT_INTERVAL);
     }
 }
@@ -131,14 +131,14 @@ static void dbg_print_ebid_mgr(void)
 
     DEBUG("Current timings\n");
     DEBUG("\t ticks: slice=%ld, ebid=%ld", ebid_mgr.ticks.slice,
-           ebid_mgr.ticks.ebid);
+          ebid_mgr.ticks.ebid);
     DEBUG("\t limits: slice=%d, ebid=%d\n", ebid_mgr.limits.slice_adv_time_sec,
-           ebid_mgr.limits.ebid_adv_time_sec);
+          ebid_mgr.limits.ebid_adv_time_sec);
 
 }
 
 
-static void _ebid_mgr_init(ebid_t* ebid, uint16_t slice_adv_time_sec,
+static void _ebid_mgr_init(ebid_t *ebid, uint16_t slice_adv_time_sec,
                            uint16_t ebid_adv_time_sec)
 {
     // Generate a random CID that remains the same for the given EBID during the advertisement period
@@ -162,6 +162,8 @@ static bool _ebid_mgr_tick(void)
 
     ebid_mgr.ticks.ebid++;
     ebid_mgr.ticks.slice++;
+    uint8_t slice[EBID_SLICE_SIZE_LONG];
+    memset(&slice, '\0', EBID_SLICE_SIZE_LONG);
 
     if (ebid_mgr.ticks.ebid < ebid_mgr.limits.ebid_adv_time_sec) {
         // EBID did not expire, check the slice
@@ -171,25 +173,34 @@ static bool _ebid_mgr_tick(void)
             // slice expired, switch to new slice and update metadata: current slice and adv payload (service data)
             ebid_mgr.sid = ((ebid_mgr.sid + 1) % 4);
             switch (ebid_mgr.sid) {
-            case 0:
-                ebid_mgr.current_ebid_slice = ebid_get_slice1(&ebid_mgr.ebid);
-                break;
-            case 1:
-                ebid_mgr.current_ebid_slice = ebid_get_slice2(&ebid_mgr.ebid);
-                break;
-            case 2:
-                ebid_mgr.current_ebid_slice = ebid_get_slice3(&ebid_mgr.ebid);
-                break;
-            case 3:
-                ebid_mgr.current_ebid_slice = ebid_get_xor(&ebid_mgr.ebid);
-                break;
-            default:
-                assert(false); // Should not happen
-                break;
+                case 0:
+                    memcpy(slice, ebid_get_slice1(
+                               &ebid_mgr.ebid), EBID_SLICE_SIZE_LONG);
+                    break;
+                case 1:
+                    memcpy(slice, ebid_get_slice2(
+                               &ebid_mgr.ebid), EBID_SLICE_SIZE_LONG);
+                    break;
+                case 2:
+                    /* DESIRE sends sends the third slice with front padding so
+                       ignore first 4 bytes:
+                       https://gitlab.inria.fr/aboutet1/test-bluetooth/-/blob/master/app/src/main/java/fr/inria/desire/ble/models/AdvPayload.kt#L54
+                     */
+                    memcpy(slice + EBID_SLICE_SIZE_PAD,
+                           ebid_get_slice3(
+                               &ebid_mgr.ebid), EBID_SLICE_SIZE_SHORT);
+                    break;
+                case 3:
+                    memcpy(slice, ebid_get_xor(
+                               &ebid_mgr.ebid), EBID_SLICE_SIZE_LONG);
+                    break;
+                default:
+                    assert(false); // Should not happen
+                    break;
             }
             desire_ble_adv_payload_build(&ebid_mgr.ble_adv_payload,
                                          ebid_mgr.sid, ebid_mgr.cid,
-                                         ebid_mgr.current_ebid_slice);
+                                         slice);
         }
     }
     else {

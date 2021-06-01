@@ -1,2 +1,4 @@
 USEMODULE += ed
 EXTERNAL_MODULE_DIRS += $(CURDIR)/../../modules/sys/ed
+
+CFLAGS += -DLOG_LEVEL=LOG_ERROR
