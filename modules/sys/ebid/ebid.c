@@ -41,7 +41,7 @@ int ebid_generate(ebid_t* ebid, crypto_manager_keys_t *keys)
     for (uint8_t i = 0; i < EBID_SLICE_SIZE_LONG; i++) {
         ebid->parts.ebid_xor[i] = ebid->parts.ebid.slice.ebid_1[i] ^
                                   ebid->parts.ebid.slice.ebid_2[i] ^
-                                  ebid->parts.ebid.slice.ebid_3[i];
+                                  ebid->parts.ebid.slice.ebid_3_padded[i];
     }
     ebid->status.status |= EBID_HAS_ALL;
     return ret;
@@ -61,7 +61,7 @@ int ebid_reconstruct(ebid_t* ebid)
         for (uint8_t i = 0; i < EBID_SLICE_SIZE_LONG; i++) {
             tmp[i] = ebid->parts.ebid.slice.ebid_1[i] ^
                      ebid->parts.ebid.slice.ebid_2[i] ^
-                     ebid->parts.ebid.slice.ebid_3[i] ^
+                     ebid->parts.ebid.slice.ebid_3_padded[i] ^
                      ebid->parts.ebid_xor[i];
         }
         if (!ebid->status.bit.ebid_1_set) {

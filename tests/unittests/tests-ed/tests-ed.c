@@ -198,7 +198,10 @@ static void test_ed_add_slice(void)
     ed_init(&ed, 0x01);
     ed_add_slice(&ed, data_ts[0], ebid_slice[0], EBID_SLICE_1, &local_ebid);
     ed_add_slice(&ed, data_ts[1], ebid_slice[1], EBID_SLICE_2, &local_ebid);
-    ed_add_slice(&ed, data_ts[2], ebid_slice[2], EBID_SLICE_3, &local_ebid);
+    uint8_t pad_slice3[EBID_SLICE_SIZE_LONG];
+    memset(pad_slice3, '\0', EBID_SLICE_SIZE_LONG);
+    memcpy(pad_slice3 + EBID_SLICE_SIZE_PAD, ebid_slice[2], EBID_SLICE_SIZE_SHORT);
+    ed_add_slice(&ed, data_ts[2], pad_slice3, EBID_SLICE_3, &local_ebid);
     TEST_ASSERT(memcmp(ebid, ed.ebid.parts.ebid.u8, EBID_SIZE) == 0);
     TEST_ASSERT(ed.obf == (0x5c24 % CONFIG_ED_OBFUSCATE_MAX));
 }

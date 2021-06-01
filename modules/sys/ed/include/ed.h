@@ -208,6 +208,8 @@ uint16_t ed_exposure_time(ed_t *ed);
  *
  * @note    Once a full EBID is received or reconstructed the start time for
  *          for the ed_t data is set to time.
+ * @note    The third slice is expected to be front padded with
+ *          @ref EBID_SLICE_SIZE_PAD '0'
  *
  * @param[in]       ed       the encounter matching the data
  * @param[in]       time     the timestamp in seconds relative to the start of

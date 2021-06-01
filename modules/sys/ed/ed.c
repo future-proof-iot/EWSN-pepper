@@ -23,6 +23,9 @@
 
 #include "irq.h"
 #include "ed.h"
+#ifndef LOG_LEVEL
+#define LOG_LEVEL   LOG_INFO
+#endif
 #include "log.h"
 
 void ed_add(ed_list_t *list, ed_t *ed)
@@ -83,13 +86,14 @@ uint16_t ed_exposure_time(ed_t *ed)
     return ed->end_s - ed->start_s;
 }
 
-void ed_set_obf_value(ed_t *ed, ebid_t* ebid)
+void ed_set_obf_value(ed_t *ed, ebid_t *ebid)
 {
     bool local_gt_remote = false;
+
     /* compare local ebid and the remote one to see which one
        is greater */
-    for (uint8_t i = 0; i < EBID_SIZE; i ++) {
-        if ( ebid->parts.ebid.u8[i] > ed->ebid.parts.ebid.u8[i]) {
+    for (uint8_t i = 0; i < EBID_SIZE; i++) {
+        if (ebid->parts.ebid.u8[i] > ed->ebid.parts.ebid.u8[i]) {
             local_gt_remote = true;
             break;
         }
@@ -100,7 +104,8 @@ void ed_set_obf_value(ed_t *ed, ebid_t* ebid)
     /* calculate obf depending on which ebid is greater */
     if (local_gt_remote) {
         ed->obf = (ebid->parts.ebid.u8[0] << 8) | ebid->parts.ebid.u8[1];
-    } else {
+    }
+    else {
         ed->obf = (ed->ebid.parts.ebid.u8[0] << 8) | ed->ebid.parts.ebid.u8[1];
     }
     ed->obf %= CONFIG_ED_OBFUSCATE_MAX;
@@ -110,10 +115,22 @@ int ed_add_slice(ed_t *ed, uint16_t time, const uint8_t *slice, uint8_t part,
                  ebid_t *ebid_local)
 {
     if (ed->ebid.status.status != EBID_HAS_ALL) {
+        if (part == EBID_SLICE_3) {
+            /* DESIRE sends sends the third slice with front padding so
+               ignore first 4 bytes:
+               https://gitlab.inria.fr/aboutet1/test-bluetooth/-/blob/master/app/src/main/java/fr/inria/desire/ble/models/AdvPayload.kt#L54
+             */
+            slice += EBID_SLICE_SIZE_PAD;
+        }
         ebid_set_slice(&ed->ebid, slice, part);
         if (ebid_reconstruct(&ed->ebid) == 0) {
             ed_set_obf_value(ed, ebid_local);
             ed->start_s = time;
+            LOG_INFO("[ed]: saw ebid: [");
+            for (uint8_t i = 0; i < EBID_SIZE; i++) {
+                LOG_INFO("%d, ", ed->ebid.parts.ebid.u8[i]);
+            }
+            LOG_INFO("]\n");
             return 0;
         }
         return -1;
