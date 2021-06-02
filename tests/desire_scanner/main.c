@@ -10,6 +10,18 @@
 /* default scan duration (20s) */
 #define DEFAULT_DURATION_MS       (20 * MS_PER_SEC)
 
+static struct {
+    bool active;
+    uint32_t cid;
+    ebid_t ebid;
+} ebid_tracker;
+
+static void init_ebid_tracker(uint32_t cid) 
+{
+    ebid_init(&ebid_tracker.ebid);
+    ebid_tracker.cid = cid;
+}
+
 /* Dummy detection callback */
 void detection_cb(uint32_t ts,
                   const ble_addr_t *addr, int8_t rssi,
@@ -25,6 +37,37 @@ void detection_cb(uint32_t ts,
     dbg_print_ble_addr(addr);
     printf("\t sid = %d, cid=0x%lX, md_version=0x%"PRIX32"\n", sid, cid, adv_payload->data.md_version);
     dbg_dump_buffer("\t ebid_slice = ", adv_payload->data.ebid_slice, EBID_SLICE_SIZE_LONG, '\n');
+
+    // Reconstruct ebid when possible
+    // if new cid, reset else update slice
+    if ( ebid_tracker.cid != cid) {
+        puts(">>>>>>>>>>EBID RESET");
+        init_ebid_tracker(cid);
+    }
+    // TODO assert sid range
+    if(sid != 2) {
+        ebid_set_slice(&ebid_tracker.ebid, adv_payload->data.ebid_slice, sid);
+    } else {
+        // FIXME Desire sets padding bytes first !!
+        /* DESIRE sends sends the third slice with front padding so
+            ignore first 4 bytes:
+            https://gitlab.inria.fr/aboutet1/test-bluetooth/-/blob/master/app/src/main/java/fr/inria/desire/ble/models/AdvPayload.kt#L54
+        */
+        ebid_set_slice(&ebid_tracker.ebid, adv_payload->data.ebid_slice+EBID_SLICE_SIZE_PAD, sid);
+    }
+    
+    
+    int rc = ebid_reconstruct(&ebid_tracker.ebid);
+    printf("EBID Reconstruct status = %d\n", rc);
+    if (!rc) {
+        puts(">>>>>>>>>>EBID RECONSTRUCTED");
+        ebid_t* ebid = &ebid_tracker.ebid;
+        dbg_dump_buffer("Reconstructed ebid = ", ebid_get(ebid), EBID_SIZE, '\n');
+        dbg_dump_buffer("\t slice_1 = ", ebid_get_slice1(ebid), EBID_SLICE_SIZE_LONG, '\n');
+        dbg_dump_buffer("\t slice_2 = ", ebid_get_slice2(ebid), EBID_SLICE_SIZE_LONG, '\n');
+        dbg_dump_buffer("\t slice_3 = ", ebid_get_slice3(ebid), EBID_SLICE_SIZE_LONG, '\n');
+        dbg_dump_buffer("\t slice_xor = ", ebid_get_xor(ebid), EBID_SLICE_SIZE_LONG, '\n');
+    }
 }
 
 int _cmd_desire_scan(int argc, char **argv)
@@ -64,6 +107,7 @@ int main(void)
 
     /* initialize the desire scanner */
     desire_ble_scan_init();
+    init_ebid_tracker(0);
 
     /* start shell */
     char line_buf[SHELL_DEFAULT_BUFSIZE];

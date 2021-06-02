@@ -9,6 +9,11 @@ RIOTBASE ?= $(CURDIR)/../../RIOT
 USEMODULE += desire_scanner
 EXTERNAL_MODULE_DIRS += $(CURDIR)/../../modules/ble/desire_scanner
 
+# EBID module
+USEMODULE += ebid
+CFLAGS += -DEBID_FIXED_KEYS=0
+EXTERNAL_MODULE_DIRS += $(CURDIR)/../../modules/sys/ebid
+
 # Shell module for tests
 USEMODULE += shell
 USEMODULE += shell_commands
