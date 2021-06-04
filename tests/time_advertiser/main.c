@@ -33,7 +33,7 @@ current_time_ble_adv_payload_t adv_payload;
 static void ble_advertise_once(current_time_ble_adv_payload_t *adv_payload);
 
 /* Advertising Event Thread spec */
-#define DEFAULT_ADVERTISEMENT_PERIOD (3 * MS_PER_SEC)
+#define DEFAULT_ADVERTISEMENT_PERIOD (1 * MS_PER_SEC)
 static uint32_t _adv_period = DEFAULT_ADVERTISEMENT_PERIOD;
 static event_queue_t _eq;
 static event_t _update_evt;
@@ -104,10 +104,9 @@ static void _tick_event_handler(event_t *e)
     puts("[Tick]");
 
     // get current time: WARN not protected against race conditions with shell cli
-    adv_payload.data.service_uuid_16 = CURRENT_TIME_SERVICE_UUID16;
-    // todo fill from rtc
     rtc_get_time(&time);
     memset(adv_payload.bytes, 0, CURRENT_TIME_ADV_PAYLOAD_SIZE);
+    adv_payload.data.service_uuid_16 = CURRENT_TIME_SERVICE_UUID16;
     adv_payload.data.year = (uint16_t)(time.tm_year + TM_YEAR_OFFSET);
     adv_payload.data.month = (uint8_t)(time.tm_mon + 1);
     adv_payload.data.day =  (uint8_t)(time.tm_mday);

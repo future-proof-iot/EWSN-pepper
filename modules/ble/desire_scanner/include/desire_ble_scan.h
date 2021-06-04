@@ -30,6 +30,7 @@
 
 #include "host/ble_hs.h"
 #include "desire_ble_pkt.h"
+#include "time_ble_pkt.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -48,6 +49,14 @@ extern "C" {
 typedef void (*detection_cb_t)(uint32_t ts,
                                const ble_addr_t *addr, int8_t rssi,
                                const desire_ble_adv_payload_t *adv_payload);
+
+/**
+ * @brief   Callback signature triggered by this module for each discovered
+ *          advertising Current Time Service packet
+ *
+ * @param[in] adv_payload   Decoded time payload
+ */
+typedef void (*time_update_cb_t) (const current_time_ble_adv_payload_t* adv_payload);
 
 
 /**
@@ -74,6 +83,13 @@ void desire_ble_scan(uint32_t scan_duration_ms,
  *
  */
 void desire_ble_scan_stop(void);
+
+/**
+ * @brief   Sets a callback or each discovered advertising Current Time Service packet
+ *
+ * @param[in] usr_callback   user callback with decode time structure
+ */
+void desire_ble_set_time_update_cb(time_update_cb_t usr_callback);
 
 
 #ifdef __cplusplus

@@ -70,6 +70,10 @@ void detection_cb(uint32_t ts,
     }
 }
 
+void time_update_cb(const current_time_ble_adv_payload_t * time) {
+    dbg_print_curr_time_pkt(time);
+}
+
 int _cmd_desire_scan(int argc, char **argv)
 {
     uint32_t duration = DEFAULT_DURATION_MS;
@@ -107,6 +111,7 @@ int main(void)
 
     /* initialize the desire scanner */
     desire_ble_scan_init();
+    desire_ble_set_time_update_cb(time_update_cb);
     init_ebid_tracker(0);
 
     /* start shell */

@@ -12,6 +12,7 @@
 #include "debug.h"
 
 static detection_cb_t _detection_cb = NULL;
+static time_update_cb_t _time_update_cb = NULL;
 
 static void _nimble_scanner_cb(uint8_t type, const ble_addr_t *addr,
                                int8_t rssi, const uint8_t *adv,
@@ -39,27 +40,54 @@ static void _nimble_scanner_cb(uint8_t type, const ble_addr_t *addr,
 
     // filter service uuid: BLE_GAP_AD_UUID16_COMP set to DESIRE_SERVICE_UUID16
     uint16_t desire_uuid = DESIRE_SERVICE_UUID16;
+    uint16_t cts_uuid =  CURRENT_TIME_SERVICE_UUID16;
 
-    if (!bluetil_ad_find_and_cmp(&ad, BLE_GAP_AD_UUID16_COMP, &desire_uuid,
-                                 sizeof(uint16_t))) {
-        DEBUG("[Miss] DESIRE_SERVICE_UUID16 not matched in adv service uuid\n");
-        return;
-    }
+    if (bluetil_ad_find_and_cmp(&ad, BLE_GAP_AD_UUID16_COMP, &desire_uuid,
+                                sizeof(uint16_t))) {
+        // filter desire service data field
+        bluetil_ad_data_t field;     //= {.data=desire_adv_payload.bytes, .len=DESIRE_ADV_PAYLOAD_SIZE};
 
-    // filter desire service data field
-    bluetil_ad_data_t field ;//= {.data=desire_adv_payload.bytes, .len=DESIRE_ADV_PAYLOAD_SIZE};
-
-    if (BLUETIL_AD_OK == bluetil_ad_find(&ad, BLE_GAP_AD_SERVICE_DATA_UUID16, &field)) {
-        desire_ble_adv_payload_t* desire_adv_payload;
-        DEBUG("[Hit] Desire adv packet found, payload decoded\n");
-        desire_adv_payload = (desire_ble_adv_payload_t*) field.data;
-        // Callback if UUID of desire packet matches to DESIRE_SERVICE_UUID16
-        if ((desire_adv_payload->data.service_uuid_16 == DESIRE_SERVICE_UUID16) && (_detection_cb != NULL)) {
-            _detection_cb(now, addr, rssi, desire_adv_payload);
+        if (BLUETIL_AD_OK == bluetil_ad_find(&ad, BLE_GAP_AD_SERVICE_DATA_UUID16, &field)) {
+            desire_ble_adv_payload_t *desire_adv_payload;
+            DEBUG("[Hit] Desire adv packet found, payload decoded\n");
+            desire_adv_payload = (desire_ble_adv_payload_t *)field.data;
+            // Callback if UUID of desire packet matches to DESIRE_SERVICE_UUID16
+            if ((desire_adv_payload->data.service_uuid_16 == DESIRE_SERVICE_UUID16) &&
+                (_detection_cb != NULL)) {
+                _detection_cb(now, addr, rssi, desire_adv_payload);
+            }
         }
-    } else {
-        DEBUG(
-            "[Miss] DESIRE_SERVICE_UUID16 found in adv service uuid but missing or malformed in service data field\n");
+        else {
+            DEBUG(
+                "[Miss] DESIRE_SERVICE_UUID16 found in adv service uuid but missing or malformed in service data field\n");
+        }
+    }
+    else if (bluetil_ad_find_and_cmp(&ad, BLE_GAP_AD_UUID16_COMP, &cts_uuid,
+                                     sizeof(uint16_t))) {
+        // filter desire service data field
+        bluetil_ad_data_t field;     //= {.data=desire_adv_payload.bytes, .len=DESIRE_ADV_PAYLOAD_SIZE};
+
+        if (BLUETIL_AD_OK == bluetil_ad_find(&ad, BLE_GAP_AD_SERVICE_DATA_UUID16, &field)) {
+            current_time_ble_adv_payload_t *cts_adv_payload;
+            DEBUG("[Hit] Current Time adv packet found, payload decoded\n");
+            cts_adv_payload = (current_time_ble_adv_payload_t *)field.data;
+            // Callback if UUID of desire packet matches to CURRENT_TIME_SERVICE_UUID16
+            if ((cts_adv_payload->data.service_uuid_16 == CURRENT_TIME_SERVICE_UUID16) &&
+                (_time_update_cb != NULL)) {
+                DEBUG("\t Calling user callback\n");
+                _time_update_cb(cts_adv_payload);
+            }
+            else {
+                DEBUG("\t Failure service uuid = %04X and callback = %d\n", cts_adv_payload->data.service_uuid_16, _time_update_cb!=NULL);
+            }
+        }
+        else {
+            DEBUG(
+                "[Miss] CURRENT_TIME_SERVICE_UUID16 found in adv service uuid but missing or malformed in service data field\n");
+        }
+    }
+    else {
+        DEBUG("[Miss] unsupported advertising packet");
     }
 }
 
@@ -100,4 +128,8 @@ void desire_ble_scan(uint32_t scan_duration_ms,
 void desire_ble_scan_stop(void)
 {
     nimble_scanner_stop();
+}
+
+void desire_ble_set_time_update_cb(time_update_cb_t usr_callback) {
+    _time_update_cb = usr_callback;
 }

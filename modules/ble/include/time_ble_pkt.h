@@ -66,7 +66,7 @@ typedef union __attribute__((packed)) {
 
 static inline void dbg_print_curr_time_pkt(const current_time_ble_adv_payload_t *pkt)
 {
-    printf("[Current TIme Packet] Service uuid16  = %X:\n", pkt->data.service_uuid_16);
+    printf("[Current TIme Packet] Service uuid16  = 0x%X\n", pkt->data.service_uuid_16);
     printf("\t .year = %d\n", pkt->data.year);
     printf("\t .month = %d\n", pkt->data.month);
     printf("\t .day = %d\n", pkt->data.day);
