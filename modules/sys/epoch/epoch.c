@@ -109,11 +109,13 @@ static void turo_array_hex(turo_t *ctx, uint8_t *vals, size_t size)
         print_str(",");
     }
     ctx->state = 1;
+    print_str("\"");
     while (size > 0) {
        print_byte_hex(*vals);
         vals++;
         size--;
     }
+    print_str("\"");
 }
 
 void epoch_serialize_printf(epoch_data_t *epoch)
@@ -138,10 +140,15 @@ void epoch_serialize_printf(epoch_data_t *epoch)
             turo_array_hex(&ctx, epoch->contacts[i].pet.rt, PET_SIZE);
             turo_dict_close(&ctx);
             turo_dict_close(&ctx);
+            turo_dict_open(&ctx);
             turo_dict_key(&ctx, "duration");
             turo_u32(&ctx, epoch->contacts[i].duration);
+            turo_dict_close(&ctx);
+            turo_dict_open(&ctx);
             turo_dict_key(&ctx, "Gtx");
             turo_u32(&ctx, CONFIG_TX_COMPENSATION_GAIN - epoch->contacts[i].obf);
+            turo_dict_close(&ctx);
+            turo_dict_open(&ctx);
             turo_dict_key(&ctx, "windows");
             turo_array_open(&ctx);
             for (uint8_t j = 0; j < WINDOWS_PER_EPOCH; j++) {
