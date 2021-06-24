@@ -7,7 +7,7 @@ RIOTBASE ?= $(CURDIR)/../../RIOT
 
 # Desire BLE Advertiser
 USEMODULE += desire_advertiser
-EXTERNAL_MODULE_DIRS += $(CURDIR)/../../modules/ble/desire_advertiser
+EXTERNAL_MODULE_DIRS += $(CURDIR)/../../modules/ble/
 
 # Shell
 USEMODULE += shell

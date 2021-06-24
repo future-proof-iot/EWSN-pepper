@@ -1,3 +1,2 @@
 USEMODULE += crypto_manager
-EXTERNAL_MODULE_DIRS += $(CURDIR)/../../modules/sys/crypto_manager
 USEMODULE += base64
