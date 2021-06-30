@@ -92,7 +92,6 @@ static void test_uwb_epoch_finalize(void)
     uwb_epoch_data_t uwb_epoch;
 
     crypto_manager_keys_t keys;
-
     crypto_manager_gen_keypair(&keys);
     uwb_epoch_init(&uwb_epoch, 10, &keys);
     ebid_t ebid;
