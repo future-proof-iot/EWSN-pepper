@@ -17,6 +17,9 @@
 #include "desire_ble_scan.h"
 #include "desire_ble_adv.h"
 
+#include "board.h"
+#include "periph/gpio.h"
+
 #ifndef LOG_LEVEL
 #define LOG_LEVEL   LOG_INFO
 #endif
@@ -43,6 +46,15 @@ static ebid_t ebid;
 static uint32_t start_time;
 static event_periodic_t uwb_epoch_end;
 static twr_event_mem_manager_t twr_manager;
+
+#if defined(MODULE_PERIPH_GPIO_IRQ) && defined(BTN0_PIN)
+static void _declare_positive(void *arg)
+{
+    (void) arg;
+    LOG_INFO("[pepper]: COVID positive! \n");
+    gpio_toggle(LED1_PIN);
+}
+#endif
 
 uint16_t _get_txrx_offset(ebid_t *ebid)
 {
@@ -224,8 +236,27 @@ void _time_update_cb(const current_time_ble_adv_payload_t *time)
     }
 }
 
+static int _cmd_contact(int argc, char **argv)
+{
+    (void) argc;
+    (void) argv;
+    gpio_toggle(LED0_PIN);
+    LOG_INFO("[pepper]: testing needed!");
+    return 0;
+}
+
+static const shell_command_t _commands[] = {
+    {"contact", "Toggles led declaring contact => needs testing", _cmd_contact},
+    {NULL, NULL, NULL}
+};
+
 int main(void)
 {
+#if defined(MODULE_PERIPH_GPIO_IRQ) && defined(BTN0_PIN)
+    /* initialize a button to manually trigger an update */
+    gpio_init_int(BTN0_PIN, BTN0_MODE, GPIO_FALLING, _declare_positive, NULL);
+#endif
+
     /* initiate encounter management */
     uwb_ed_memory_manager_init(&manager);
     uwb_ed_list_init(&uwb_ed_list, &manager, &ebid);
@@ -254,7 +285,7 @@ int main(void)
     _boostrap_new_now();
     /* start shell */
     char line_buf[SHELL_DEFAULT_BUFSIZE];
-    shell_run(NULL, line_buf, SHELL_DEFAULT_BUFSIZE);
+    shell_run(_commands, line_buf, SHELL_DEFAULT_BUFSIZE);
 
     return 0;
 }

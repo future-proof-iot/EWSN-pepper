@@ -45,4 +45,6 @@ USEMODULE += uwb-core_twr_ss_ext
 USEMODULE += uwb-core_twr_ds
 USEMODULE += uwb-core_twr_ds_ext
 
+FEATURES_OPTIONAL += periph_gpio_irq
+
 include $(RIOTBASE)/Makefile.include
