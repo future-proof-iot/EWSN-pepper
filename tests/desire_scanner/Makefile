@@ -7,12 +7,12 @@ RIOTBASE ?= $(CURDIR)/../../RIOT
 
 # Desire BLE Scanner
 USEMODULE += desire_scanner
-EXTERNAL_MODULE_DIRS += $(CURDIR)/../../modules/ble/desire_scanner
+EXTERNAL_MODULE_DIRS += $(CURDIR)/../../modules/ble
 
 # EBID module
 USEMODULE += ebid
 CFLAGS += -DEBID_FIXED_KEYS=0
-EXTERNAL_MODULE_DIRS += $(CURDIR)/../../modules/sys/ebid
+EXTERNAL_MODULE_DIRS += $(CURDIR)/../../modules/sys
 
 # Shell module for tests
 USEMODULE += shell
