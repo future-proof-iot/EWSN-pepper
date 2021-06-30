@@ -32,6 +32,8 @@ static event_timeout_t _update_timeout_evt;
 static void _tick_event_handler(event_t *e);
 static char event_thread_stack[THREAD_STACKSIZE_MAIN];
 
+static ble_adv_cb_t _user_adv_cb = NULL;
+
 // EBID generation and slicing management
 typedef struct {
     /* Current EBID information */
@@ -61,6 +63,7 @@ static bool _ebid_mgr_tick(void);
 
 void desire_ble_adv_init(void)
 {
+    _user_adv_cb = NULL;
     // init event loop ticker thread
     // create a thread that runs the event loop: event_thread_init
     event_queue_init(&_eq);
@@ -106,6 +109,9 @@ static void _tick_event_handler(event_t *e)
 
     ble_advertise_once(&(ebid_mgr.ble_adv_payload));
 
+    if (_user_adv_cb) {
+        _user_adv_cb(ztimer_now(ZTIMER_MSEC), NULL);
+    }
     // if must change ebid, regenerate ebid
     done = _ebid_mgr_tick();
 
@@ -250,4 +256,14 @@ static void ble_advertise_once(desire_ble_adv_payload_t *adv_payload)
     nimble_autoadv_start(); // start, this will end after 10 ms approx
 
     (void)nimlble_ret;
+}
+
+void desire_ble_adv_set_cb(ble_adv_cb_t cb)
+{
+    _user_adv_cb = cb;
+}
+
+uint32_t desire_ble_adv_get_cid(void)
+{
+    return ebid_mgr.cid;
 }
