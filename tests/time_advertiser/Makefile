@@ -22,6 +22,7 @@ USEMODULE += event_thread
 
 USEMODULE += ztimer_msec
 USEMODULE += rtt_rtc
+USEMODULE += periph_init_rtc
 CFLAGS +=  -DRTC_NORMALIZE_COMPAT=1
 
 # Shell

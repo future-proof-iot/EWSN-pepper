@@ -1,3 +1,1 @@
-MODULE_EBID_DIR := $(LAST_MAKEFILEDIR)
 USEMODULE += crypto_manager
-EXTERNAL_MODULE_DIRS += $(MODULE_EBID_DIR)/../crypto_manager

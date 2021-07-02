@@ -33,7 +33,7 @@ current_time_ble_adv_payload_t adv_payload;
 static void ble_advertise_once(current_time_ble_adv_payload_t *adv_payload);
 
 /* Advertising Event Thread spec */
-#define DEFAULT_ADVERTISEMENT_PERIOD (1 * MS_PER_SEC)
+#define DEFAULT_ADVERTISEMENT_PERIOD (5 * MS_PER_SEC)
 static uint32_t _adv_period = DEFAULT_ADVERTISEMENT_PERIOD;
 static event_queue_t _eq;
 static event_t _update_evt;
@@ -46,9 +46,6 @@ static bool adv_status = false;
 
 static void cts_ble_adv_init(void)
 {
-    // init RTC
-    rtc_init();
-
     // init event loop ticker thread
     // create a thread that runs the event loop: event_thread_init
     event_queue_init(&_eq);
@@ -84,15 +81,17 @@ static void cts_ble_adv_start(uint32_t adv_period)
 
 
 #define TM_YEAR_OFFSET      (1900)
-static void print_time(const char *label, const struct tm *time)
+static void print_time(const char *label, struct tm *time)
 {
-    printf("%s  %04d-%02d-%02d %02d:%02d:%02d\n", label,
+    uint32_t epoch = rtc_mktime(time);
+    printf("%s  %04d-%02d-%02d %02d:%02d:%02d, epoch: %"PRIu32"\n", label,
            time->tm_year + TM_YEAR_OFFSET,
            time->tm_mon + 1,
            time->tm_mday,
            time->tm_hour,
            time->tm_min,
-           time->tm_sec);
+           time->tm_sec,
+           epoch);
 }
 
 static void _tick_event_handler(event_t *e)

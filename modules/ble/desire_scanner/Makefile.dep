@@ -8,7 +8,7 @@ USEMODULE += bluetil_ad
 # EBID module
 USEMODULE += ebid
 CFLAGS += -DEBID_FIXED_KEYS=0
-EXTERNAL_MODULE_DIRS += $(MODULE_DESIRE_SCANNER_DIR)/../../sys/ebid
+EXTERNAL_MODULE_DIRS += $(MODULE_DESIRE_SCANNER_DIR)/../../sys
 
 USEMODULE += ztimer_msec
 USEMODULE += ztimer_usec

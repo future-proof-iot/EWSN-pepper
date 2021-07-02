@@ -6,14 +6,16 @@ BOARD ?= dwm1001
 RIOTBASE ?= $(CURDIR)/../../RIOT
 
 USEMODULE += desire_advertiser
-EXTERNAL_MODULE_DIRS += $(CURDIR)/../../modules/ble/desire_advertiser
 USEMODULE += desire_scanner
-EXTERNAL_MODULE_DIRS += $(CURDIR)/../../modules/ble/desire_scanner
 USEMODULE += epoch
-EXTERNAL_MODULE_DIRS += $(CURDIR)/../../modules/sys/epoch
+EXTERNAL_MODULE_DIRS += $(CURDIR)/../../modules/sys/
+EXTERNAL_MODULE_DIRS += $(CURDIR)/../../modules/ble/
 
 USEMODULE += event_thread_highest
 USEMODULE += event_thread_medium
+USEMODULE += event_periodic
+USEMODULE += event_callback
+USEMODULE += ztimer_epoch
 
 # Uncomment to modify default rotation values
 # CFLAGS+=-DCONFIG_SLICE_ROTATION_T_S=1

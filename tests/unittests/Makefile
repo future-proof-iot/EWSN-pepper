@@ -29,7 +29,7 @@ FEATURES_BLACKLIST += highlevel_stdio
 # Pull in `Makefile.include`s and `Makefile.dep` from the test suites:
 -include $(UNIT_TESTS:%=$(CURDIR)/%/Makefile.dep)
 -include $(UNIT_TESTS:%=$(CURDIR)/%/Makefile.include)
-EXTERNAL_MODULE_DIRS := $(sort $(abspath $(EXTERNAL_MODULE_DIRS)))
+EXTERNAL_MODULE_DIRS += $(CURDIR)/../../modules/sys
 
 DIRS += $(UNIT_TESTS)
 BASELIBS += $(UNIT_TESTS:%=%.module)
