@@ -1,0 +1,22 @@
+{
+    "epoch": 332,
+    "pets": [{
+            "pet": {
+                "etl": "56CE8ACF9E5D49D80DF41877983DB8752B82CB8152D79EF19C9B0D600C7EAE9E",
+                "rtl": "0F070F9ACBB326E6A228CCA1D3FD393E6CA40901A8BD13E515BC9A00388C745E",
+                "exposure": 22,
+                "req_count": 21,
+                "avg_d_cm": 51
+            }
+        },
+        {
+            "pet": {
+                "etl": "56CE8ACF9E5D49D80DF41877983DB8752B82CB8152D79EF19C9B0D600C7EAE9E",
+                "rtl": "0F070F9ACBB326E6A228CCA1D3FD393E6CA40901A8BD13E515BC9A00388C745E",
+                "exposure": 22,
+                "req_count": 21,
+                "avg_d_cm": 51
+            }
+        }
+    ]
+}
