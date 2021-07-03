@@ -130,7 +130,7 @@ class ErtlResource(NodeResource):
         ertl = ErtlPayload.from_json_str(request.payload)
         self.handler.update_ertl(self.uid, ertl)
 
-        return aiocoap.Message(payload=f"{ertl.to_json_str()}".encode())
+        return aiocoap.Message(mtype=request.mtype)
 
 
     async def render_get(self, request:aiocoap.message.Message): 
@@ -158,7 +158,7 @@ class DesireCoapServer:
     port:int
     rq_handler: RqHandlerBase
     nodes:List[str]
-    
+
     __coap_root:resource.Site = field(init=False, repr=False)
 
     def __post_init__(self):
