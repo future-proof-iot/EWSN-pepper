@@ -10,7 +10,7 @@ import aiocoap.resource as resource
 import aiocoap
 
 from typing import List
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass, asdict, field
 from dacite import from_dict
 
 from typing import List
@@ -149,6 +149,33 @@ class EsrResource(NodeResource):
     async def render_get(self, request): 
         exposed_payload =  EsrPayload(self.handler.is_exposed(self.uid))
         return aiocoap.Message(payload=exposed_payload.to_json_str().encode())
+
+
+# Coap Server
+@dataclass
+class DesireCoapServer:
+    host:str
+    port:int
+    rq_handler: RqHandlerBase
+    nodes:List[str]
+    
+    __coap_root:resource.Site = field(init=False, repr=False)
+
+    def __post_init__(self):
+        self.__coap_root = resource.Site()
+        self.__coap_root.add_resource(['.well-known', 'core'],
+            resource.WKCResource( self.__coap_root .get_resources_as_linkheader))
+        for node_id in self.nodes:
+            self.__coap_root.add_resource([node_id, 'ertl'], ErtlResource(uid=node_id, handler=self.rq_handler))
+            self.__coap_root.add_resource([node_id, 'infected'], InfectedResource(uid=node_id, handler=self.rq_handler))
+            self.__coap_root.add_resource([node_id, 'esr'], EsrResource(uid=node_id, handler=self.rq_handler))
+
+
+    def run(self):
+        asyncio.Task(aiocoap.Context.create_server_context(self.__coap_root,bind=(self.host,self.port))) # bind arg required on Mac and windows
+        asyncio.get_event_loop().run_forever()
+
+
 
 
 if __name__ == "__main__":
