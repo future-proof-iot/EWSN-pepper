@@ -1,35 +1,41 @@
 #!/usr/bin/env python3
 import logging
+from tkinter.constants import NO
 from typing import List
 
 
-from desire_coap_resources import ErtlPayload, ErtlResource, EsrResource, InfectedResource
+from desire_coap_resources import ErtlPayload
 from desire_coap_resources import DesireCoapServer, RqHandlerBase
 
 
 class DummyRqHandler(RqHandlerBase):
 
     def update_ertl(self, uid, ertl:ErtlPayload):
-        print(f'[{self.__class__}] update_ertl: uid={uid}, ertl = {ertl}')
+        print(f'[{self.__class__.__name__}] update_ertl: uid={uid}, ertl = {ertl}')
     
     def get_ertl(self, uid) -> ErtlPayload:
-        print(f'[{self.__class__}] update_ertl: uid={uid}, ertl = {None}')
-        return None
+        # load from statics
+        ertl = None
+        with open('static/ertl.json') as json_file:
+            ertl = ErtlPayload.from_json_str(''.join(json_file.readlines()))
+
+        print(f'[{self.__class__.__name__}] update_ertl: uid={uid}, ertl = {ertl}')
+        return ertl
 
     def is_infected(self, uid) -> bool :
-        print(f'[{self.__class__}] is_infected: uid={uid}')
+        print(f'[{self.__class__.__name__}] is_infected: uid={uid}')
         return False
 
     def is_exposed(self, uid) -> bool:
-        print(f'[{self.__class__}] is_exposed: uid={uid}')
+        print(f'[{self.__class__.__name__}] is_exposed: uid={uid}')
         return False
     
     def set_infected(self, uid) -> None :
-        print(f'[{self.__class__}] set_infected: uid={uid}')
+        print(f'[{self.__class__.__name__}] set_infected: uid={uid}')
         return None
 
     def set_exposed(self, uid) -> None:
-        print(f'[{self.__class__}] set_exposed: uid={uid}')
+        print(f'[{self.__class__.__name__}] set_exposed: uid={uid}')
         return None
 
 

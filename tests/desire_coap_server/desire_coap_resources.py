@@ -1,93 +1,18 @@
-#!/usr/bin/env python3
 import logging
 
 from abc import ABC, abstractmethod
 
 import asyncio
-from tkinter.constants import NO
 
 import aiocoap.resource as resource
 import aiocoap
 
 from typing import List
-from dataclasses import dataclass, asdict, field
-from dacite import from_dict
+from dataclasses import dataclass, field
 
-from typing import List
-import json
+from desire_coap_payloads import ErtlPayload, InfectedPayload, EsrPayload
 
-# Coap payloads
-
-@dataclass
-class EncounterData:
-    etl: str
-    rtl: str
-    exposure: int
-    req_count: int
-    avg_d_cm: float
-
-    def to_json_str(self):
-        json_dict = asdict(self)
-        return json.dumps(json_dict)
-
-    @staticmethod
-    def from_json_str(json_string: str):
-        json_dict = json.loads(json_string)
-        return from_dict(data_class=EncounterData, data=json_dict)
-
-@dataclass
-class PetElement:
-    pet: EncounterData
-
-    def to_json_str(self):
-        json_dict = asdict(self)
-        return json.dumps(json_dict)
-
-    @staticmethod
-    def from_json_str(json_string: str):
-        json_dict = json.loads(json_string)
-        return from_dict(data_class=PetElement, data=json_dict)
-
-@dataclass
-class ErtlPayload:
-    epoch: int
-    pets: List[PetElement]
-
-    def to_json_str(self):
-        json_dict = asdict(self)
-        return json.dumps(json_dict)
-
-    @staticmethod
-    def from_json_str(json_string: str):
-        json_dict = json.loads(json_string)  
-        return from_dict(data_class=ErtlPayload, data=json_dict)
-
-@dataclass
-class EsrPayload:
-    contact: bool
-
-    def to_json_str(self):
-        json_dict = asdict(self)
-        return json.dumps(json_dict)
-
-    @staticmethod
-    def from_json_str(json_string: str):
-        json_dict = json.loads(json_string)  
-        return from_dict(data_class=EsrPayload, data=json_dict)
-
-@dataclass
-class InfectedPayload:
-    infected: bool
-
-    def to_json_str(self):
-        json_dict = asdict(self)
-        return json.dumps(json_dict)
-
-    @staticmethod
-    def from_json_str(json_string: str):
-        json_dict = json.loads(json_string)  
-        return from_dict(data_class=InfectedPayload, data=json_dict)
-
+# Coap Request handler to whom we formward the requests
 class RqHandlerBase(ABC):
     @abstractmethod
     def update_ertl(self, uid, ertl:ErtlPayload):
@@ -125,30 +50,99 @@ class NodeResource(resource.Resource):
 class ErtlResource(NodeResource):
     async def render_post(self, request:aiocoap.message.Message):
         # get uid, get json payload,  
-        print(f'uri = {request.get_request_uri()}, payload = {request.payload}')
+        #print(f'uri = {request.get_request_uri()}, payload = {request.payload}')
+        #print(f'\n\n location_path = {request.opt.location_path}, location_query = {request.opt.location_query}, content_format={request.opt.content_format}\n\n')
+        #print(f'header = {request.opt}')
 
-        ertl = ErtlPayload.from_json_str(request.payload)
-        self.handler.update_ertl(self.uid, ertl)
+        rsp = aiocoap.Message(mtype=request.mtype)
+        content_format = request.opt.content_format 
+        
+        try:
+            if content_format == aiocoap.numbers.media_types_rev['application/json']:
+                ertl = ErtlPayload.from_json_str(request.payload)
+                self.handler.update_ertl(self.uid, ertl)
+                # TODO handle eventual return code of ertl update (?) and report in the coap response (?)                
+                rsp.opt.content_format = content_format
+            elif content_format == aiocoap.numbers.media_types_rev['application/cbor']:
+                ertl = ErtlPayload.from_cbor_bytes(request.payload)
+                self.handler.update_ertl(self.uid, ertl)
+                # TODO handle eventual return code of ertl update (?) and report in the coap response (?)                
+                rsp.opt.content_format = content_format
+            else:
+                # unsupported payload format
+                rsp = aiocoap.Message(mtype=request.mtype, code=aiocoap.numbers.codes.Code.UNSUPPORTED_CONTENT_FORMAT)
+        except Exception as e:
+                rsp = aiocoap.Message(mtype=request.mtype, code=aiocoap.numbers.codes.Code.INTERNAL_SERVER_ERROR)
 
-        return aiocoap.Message(mtype=request.mtype)
+        return rsp
 
 
     async def render_get(self, request:aiocoap.message.Message): 
-        print(f'uid = {self.uid}')
-        print(f"{self.uid} -> ertl = {self.handler.get_ertl(self.uid)}")
-        return aiocoap.Message(payload=b"{}")
+        rsp = aiocoap.Message(mtype=request.mtype)
+        content_format = request.opt.content_format 
+        try:
+            if content_format == aiocoap.numbers.media_types_rev['application/json']:
+                ertl = self.handler.get_ertl(self.uid)
+                print(f"{self.uid} -> ertl = {ertl}")               
+                rsp = aiocoap.Message(mtype=request.mtype, payload=ertl.to_json_str().encode())
+                rsp.opt.content_format = content_format
+            elif content_format == aiocoap.numbers.media_types_rev['application/cbor']:
+                ertl = self.handler.get_ertl(self.uid)
+                print(f"{self.uid} -> ertl = {ertl}")               
+                rsp = aiocoap.Message(mtype=request.mtype, payload=ertl.to_cbor_bytes())
+                rsp.opt.content_format = content_format
+            else:
+                # unsupported payload format
+                rsp = aiocoap.Message(mtype=request.mtype, code=aiocoap.numbers.codes.Code.UNSUPPORTED_CONTENT_FORMAT)
+        except Exception as e:
+                print(e)
+                rsp = aiocoap.Message(mtype=request.mtype, code=aiocoap.numbers.codes.Code.INTERNAL_SERVER_ERROR)
+
+        return rsp
+
 
 class InfectedResource(NodeResource):
 
     async def render_get(self, request): 
-        infected_payload =  InfectedPayload(self.handler.is_infected(self.uid))
-        return aiocoap.Message(payload=infected_payload.to_json_str().encode())
+        rsp = aiocoap.Message(mtype=request.mtype)
+        content_format = request.opt.content_format 
+        try:
+            infected_payload =  InfectedPayload(self.handler.is_infected(self.uid))
+            if content_format == aiocoap.numbers.media_types_rev['application/json']:                
+                rsp = aiocoap.Message(payload=infected_payload.to_json_str().encode())
+                rsp.opt.content_format = content_format
+            elif content_format == aiocoap.numbers.media_types_rev['application/cbor']:
+                rsp = aiocoap.Message(payload=infected_payload.to_cbor_bytes())
+                rsp.opt.content_format = content_format
+            else:
+                # unsupported payload format
+                rsp = aiocoap.Message(mtype=request.mtype, code=aiocoap.numbers.codes.Code.UNSUPPORTED_CONTENT_FORMAT)
+        except Exception as e:
+                rsp = aiocoap.Message(mtype=request.mtype, code=aiocoap.numbers.codes.Code.INTERNAL_SERVER_ERROR)
+
+        return rsp
 
 class EsrResource(NodeResource):
 
     async def render_get(self, request): 
-        exposed_payload =  EsrPayload(self.handler.is_exposed(self.uid))
-        return aiocoap.Message(payload=exposed_payload.to_json_str().encode())
+        exposed_payload = EsrPayload(self.handler.is_exposed(self.uid))
+        rsp = aiocoap.Message(mtype=request.mtype)
+        content_format = request.opt.content_format 
+        try:
+            exposed_payload =  EsrPayload(self.handler.is_exposed(self.uid))
+            if content_format == aiocoap.numbers.media_types_rev['application/json']:                
+                rsp = aiocoap.Message(payload=exposed_payload.to_json_str().encode())
+                rsp.opt.content_format = content_format
+            elif content_format == aiocoap.numbers.media_types_rev['application/cbor']:
+                rsp = aiocoap.Message(payload=exposed_payload.to_cbor_bytes())
+                rsp.opt.content_format = content_format
+            else:
+                # unsupported payload format
+                rsp = aiocoap.Message(mtype=request.mtype, code=aiocoap.numbers.codes.Code.UNSUPPORTED_CONTENT_FORMAT)
+        except Exception as e:
+                rsp = aiocoap.Message(mtype=request.mtype, code=aiocoap.numbers.codes.Code.INTERNAL_SERVER_ERROR)
+
+        return rsp
 
 
 # Coap Server
@@ -175,10 +169,3 @@ class DesireCoapServer:
         asyncio.Task(aiocoap.Context.create_server_context(self.__coap_root,bind=(self.host,self.port))) # bind arg required on Mac and windows
         asyncio.get_event_loop().run_forever()
 
-
-
-
-if __name__ == "__main__":
-    with open('static/ertl.json') as json_file:
-        ertl = ErtlPayload.from_json_str(''.join(json_file.readlines()))
-        print(ertl)
