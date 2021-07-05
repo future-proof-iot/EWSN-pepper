@@ -86,6 +86,7 @@ void uwb_epoch_finish(uwb_epoch_data_t *epoch, uwb_ed_list_t *list)
 {
     /* process all data */
     top_uwb_ed_list_t top;
+
     memset(&top, '\0', sizeof(top));
 
     /* finish list processing */
@@ -127,6 +128,7 @@ void uwb_epoch_serialize_printf(uwb_epoch_data_t *epoch)
     turo_t ctx;
 
     unsigned int state = irq_disable();
+
     turo_init(&ctx);
     turo_dict_open(&ctx);
     turo_dict_key(&ctx, "epoch");
