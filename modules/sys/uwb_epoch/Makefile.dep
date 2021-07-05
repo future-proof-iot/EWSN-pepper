@@ -7,3 +7,5 @@ USEMODULE += base64
 
 OUTPUT_FORMAT ?= json
 USEMODULE += test_utils_result_output_${OUTPUT_FORMAT}
+
+USEPKG += nanocbor
