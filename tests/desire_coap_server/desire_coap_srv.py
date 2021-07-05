@@ -11,7 +11,7 @@ from desire_coap_resources import DesireCoapServer, RqHandlerBase
 class DummyRqHandler(RqHandlerBase):
 
     def update_ertl(self, uid, ertl:ErtlPayload):
-        print(f'[{self.__class__.__name__}] update_ertl: uid={uid}, ertl = {ertl}')
+        print(f'[{self.__class__.__name__}] update_ertl: uid={uid}, ertl = {ertl}, json = \n{ertl.to_json_str()}')
     
     def get_ertl(self, uid) -> ErtlPayload:
         # load from statics

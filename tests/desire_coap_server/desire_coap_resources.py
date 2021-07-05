@@ -114,6 +114,9 @@ class InfectedResource(NodeResource):
             elif content_format == aiocoap.numbers.media_types_rev['application/cbor']:
                 rsp = aiocoap.Message(payload=infected_payload.to_cbor_bytes())
                 rsp.opt.content_format = content_format
+            elif content_format == aiocoap.numbers.media_types_rev['application/octet-stream']:
+                rsp = aiocoap.Message(payload=infected_payload.infected.to_bytes(1,byteorder='little'))
+                rsp.opt.content_format = content_format
             else:
                 # unsupported payload format
                 rsp = aiocoap.Message(mtype=request.mtype, code=aiocoap.numbers.codes.Code.UNSUPPORTED_CONTENT_FORMAT)
@@ -135,6 +138,9 @@ class EsrResource(NodeResource):
                 rsp.opt.content_format = content_format
             elif content_format == aiocoap.numbers.media_types_rev['application/cbor']:
                 rsp = aiocoap.Message(payload=exposed_payload.to_cbor_bytes())
+                rsp.opt.content_format = content_format
+            elif content_format == aiocoap.numbers.media_types_rev['application/octet-stream']:
+                rsp = aiocoap.Message(payload=exposed_payload.contact.to_bytes(1,byteorder='little'))
                 rsp.opt.content_format = content_format
             else:
                 # unsupported payload format

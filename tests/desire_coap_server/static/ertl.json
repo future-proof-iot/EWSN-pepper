@@ -1,22 +1,20 @@
 {
-    "epoch": 332,
-    "pets": [{
-            "pet": {
-                "etl": "56CE8ACF9E5D49D80DF41877983DB8752B82CB8152D79EF19C9B0D600C7EAE9E",
-                "rtl": "0F070F9ACBB326E6A228CCA1D3FD393E6CA40901A8BD13E515BC9A00388C745E",
-                "exposure": 22,
-                "req_count": 21,
-                "avg_d_cm": 51
-            }
-        },
-        {
-            "pet": {
-                "etl": "56CE8ACF9E5D49D80DF41877983DB8752B82CB8152D79EF19C9B0D600C7EAE9E",
-                "rtl": "0F070F9ACBB326E6A228CCA1D3FD393E6CA40901A8BD13E515BC9A00388C745E",
-                "exposure": 22,
-                "req_count": 21,
-                "avg_d_cm": 51
-            }
-        }
-    ]
+	"epoch": 332,
+	"pets": [{
+		"pet": {
+			"etl": "vwqMHjrpYru3s3BhZJqNpdv7yVTcukv9j22PNHEzSkI=",
+			"rtl": "UFGTQCsxu3f7l2QsKwpnimSW1vfuBBp3C2C8rdAmg14=",
+			"exposure": 780,
+			"req_count": 432,
+			"avg_d_cm": 151
+		}
+	}, {
+		"pet": {
+			"etl": "2IDGdmnLl2JDBRxfjVsC5MMqMdA1lGjlqzUjnlmS9Ew=",
+			"rtl": "EDfFx+xAXrsAaIJaNbUgdVFf0WTktZIiyJwzhF7dqBQ=",
+			"exposure": 640,
+			"req_count": 323,
+			"avg_d_cm": 71
+		}
+	}]
 }

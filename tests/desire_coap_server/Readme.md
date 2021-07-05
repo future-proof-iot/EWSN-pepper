@@ -35,20 +35,20 @@ $ aiocoap-client -q coap://localhost/dw0456/ertl --content-format application/js
     "pets": [
         {
             "pet": {
-                "etl": "56CE8ACF9E5D49D80DF41877983DB8752B82CB8152D79EF19C9B0D600C7EAE9E",
-                "rtl": "0F070F9ACBB326E6A228CCA1D3FD393E6CA40901A8BD13E515BC9A00388C745E",
-                "exposure": 22,
-                "req_count": 21,
-                "avg_d_cm": 51
+                "etl": "vwqMHjrpYru3s3BhZJqNpdv7yVTcukv9j22PNHEzSkI=",
+                "rtl": "UFGTQCsxu3f7l2QsKwpnimSW1vfuBBp3C2C8rdAmg14=",
+                "exposure": 780,
+                "req_count": 432,
+                "avg_d_cm": 151
             }
         },
         {
             "pet": {
-                "etl": "56CE8ACF9E5D49D80DF41877983DB8752B82CB8152D79EF19C9B0D600C7EAE9E",
-                "rtl": "0F070F9ACBB326E6A228CCA1D3FD393E6CA40901A8BD13E515BC9A00388C745E",
-                "exposure": 22,
-                "req_count": 21,
-                "avg_d_cm": 51
+                "etl": "2IDGdmnLl2JDBRxfjVsC5MMqMdA1lGjlqzUjnlmS9Ew=",
+                "rtl": "EDfFx+xAXrsAaIJaNbUgdVFf0WTktZIiyJwzhF7dqBQ=",
+                "exposure": 640,
+                "req_count": 323,
+                "avg_d_cm": 71
             }
         }
     ]
@@ -57,7 +57,7 @@ $ aiocoap-client -q coap://localhost/dw0456/ertl --content-format application/js
 - GET ERTL data in `cbor` format for node `dw0456`
 ```shell
 $ aiocoap-client -q coap://localhost/dw0456/ertl --content-format application/cbor
-CBORTag(51966, [332, [['56CE8ACF9E5D49D80DF41877983DB8752B82CB8152D79EF19C9B0D600C7EAE9E', '0F070F9ACBB326E6A228CCA1D3FD393E6CA40901A8BD13E515BC9A00388C745E', 22, 21, 51], ['56CE8ACF9E5D49D80DF41877983DB8752B82CB8152D79EF19C9B0D600C7EAE9E', '0F070F9ACBB326E6A228CCA1D3FD393E6CA40901A8BD13E515BC9A00388C745E', 22, 21, 51]]])
+CBORTag(51966, [332, [[b'\xbf\n\x8c\x1e:\xe9b\xbb\xb7\xb3pad\x9a\x8d\xa5\xdb\xfb\xc9T\xdc\xbaK\xfd\x8fm\x8f4q3JB', b'PQ\x93@+1\xbbw\xfb\x97d,+\ng\x8ad\x96\xd6\xf7\xee\x04\x1aw\x0b`\xbc\xad\xd0&\x83^', 780, 432, 151], [b'\xd8\x80\xc6vi\xcb\x97bC\x05\x1c_\x8d[\x02\xe4\xc3*1\xd05\x94h\xe5\xab5#\x9eY\x92\xf4L', b'\x107\xc5\xc7\xec@^\xbb\x00h\x82Z5\xb5 uQ_\xd1d\xe4\xb5\x92"\xc8\x9c3\x84^\xdd\xa8\x14', 640, 323, 71]]])
 ```
 
 - GET infected data in `json` format for node `dw0456` - allows him to declare an infection
@@ -69,13 +69,15 @@ $ aiocoap-client -q coap://localhost/dw0456/infected --content-format applicatio
 - GET infected data in `cbor` format for node `dw0456` - allows him to declare an infection
 ```shell
 $ aiocoap-client -q coap://localhost/dw0456/infected --content-format application/cbor
-{"infected": false}
+CBORTag(51962, [False])
 ```
 
 - GET exposure data in `json` for node `dw0456` - allows him to check if he was in contact with another infected user
 ```shell
 $ aiocoap-client -q coap://localhost/dw0456/esr --content-format application/json
-CBORTag(51962, [False]
+{
+    "contact": false
+}
 ```
 
 - GET exposure data in `cbor` for node `dw0456` - allows him to check if he was in contact with another infected user
@@ -88,25 +90,25 @@ CBORTag(51967, [False])
 The payloads have binary cbor files that can be dumped using this helper [tools/dump_cbor_file.py](tools/dump_cbor_file.py) as follows, where the hex bytes are printed then decoded using the system utility
 ```shell
 $ python tools/dump_cbor_file.py static/ertl.cbor 
-line [len = 282 bytes] = d9cafe8219014c8285784035364345384143463945354434394438304446343138373739383344423837353242383243423831353244373945463139433942304436303043374541453945784030463037304639414342423332364536413232384343413144334644333933453643413430393031413842443133453531354243394130303338384337343545161518338578403536434538414346394535443439443830444634313837373938334442383735324238324342383135324437394546313943394230443630304337454145394578403046303730463941434242333236453641323238434341314433464433393345364341343039303141384244313345353135424339413030333838433734354516151833
+line [len = 162 bytes] = d9cafe8219014c82855820bf0a8c1e3ae962bbb7b37061649a8da5dbfbc954dcba4bfd8f6d8f3471334a425820505193402b31bb77fb97642c2b0a678a6496d6f7ee041a770b60bcadd026835e19030c1901b01897855820d880c67669cb976243051c5f8d5b02e4c32a31d0359468e5ab35239e5992f44c58201037c5c7ec405ebb0068825a35b52075515fd164e4b59222c89c33845edda8141902801901431847
 CBOR decoding:
 {
     "CBORTag:51966": [
         332,
         [
             [
-                "56CE8ACF9E5D49D80DF41877983DB8752B82CB8152D79EF19C9B0D600C7EAE9E",
-                "0F070F9ACBB326E6A228CCA1D3FD393E6CA40901A8BD13E515BC9A00388C745E",
-                22,
-                21,
-                51
+                "\\xbf\n\\x8c\u001e:\\xe9b\\xbb\\xb7\\xb3pad\\x9a\\x8d\\xa5\\xdb\\xfb\\xc9TܺK\\xfd\\x8fm\\x8f4q3JB",
+                "PQ\\x93@+1\\xbbw\\xfb\\x97d,+\ng\\x8ad\\x96\\xd6\\xf7\\xee\u0004\u001aw\u000b`\\xbc\\xad\\xd0&\\x83^",
+                780,
+                432,
+                151
             ],
             [
-                "56CE8ACF9E5D49D80DF41877983DB8752B82CB8152D79EF19C9B0D600C7EAE9E",
-                "0F070F9ACBB326E6A228CCA1D3FD393E6CA40901A8BD13E515BC9A00388C745E",
-                22,
-                21,
-                51
+                "؀\\xc6vi˗bC\u0005\u001c_\\x8d[\u0002\\xe4\\xc3*1\\xd05\\x94h\\xe5\\xab5#\\x9eY\\x92\\xf4L",
+                "\u00107\\xc5\\xc7\\xec@^\\xbb\u0000h\\x82Z5\\xb5 uQ_\\xd1d䵒\"Ȝ3\\x84^ݨ\u0014",
+                640,
+                323,
+                71
             ]
         ]
     ]
@@ -119,7 +121,10 @@ In order to estimate the CBOR packet length for the ERTL payload (ErtlPayload cl
 ```shell
 $ PYTHONPATH=$PWD python tools/print_cbor_size.py 2
 CBOR packet size for 2 pets
-ErtlPayload(epoch=71, pets=[PetElement(pet=EncounterData(etl='B699803548DA82EA1D47E097A74CA08E4667595646CF427126686C420138D22B', rtl='4CD6710464607B50087A57AA082A8522A6D81886206354E0E6BA7A4A8980BA35', exposure=23, req_count=99, avg_d_cm=62.047)), PetElement(pet=EncounterData(etl='753E911B07E0AE17E0D17A5C4A9C7F3E8472AD4432D911065D67FFDED15C6D58', rtl='140F3F884C6FE25DAE07FC4A68A7A9135684D394BF57631809F5066A63CCD5C9', exposure=98, req_count=98, avg_d_cm=73.099))])
-cbor packet length = 298
-D9CAFE8218478285784042363939383033353438444138324541314434374530393741373443413038453436363735393536343643463432373132363638364334323031333844323242784034434436373130343634363037423530303837413537414130383241383532324136443831383836323036333534453045364241374134413839383042413335171863FB404F0604189374BC8578403735334539313142303745304145313745304431374135433441394337463345383437324144343433324439313130363544363746464445443135433644353878403134304633463838344336464532354441453037464334413638413741393133353638344433393442463537363331383039463530363641363343434435433918621862FB4052465604189375
+EncounterData to array = [b'\x97-\x8f^\xaf\xd2\xf5\xeb\n\x1c\x95\x06^#vrCw2\x00\xfaDO\xd7\x1c\x04\xe7u\x90\xe4Et', b'e61\xeal\x84\xef\x8e\xb1\x0f\x85\xbe\xda\xd0\xdcWZC%b\xa0?\xff\xf4\x08,\x04\x96e\xf3G\xb6', 67, 56, 72.533]
+EncounterData to array = [b'R\t\x07\xa9\xad\xcc\xb0\xf9\xb4\xcf\x84U\x87\x95la\xf6\xd6\x0bA\x19\x83\x07\x9b\xe5\xdd\xe5<\x8c\xf7\xa1q', b'g\x7f\xd8\xa4\xb6\xb2\r\xed]\xf1ic\x19\x89r\x062\xc5-~\x9d\xbe\xb3\xbd\x12\x10\xa6\x16\xa5\x91\xc8\xe3', 15, 97, 10.599]
+ErtlPayload(epoch=10, pets=[PetElement(pet=EncounterData(etl=b'\x97-\x8f^\xaf\xd2\xf5\xeb\n\x1c\x95\x06^#vrCw2\x00\xfaDO\xd7\x1c\x04\xe7u\x90\xe4Et', rtl=b'e61\xeal\x84\xef\x8e\xb1\x0f\x85\xbe\xda\xd0\xdcWZC%b\xa0?\xff\xf4\x08,\x04\x96e\xf3G\xb6', exposure=67, req_count=56, avg_d_cm=72.533)), PetElement(pet=EncounterData(etl=b'R\t\x07\xa9\xad\xcc\xb0\xf9\xb4\xcf\x84U\x87\x95la\xf6\xd6\x0bA\x19\x83\x07\x9b\xe5\xdd\xe5<\x8c\xf7\xa1q', rtl=b'g\x7f\xd8\xa4\xb6\xb2\r\xed]\xf1ic\x19\x89r\x062\xc5-~\x9d\xbe\xb3\xbd\x12\x10\xa6\x16\xa5\x91\xc8\xe3', exposure=15, req_count=97, avg_d_cm=10.599))])
+{"epoch": 10, "pets": [{"pet": {"etl": "ly2PXq/S9esKHJUGXiN2ckN3MgD6RE/XHATndZDkRXQ=", "rtl": "ZTYx6myE746xD4W+2tDcV1pDJWKgP//0CCwElmXzR7Y=", "exposure": 67, "req_count": 56, "avg_d_cm": 72.533}}, {"pet": {"etl": "UgkHqa3MsPm0z4RVh5VsYfbWC0EZgweb5d3lPIz3oXE=", "rtl": "Z3/YpLayDe1d8WljGYlyBjLFLX6dvrO9EhCmFqWRyOM=", "exposure": 15, "req_count": 97, "avg_d_cm": 10.599}}]}
+cbor packet length = 169
+D9CAFE820A82855820972D8F5EAFD2F5EB0A1C95065E23767243773200FA444FD71C04E77590E445745820653631EA6C84EF8EB10F85BEDAD0DC575A432562A03FFFF4082C049665F347B618431838FB4052221CAC083127855820520907A9ADCCB0F9B4CF845587956C61F6D60B411983079BE5DDE53C8CF7A1715820677FD8A4B6B20DED5DF169631989720632C52D7E9DBEB3BD1210A616A591C8E30F1861FB402532B020C49BA6
 ```
