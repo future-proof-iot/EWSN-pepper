@@ -69,6 +69,16 @@ void desire_ble_adv_start(ebid_t *ebid,
  */
 void desire_ble_adv_stop(void);
 
+typedef void (*ble_adv_cb_t)(uint32_t, void*);
+
+/**
+ * @brief   Sets a callback or each discovered advertising Current Time Service packet
+ *
+ * @param[in] usr_callback   user callback with decode time structure
+ */
+void desire_ble_adv_set_cb(ble_adv_cb_t cb);
+
+uint32_t desire_ble_adv_get_cid(void);
 
 #ifdef __cplusplus
 }

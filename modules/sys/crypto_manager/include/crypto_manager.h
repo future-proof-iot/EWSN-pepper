@@ -115,6 +115,18 @@ int crypto_manager_gen_pet(crypto_manager_keys_t *keys, uint8_t *pk,
 int crypto_manager_gen_pets(crypto_manager_keys_t *keys, uint8_t *ebid,
                             pet_t* pet);
 
+/**
+ * @brief       Check wether array a is greater than b
+ *
+ * @param[inout]     a      The array to comapre
+ * @param[inout]     b      The array to compare against
+ *
+ * @retval   0  if a >  b
+ * @retval   1  if b >  a
+ * @retval  -1 if a == b
+ */
+int8_t array_a_greater_than_b(uint8_t *a, uint8_t *b);
+
 #ifdef __cplusplus
 }
 #endif

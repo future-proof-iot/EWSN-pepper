@@ -11,7 +11,7 @@
 #include "event/thread.h"
 
 #include "assert.h"
-
+#include "mutex.h"
 #include "ztimer.h"
 #include "timex.h"
 
@@ -26,34 +26,37 @@
 #include "host/ble_hs.h"
 #include "services/gap/ble_svc_gap.h"
 
-
 /* BLE Advetisement specs  */
 #define BLE_NIMBLE_ADV_DURATION_MS 10
 current_time_ble_adv_payload_t adv_payload;
 static void ble_advertise_once(current_time_ble_adv_payload_t *adv_payload);
 
 /* Advertising Event Thread spec */
-#define DEFAULT_ADVERTISEMENT_PERIOD (5 * MS_PER_SEC)
+#ifndef DEFAULT_ADVERTISEMENT_PERIOD
+#define DEFAULT_ADVERTISEMENT_PERIOD (1 * MS_PER_SEC)
+#endif
 static uint32_t _adv_period = DEFAULT_ADVERTISEMENT_PERIOD;
 static event_queue_t _eq;
 static event_t _update_evt;
 static event_timeout_t _update_timeout_evt;
 static void _tick_event_handler(event_t *e);
 static char event_thread_stack[THREAD_STACKSIZE_MAIN];
+static mutex_t _time_lock = MUTEX_INIT;
 
 /* BLE Advertising Thread */
 static bool adv_status = false;
 
 static void cts_ble_adv_init(void)
 {
-    // init event loop ticker thread
-    // create a thread that runs the event loop: event_thread_init
+    /* init event loop ticker thread
+       create a thread that runs the event loop: event_thread_init */
     event_queue_init(&_eq);
     _update_evt.handler = _tick_event_handler;
     event_timeout_ztimer_init(&_update_timeout_evt, ZTIMER_MSEC, &_eq,
                               &_update_evt);
 
-    // Thread that will run an event loop (event_loop) for handling advertisment events
+    /* Thread that will run an event loop (event_loop)
+        for handling advertisment events */
     event_thread_init(&_eq, event_thread_stack, sizeof(event_thread_stack),
                       EVENT_QUEUE_PRIO_MEDIUM);
 
@@ -62,23 +65,22 @@ static void cts_ble_adv_init(void)
 
 static void cts_ble_adv_stop(void)
 {
-    // notify stop event: cancel current advertisement ticker, reset
+    /* notify stop event: cancel current advertisement ticker, reset */
     event_timeout_clear(&_update_timeout_evt);
     adv_status = false;
 }
 
 static void cts_ble_adv_start(uint32_t adv_period)
 {
-    // stop current advetisement if any
+    /* stop current advetisement if any */
     if (adv_status) {
         cts_ble_adv_stop();
     }
-    // schedule advertisements
+    /* schedule advertisements */
     _adv_period = adv_period;
     event_timeout_set(&_update_timeout_evt, _adv_period);
     adv_status = true;
 }
-
 
 #define TM_YEAR_OFFSET      (1900)
 static void print_time(const char *label, struct tm *time)
@@ -101,9 +103,10 @@ static void _tick_event_handler(event_t *e)
     (void)e;
 
     puts("[Tick]");
-
-    // get current time: WARN not protected against race conditions with shell cli
-    rtc_get_time(&time);
+    /* get current time*/
+    mutex_lock(&_time_lock);
+    rtc_localtime(ztimer_now(ZTIMER_EPOCH), &time);
+    mutex_unlock(&_time_lock);
     memset(adv_payload.bytes, 0, CURRENT_TIME_ADV_PAYLOAD_SIZE);
     adv_payload.data.service_uuid_16 = CURRENT_TIME_SERVICE_UUID16;
     adv_payload.data.year = (uint16_t)(time.tm_year + TM_YEAR_OFFSET);
@@ -114,11 +117,11 @@ static void _tick_event_handler(event_t *e)
     adv_payload.data.seconds = (uint8_t)(time.tm_sec);
     adv_payload.data.day_of_week = (uint8_t)(time.tm_wday);
 
-    // advertise it
+    /* advertise it */
     print_time("Current Time =", &time);
     ble_advertise_once(&adv_payload);
 
-    // schedule next update event if advertisement duration not reached
+    /* schedule next update event if advertisement duration not reached */
     event_timeout_set(&_update_timeout_evt, _adv_period);
 }
 
@@ -135,26 +138,26 @@ static void ble_advertise_once(current_time_ble_adv_payload_t *adv_payload)
     nimble_autoadv_set_ble_gap_adv_params(&adv_params);
     nimble_auto_adv_set_adv_duration(BLE_NIMBLE_ADV_DURATION_MS);
 
-    // Add service data uuid
+    /* Add service data uuid */
     uint16_t service_data = CURRENT_TIME_SERVICE_UUID16;
 
     nimble_ret = nimble_autoadv_add_field(BLE_GAP_AD_UUID16_COMP,
                                           &service_data, sizeof(service_data));
     assert(nimble_ret == BLUETIL_AD_OK);
 
-    // Add service data field
+    /* Add service data field */
     nimble_ret = nimble_autoadv_add_field(BLE_GAP_AD_SERVICE_DATA_UUID16,
                                           adv_payload->bytes,
                                           CURRENT_TIME_ADV_PAYLOAD_SIZE);
     assert(nimble_ret == BLUETIL_AD_OK);
 
-    nimble_autoadv_start(); // start, this will end after 10 ms approx
+    /* start, this will end after 10 ms approx */
+    nimble_autoadv_start();
 
     (void)nimble_ret;
 }
 
 /* CLI handlers */
-
 int _cmd_adv_start(int argc, char **argv)
 {
     (void)argc;
@@ -195,7 +198,9 @@ int _cmd_time(int argc, char **argv)
     }
 
     if (argc == 1) {
-        rtc_get_time(&time);
+        mutex_lock(&_time_lock);
+        rtc_localtime(ztimer_now(ZTIMER_EPOCH), &time);
+        mutex_unlock(&_time_lock);
         print_time("Current Time =", &time);
         return 0;
     }
@@ -212,9 +217,11 @@ int _cmd_time(int argc, char **argv)
     time.tm_min = (uint8_t)(atoi(argv[5]));
     time.tm_sec = (uint8_t)(atoi(argv[6]));
 
-    // if running stop, update rtc time, restart adv if previous
+    /* if running stop, update rtc time, restart adv if previous */
     cts_ble_adv_stop();
-    rtc_set_time(&time);
+    mutex_lock(&_time_lock);
+    ztimer_adjust_time(ZTIMER_EPOCH, rtc_mktime(&time) - ztimer_now(ZTIMER_EPOCH));
+    mutex_unlock(&_time_lock);
 
     if (restart) {
         puts("Time changed, restarting advertisement");

@@ -102,16 +102,7 @@ int crypto_manager_gen_pets(crypto_manager_keys_t *keys, uint8_t *ebid,
 {
     assert(keys && ebid && pet);
 
-    int8_t pk_gt_ebid = -1;
-    for (uint8_t i = 0; i < C25519_KEY_SIZE; i ++) {
-        if (keys->pk[i] > ebid[i]) {
-            pk_gt_ebid = 1;
-            break;
-        } else if (keys->pk[i] < ebid[i]) {
-            pk_gt_ebid = 0;
-            break;
-        }
-    }
+    int8_t pk_gt_ebid = array_a_greater_than_b(keys->pk, ebid);
     if (pk_gt_ebid == -1) {
         return -1;
     } else if (pk_gt_ebid == 0) {
