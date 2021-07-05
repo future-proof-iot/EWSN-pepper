@@ -20,10 +20,8 @@ CFLAGS += -I$(CURDIR)/../../modules/ble/include
 USEMODULE += event_timeout_ztimer
 USEMODULE += event_thread
 
+USEMODULE += ztimer_epoch
 USEMODULE += ztimer_msec
-USEMODULE += rtt_rtc
-USEMODULE += periph_init_rtc
-CFLAGS +=  -DRTC_NORMALIZE_COMPAT=1
 
 # Shell
 USEMODULE += shell

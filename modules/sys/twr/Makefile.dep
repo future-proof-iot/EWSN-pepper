@@ -1,0 +1,7 @@
+USEMODULE += event
+USEMODULE += event_callback
+USEMODULE += event_timeout
+USEMODULE += memarray
+
+USEPKG += uwb-core
+USEPKG += uwb-dw1000
