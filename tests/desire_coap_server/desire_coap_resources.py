@@ -54,7 +54,7 @@ class ErtlResource(NodeResource):
         #print(f'\n\n location_path = {request.opt.location_path}, location_query = {request.opt.location_query}, content_format={request.opt.content_format}\n\n')
         #print(f'header = {request.opt}')
 
-        rsp = aiocoap.Message(mtype=request.mtype)
+        rsp = aiocoap.Message(mtype=request.mtype, code=aiocoap.numbers.codes.Code.CHANGED)
         content_format = request.opt.content_format 
         
         try:
