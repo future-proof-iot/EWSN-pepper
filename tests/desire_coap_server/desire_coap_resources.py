@@ -175,7 +175,7 @@ class DesireCoapServer:
         if not self.host or not self.port:
             asyncio.Task(aiocoap.Context.create_server_context(self.__coap_root))
         else:
-            asyncio.Task(aiocoap.Context.create_server_context(self.__coap_root),bind=(self.host,self.port)) 
+            asyncio.Task(aiocoap.Context.create_server_context(self.__coap_root,bind=(self.host,self.port)))
         
         asyncio.get_event_loop().run_forever()
 
