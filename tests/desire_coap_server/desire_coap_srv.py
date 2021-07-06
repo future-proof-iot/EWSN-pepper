@@ -57,5 +57,5 @@ if __name__ == "__main__":
 
     assert len(sys.argv)>1, "Provide at least one node uid for enrollement"
     
-    main(sys.argv[1:], bind=platform.system() != 'Linux)')
+    main(sys.argv[1:], bind=platform.system() != 'Linux')
 
