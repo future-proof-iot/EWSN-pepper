@@ -44,14 +44,18 @@ class DummyRqHandler(RqHandlerBase):
 logging.basicConfig(level=logging.INFO)
 logging.getLogger("coap-server").setLevel(logging.DEBUG)
 
-def main(nodes:List[str]):
+def main(nodes:List[str],bind:bool):
     # Desire coap server instance , the rq_handler is the engine for handling post/get requests
-    coap_server = DesireCoapServer(host="localhost", port=5683, rq_handler=DummyRqHandler(), nodes=nodes)
+    coap_server = DesireCoapServer(host="localhost" if bind else None, port=5683 if bind else None, rq_handler=DummyRqHandler(), nodes=nodes)
     # blocking run in this thread
     coap_server.run()
 
 
 if __name__ == "__main__":
     import sys
+    import platform
+
     assert len(sys.argv)>1, "Provide at least one node uid for enrollement"
-    main(sys.argv[1:])
+    
+    main(sys.argv[1:], bind= (platform.system() == 'Linux)'))
+
