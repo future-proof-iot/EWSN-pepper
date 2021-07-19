@@ -13,11 +13,12 @@ RIOTBASE ?= $(CURDIR)/../../RIOT
 
 USEMODULE += desire_advertiser
 USEMODULE += desire_scanner
+USEMODULE += desire_scanner_time_update
 USEMODULE += uwb_epoch
 USEMODULE += twr
 EXTERNAL_MODULE_DIRS += $(CURDIR)/../../modules/sys/
 EXTERNAL_MODULE_DIRS += $(CURDIR)/../../modules/ble/
-EXTERNAL_MODULE_DIRS += $(CURDIR)/../../modules/uwb
+EXTERNAL_MODULE_DIRS += $(CURDIR)/../../modules/uwb/
 
 USEMODULE += event_thread_highest
 USEMODULE += event_thread_medium

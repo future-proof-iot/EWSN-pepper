@@ -15,6 +15,7 @@
 #include "crypto_manager.h"
 #include "uwb_epoch.h"
 #include "desire_ble_scan.h"
+#include "desire_ble_scan_params.h"
 #include "desire_ble_adv.h"
 
 #include "board.h"
@@ -146,7 +147,7 @@ static void _boostrap_new_now(void)
     twr_set_short_addr(desire_ble_adv_get_cid());
     /* start scanning */
     LOG_INFO("[pepper]: start scanning\n");
-    desire_ble_scan(CONFIG_EBID_ROTATION_T_S * MS_PER_SEC, _detection_cb);
+    desire_ble_scan_start(CONFIG_EBID_ROTATION_T_S * MS_PER_SEC);
 }
 
 static void _serialize_uwb_epoch_handler(event_t *event)
@@ -269,7 +270,7 @@ int main(void)
     /* setup adv and scanning */
     desire_ble_adv_init();
     desire_ble_adv_set_cb(_adv_cb);
-    desire_ble_scan_init();
+    desire_ble_scan_init(&desire_ble_scanner_params, _detection_cb);
     desire_ble_set_time_update_cb(_time_update_cb);
     /* setup end of uwb_epoch timeout event */
     uint32_t modulo = ztimer_now(ZTIMER_EPOCH) % CONFIG_EBID_ROTATION_T_S;
