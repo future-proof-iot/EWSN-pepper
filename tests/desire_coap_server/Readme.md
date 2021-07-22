@@ -2,7 +2,7 @@ desire_coap_server
 ==
 A python coap server for offloading RTL, ETL (for debug) and Exposure Status Request (ESR).
 
-Enrollement is done by declaring the list of nodes uuids on sever start as args. 
+Enrollement is done by declaring the list of nodes uuids on sever start as args.
 
 Example of a server with nodes DW01E2 and DW0AB34 enrolled.
 ```shell
@@ -15,17 +15,17 @@ For each node, identified by a 16-bit uid in hex format, the following resources
 | Resource URI                      | Semantic                                                                                                                                           |
 |-----------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------|
 | `coap://localhost/<uid>/ertl`     | [POST, GET] a json/cbor(tag=51966) object representing the epoch's RTL and ETL data                                                                |
-| `coap://localhost/<uid>/infected` | [POST] a json/cbor(tag=51962) object representing node's infection (a boolean)                                                                     |
+| `coap://localhost/<uid>/infected` | [POST, GET] a json/cbor(tag=51962) object representing node's infection (a boolean)                                                                     |
 | `coap://localhost/<uid>/esr`      | [GET] return an json/cbor(tag=51967) object integer equal to true if the node `<uid>`<br>was exposed to an infected user, and false otherwise      |
 
 *Example of aiocoap-client session with the server:*
 - POST ERTL data [static/ertl.json](static/ertl.json) for node `dw0456`
 ```shell
-$ aiocoap-client -q coap://localhost/dw0456/ertl -m POST --content-format application/json --payload @static/ertl.json 
+$ aiocoap-client -q coap://localhost/dw0456/ertl -m POST --content-format application/json --payload @static/ertl.json
 ```
 - POST ERTL data [static/ertl.cbor](static/ertl.cbor) for node `dw0456`
 ```shell
-$ aiocoap-client -q coap://localhost/dw0456/ertl -m POST --content-format application/cbor --payload @static/ertl.cbor 
+$ aiocoap-client -q coap://localhost/dw0456/ertl -m POST --content-format application/cbor --payload @static/ertl.cbor
 ```
 - GET ERTL data in `json` format for node `dw0456`
 ```shell
@@ -60,16 +60,27 @@ $ aiocoap-client -q coap://localhost/dw0456/ertl --content-format application/cb
 CBORTag(51966, [332, [[b'\xbf\n\x8c\x1e:\xe9b\xbb\xb7\xb3pad\x9a\x8d\xa5\xdb\xfb\xc9T\xdc\xbaK\xfd\x8fm\x8f4q3JB', b'PQ\x93@+1\xbbw\xfb\x97d,+\ng\x8ad\x96\xd6\xf7\xee\x04\x1aw\x0b`\xbc\xad\xd0&\x83^', 780, 432, 151], [b'\xd8\x80\xc6vi\xcb\x97bC\x05\x1c_\x8d[\x02\xe4\xc3*1\xd05\x94h\xe5\xab5#\x9eY\x92\xf4L', b'\x107\xc5\xc7\xec@^\xbb\x00h\x82Z5\xb5 uQ_\xd1d\xe4\xb5\x92"\xc8\x9c3\x84^\xdd\xa8\x14', 640, 323, 71]]])
 ```
 
-- GET infected data in `json` format for node `dw0456` - allows him to declare an infection
+- GET infected data in `json` format for node `dw0456` - allows him to recover
+the infection status
 ```shell
 $ aiocoap-client -q coap://localhost/dw0456/infected --content-format application/json
 {"infected": false}
 ```
 
-- GET infected data in `cbor` format for node `dw0456` - allows him to declare an infection
+- GET infected data in `cbor` format for node `dw0456` - allows him to recover the infection status
 ```shell
 $ aiocoap-client -q coap://localhost/dw0456/infected --content-format application/cbor
 CBORTag(51962, [False])
+```
+
+- POST infected data in `json` format for node `dw0456` - allows him to declare an infection
+```shell
+$ aiocoap-client -q coap://localhost/dw0456/infected -m POST --content-format application/json --payload @static/infected.json
+```
+
+- POST infected data in `cbor` format for node `dw0456` - allows him to declare an infection
+```shell
+$ aiocoap-client -q coap://localhost/dw0456/infected -m POST --content-format application/cbor --payload @static/infected.cbor
 ```
 
 - GET exposure data in `json` for node `dw0456` - allows him to check if he was in contact with another infected user
@@ -89,7 +100,7 @@ CBORTag(51967, [False])
 *Note on CBOR files in [./static](./static) folder*
 The payloads have binary cbor files that can be dumped using this helper [tools/dump_cbor_file.py](tools/dump_cbor_file.py) as follows, where the hex bytes are printed then decoded using the system utility
 ```shell
-$ python tools/dump_cbor_file.py static/ertl.cbor 
+$ python tools/dump_cbor_file.py static/ertl.cbor
 line [len = 162 bytes] = d9cafe8219014c82855820bf0a8c1e3ae962bbb7b37061649a8da5dbfbc954dcba4bfd8f6d8f3471334a425820505193402b31bb77fb97642c2b0a678a6496d6f7ee041a770b60bcadd026835e19030c1901b01897855820d880c67669cb976243051c5f8d5b02e4c32a31d0359468e5ab35239e5992f44c58201037c5c7ec405ebb0068825a35b52075515fd164e4b59222c89c33845edda8141902801901431847
 CBOR decoding:
 {

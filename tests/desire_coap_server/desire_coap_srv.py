@@ -12,7 +12,7 @@ class DummyRqHandler(RqHandlerBase):
 
     def update_ertl(self, uid, ertl:ErtlPayload):
         print(f'[{self.__class__.__name__}] update_ertl: uid={uid}, ertl = {ertl}, json = \n{ertl.to_json_str()}')
-    
+
     def get_ertl(self, uid) -> ErtlPayload:
         # load from statics
         ertl = None
@@ -29,9 +29,9 @@ class DummyRqHandler(RqHandlerBase):
     def is_exposed(self, uid) -> bool:
         print(f'[{self.__class__.__name__}] is_exposed: uid={uid}')
         return False
-    
-    def set_infected(self, uid) -> None :
-        print(f'[{self.__class__.__name__}] set_infected: uid={uid}')
+
+    def set_infected(self, uid, status:bool) -> None :
+        print(f'[{self.__class__.__name__}] set_infected: uid={uid} infected={status}')
         return None
 
     def set_exposed(self, uid) -> None:
@@ -56,6 +56,6 @@ if __name__ == "__main__":
     import platform
 
     assert len(sys.argv)>1, "Provide at least one node uid for enrollement"
-    
+
     main(sys.argv[1:], bind=platform.system() != 'Linux')
 
