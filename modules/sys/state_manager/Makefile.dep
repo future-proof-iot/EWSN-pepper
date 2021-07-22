@@ -1,0 +1,6 @@
+USEPKG += nanocbor
+USEMODULE += uwb_epoch
+USEMODULE += luid
+USEMODULE += fmt
+
+USEMODULE += periph_gpio
