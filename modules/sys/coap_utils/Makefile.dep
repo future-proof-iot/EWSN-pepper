@@ -1,0 +1,3 @@
+USEMODULE += gcoap
+USEMODULE += fmt
+USEMODULE += od
