@@ -2,7 +2,7 @@
 #include <stdlib.h>
 
 #include "ztimer.h"
-
+#include "random.h"
 #include "shell.h"
 #include "shell_commands.h"
 #include "periph/rtc.h"
@@ -17,27 +17,49 @@
 #include "desire_ble_scan.h"
 #include "desire_ble_scan_params.h"
 #include "desire_ble_adv.h"
-
-#include "board.h"
-#include "periph/gpio.h"
-
+#if IS_USED(MODULE_DESIRE_SCANNER_NETIF)
+#include "coap/utils.h"
+#endif
+#include "state_manager.h"
 #ifndef LOG_LEVEL
 #define LOG_LEVEL   LOG_INFO
 #endif
 #include "log.h"
 
+#include "board.h"
+#include "periph/gpio.h"
+#ifndef CONFIG_EPOCH_SILENT_PERIOD_MIN_S
+#define CONFIG_EPOCH_SILENT_PERIOD_MIN_S        1
+#endif
+
+#ifndef CONFIG_EPOCH_SILENT_PERIOD_MAX_S
+#define CONFIG_EPOCH_SILENT_PERIOD_MAX_S        5
+#endif
+
 #ifndef CONFIG_EPOCH_MARGIN_S
-#define CONFIG_EPOCH_MARGIN_S       5
+#define CONFIG_EPOCH_MARGIN_S                   5
 #endif
 
 #ifndef CONFIG_TWR_EARLY_LISTEN
-#define CONFIG_TWR_EARLY_LISTEN     3
+#define CONFIG_TWR_EARLY_LISTEN                 3
 #endif
 
 #ifndef CONFIG_TWR_MIN_OFFSET
-#define CONFIG_TWR_MIN_OFFSET       3
+#define CONFIG_TWR_MIN_OFFSET                   3
 #endif
 
+#ifndef CONFIG_PEPPER_SERVER_PORT
+#define CONFIG_PEPPER_SERVER_PORT               5683
+#endif
+
+#ifndef CONFIG_PEPPER_SERVER_ADDR
+#define CONFIG_PEPPER_SERVER_ADDR               "fd00:dead:beef::1"
+#endif
+
+#if IS_USED(MODULE_DESIRE_SCANNER_NETIF)
+static sock_udp_ep_t remote;
+static uint8_t buf[2048];
+#endif
 static uwb_epoch_data_t uwb_epoch_data;
 static uwb_epoch_data_t uwb_epoch_data_serialize;
 static uwb_ed_list_t uwb_ed_list;
@@ -49,11 +71,22 @@ static event_periodic_t uwb_epoch_end;
 static twr_event_mem_manager_t twr_manager;
 
 #if defined(MODULE_PERIPH_GPIO_IRQ) && defined(BTN0_PIN)
+static void _update_infected_status(void *arg)
+{
+    (void)arg;
+#if IS_USED(MODULE_DESIRE_SCANNER_NETIF)
+    if (desire_ble_is_connected()) {
+        state_manager_coap_send_infected(&remote);
+    }
+#endif
+}
+static event_callback_t _infected_event = EVENT_CALLBACK_INIT(
+    _update_infected_status, NULL);
 static void _declare_positive(void *arg)
 {
-    (void) arg;
-    LOG_INFO("[pepper]: COVID positive! \n");
-    gpio_toggle(LED1_PIN);
+    (void)arg;
+    state_manager_set_infected_status(!state_manager_get_infected_status());
+    event_post(EVENT_PRIO_MEDIUM, &_infected_event.super);
 }
 #endif
 
@@ -63,7 +96,7 @@ uint16_t _get_txrx_offset(ebid_t *ebid)
            MS_PER_SEC + CONFIG_TWR_MIN_OFFSET;
 }
 
-/* this should be offloaded */
+/* TODO: this should be offloaded */
 static void _adv_cb(uint32_t ts, void *arg)
 {
     (void)arg;
@@ -73,7 +106,7 @@ static void _adv_cb(uint32_t ts, void *arg)
      */
     uwb_ed_t *next = (uwb_ed_t *)uwb_ed_list.list.next;
     if (!next) {
-        LOG_DEBUG("[pepper]: no registered encounter\n");
+        LOG_INFO("[pepper]: skip, no neigh\n");
     }
     do {
         next = (uwb_ed_t *)next->list_node.next;
@@ -85,7 +118,7 @@ static void _adv_cb(uint32_t ts, void *arg)
                 twr_schedule_listen_managed(_get_txrx_offset(&next->ebid));
             }
             else {
-                LOG_DEBUG("[pepper]: skipping, not seen in a while");
+                LOG_DEBUG("[pepper]: skip, MIA\n");
             }
         }
     } while (next != (uwb_ed_t *)uwb_ed_list.list.next);
@@ -123,22 +156,10 @@ static void _twr_complete_cb(twr_event_data_t *data)
                                  data->range);
 }
 
-static void _boostrap_new_now(void)
+/* Event to allow delaying adv/scan activity start */
+static void _scan_adv_start(void *arg)
 {
-    start_time = ztimer_now(ZTIMER_MSEC) / MS_PER_SEC;
-    LOG_INFO("[pepper]: new uwb_epoch t=%" PRIu32 "\n", start_time);
-    /* generate new keys */
-    LOG_INFO("[pepper]: starting new uwb_epoch\n");
-    /* reset uwb_epoch data */
-    uwb_epoch_init(&uwb_epoch_data, ztimer_now(ZTIMER_EPOCH), &keys);
-    /* update local ebid */
-    ebid_init(&ebid);
-    ebid_generate(&ebid, &keys);
-    LOG_INFO("[pepper]: local ebid: [");
-    for (uint8_t i = 0; i < EBID_SIZE; i++) {
-        LOG_INFO("%d, ", ebid.parts.ebid.u8[i]);
-    }
-    LOG_INFO("]\n");
+    (void)arg;
     /* start advertisement */
     LOG_INFO("[pepper]: start adv\n");
     desire_ble_adv_start(&ebid, CONFIG_SLICE_ROTATION_T_S,
@@ -149,36 +170,107 @@ static void _boostrap_new_now(void)
     LOG_INFO("[pepper]: start scanning\n");
     desire_ble_scan_start(CONFIG_EBID_ROTATION_T_S * MS_PER_SEC);
 }
+static event_timeout_t _silent_timeout;
+static event_callback_t _scan_adv_start_ev = EVENT_CALLBACK_INIT(
+    _scan_adv_start, NULL);
+
+static void _boostrap_new_epoch(void)
+{
+    start_time = ztimer_now(ZTIMER_MSEC) / MS_PER_SEC;
+    LOG_INFO("[pepper]: new uwb_epoch t=%" PRIu32 "\n", start_time);
+    /* initiate epoch and generate new keys */
+    uwb_epoch_init(&uwb_epoch_data, ztimer_now(ZTIMER_EPOCH), &keys);
+    /* update local ebid */
+    ebid_init(&ebid);
+    LOG_INFO("[pepper]: new ebid generation\n");
+    ebid_generate(&ebid, &keys);
+    LOG_INFO("[pepper]: local ebid: [");
+    for (uint8_t i = 0; i < EBID_SIZE; i++) {
+        LOG_INFO("%d, ", ebid.parts.ebid.u8[i]);
+    }
+    LOG_INFO("]\n");
+    /* random silent period */
+    event_timeout_set(&_silent_timeout,
+                      random_uint32_range(CONFIG_EPOCH_SILENT_PERIOD_MIN_S,
+                                          CONFIG_EPOCH_SILENT_PERIOD_MAX_S));
+}
+
+typedef struct {
+    event_t super;
+    uwb_epoch_data_t *data;
+} uwb_epoch_data_event_t;
 
 static void _serialize_uwb_epoch_handler(event_t *event)
 {
-    (void)event;
-    uwb_epoch_serialize_printf(&uwb_epoch_data_serialize);
+    uwb_epoch_data_event_t *d_event = (uwb_epoch_data_event_t *)event;
+
+#if IS_USED(MODULE_DESIRE_SCANNER_NETIF)
+    if (desire_ble_is_connected()) {
+        if (uwb_epoch_contacts(d_event->data)) {
+            state_manager_coap_send_ertl(&remote, d_event->data, buf,
+                                         sizeof(buf));
+        }
+    }
+    else {
+#endif
+    LOG_INFO("[pepper]: not connected, dumping epoch data\n");
+    uwb_epoch_serialize_printf(d_event->data);
+#if IS_USED(MODULE_DESIRE_SCANNER_NETIF)
 }
-static event_t _serialize_uwb_epoch =
-{ .handler = _serialize_uwb_epoch_handler };
+#endif
+}
+
+static uwb_epoch_data_event_t _serialize_uwb_epoch =
+{ .super.handler = _serialize_uwb_epoch_handler };
 
 static void _end_of_uwb_epoch_handler(void *arg)
 {
     (void)arg;
     LOG_INFO("[pepper]: end of uwb_epoch\n");
-    /* stop advertising */
+    /* stop advertising and scanning */
+    desire_ble_scan_stop();
     desire_ble_adv_stop();
     /* process uwb_epoch data */
     LOG_INFO("[pepper]: process all uwb_epoch data\n");
     uwb_ed_list_finish(&uwb_ed_list);
     uwb_epoch_finish(&uwb_epoch_data, &uwb_ed_list);
-    /* post uwb_epoch data process event, TODO: remove this extra variable*/
+    /* post serializing/offloading event */
     memcpy(&uwb_epoch_data_serialize, &uwb_epoch_data,
            sizeof(uwb_epoch_data_t));
-    event_post(EVENT_PRIO_MEDIUM, &_serialize_uwb_epoch);
+    _serialize_uwb_epoch.data = &uwb_epoch_data_serialize;
     /* bootstrap new uwb_epoch */
-    _boostrap_new_now();
+    _boostrap_new_epoch();
+    /* post after bootstrapping the new epoch */
+    event_post(EVENT_PRIO_MEDIUM, &_serialize_uwb_epoch.super);
+#if IS_USED(MODULE_DESIRE_SCANNER_NETIF)
+    /* if connected then update exposure status */
+    if (desire_ble_is_connected()) {
+        state_manager_coap_get_esr(&remote);
+    }
+#endif
 }
+
 static event_callback_t _end_of_uwb_epoch = EVENT_CALLBACK_INIT(
     _end_of_uwb_epoch_handler, NULL);
 
-bool _time_is_in_range(uint32_t now, uint32_t new_now, uint32_t marge)
+static void _aligned_epoch_start(void)
+{
+    /* setup end of uwb_epoch timeout event */
+    uint32_t modulo = ztimer_now(ZTIMER_EPOCH) % CONFIG_EBID_ROTATION_T_S;
+    uint32_t diff = modulo ? CONFIG_EBID_ROTATION_T_S - modulo : 0;
+
+    /* setup end of uwb_epoch timeout event */
+    event_periodic_init(&uwb_epoch_end, ZTIMER_EPOCH, EVENT_PRIO_HIGHEST,
+                        &_end_of_uwb_epoch.super);
+    LOG_INFO("[pepper]: delay for %" PRIu32 "s to align uwb_epoch start\n",
+             diff);
+    ztimer_sleep(ZTIMER_EPOCH, diff);
+    event_periodic_start(&uwb_epoch_end, CONFIG_EBID_ROTATION_T_S);
+    /* bootstrap new uwb_epoch */
+    _boostrap_new_epoch();
+}
+
+static bool _time_is_in_range(uint32_t now, uint32_t new_now, uint32_t marge)
 {
     if (now > new_now) {
         return (now - new_now) < marge;
@@ -188,16 +280,11 @@ bool _time_is_in_range(uint32_t now, uint32_t new_now, uint32_t marge)
     }
 }
 
-void _time_update_cb(const current_time_ble_adv_payload_t *time)
+void time_update_cb(const current_time_ble_adv_payload_t *time)
 {
     struct tm t;
 
-    t.tm_year = time->data.year - 1900;
-    t.tm_mon = time->data.month - 1;
-    t.tm_mday = time->data.day;
-    t.tm_hour = time->data.hours;
-    t.tm_min = time->data.minutes;
-    t.tm_sec = time->data.seconds;
+    current_time_ble_adv_parse(time, &t);
     uint32_t new_now = rtc_mktime(&t);
     uint32_t now = ztimer_now(ZTIMER_EPOCH);
     LOG_DEBUG("[pepper]: epoch\n");
@@ -211,44 +298,31 @@ void _time_update_cb(const current_time_ble_adv_payload_t *time)
     if (adjust_time) {
         if (reset_epoch) {
             LOG_INFO("[pepper]: time was set back too much, bootstrap from 0\n");
+            event_timeout_clear(&_silent_timeout);
             event_periodic_stop(&uwb_epoch_end);
             desire_ble_adv_stop();
             desire_ble_scan_stop();
         }
         ztimer_adjust_time(ZTIMER_EPOCH, new_now - now);
-        LOG_DEBUG("\tnew-current: %" PRIu32 "\n", ztimer_now(ZTIMER_EPOCH));
-
+        LOG_DEBUG("\tnew-current: %" PRIu32 "\n",
+                  (uint32_t)ztimer_now(ZTIMER_EPOCH));
         if (reset_epoch) {
-            uint32_t modulo = ztimer_now(ZTIMER_EPOCH) %
-                              CONFIG_EBID_ROTATION_T_S;
-            uint32_t diff = modulo ? CONFIG_EBID_ROTATION_T_S - modulo : 0;
-            /* setup end of uwb_epoch timeout event */
-            event_periodic_init(&uwb_epoch_end, ZTIMER_EPOCH,
-                                EVENT_PRIO_HIGHEST,
-                                &_end_of_uwb_epoch.super);
-            LOG_INFO(
-                "[pepper]: delay for %" PRIu32 "s to align uwb_epoch start\n",
-                diff);
-            ztimer_sleep(ZTIMER_EPOCH, diff);
-            event_periodic_start(&uwb_epoch_end, CONFIG_EBID_ROTATION_T_S);
-            /* bootstrap new uwb_epoch */
-            _boostrap_new_now();
+            _aligned_epoch_start();
         }
     }
 }
 
-static int _cmd_contact(int argc, char **argv)
+static int _cmd_id(int argc, char **argv)
 {
-    (void) argc;
-    (void) argv;
-    gpio_toggle(LED0_PIN);
-    LOG_INFO("[pepper]: testing needed!");
+    (void)argc;
+    (void)argv;
+    printf("id: DW%s\n", state_manager_get_id());
     return 0;
 }
 
 static const shell_command_t _commands[] = {
-    {"contact", "Toggles led declaring contact => needs testing", _cmd_contact},
-    {NULL, NULL, NULL}
+    { "id", "Print device id", _cmd_id },
+    { NULL, NULL, NULL }
 };
 
 int main(void)
@@ -257,7 +331,16 @@ int main(void)
     /* initialize a button to manually trigger an update */
     gpio_init_int(BTN0_PIN, BTN0_MODE, GPIO_FALLING, _declare_positive, NULL);
 #endif
+#if IS_USED(MODULE_DESIRE_SCANNER_NETIF)
+    /* initialize coap endpoint */
+    coap_init_remote(&remote, CONFIG_PEPPER_SERVER_ADDR,
+                     CONFIG_PEPPER_SERVER_PORT);
+#endif
+    event_timeout_ztimer_init(&_silent_timeout, ZTIMER_EPOCH,
+                              EVENT_PRIO_HIGHEST,
+                              (event_t *)&_scan_adv_start_ev);
 
+    state_manager_init();
     /* initiate encounter management */
     uwb_ed_memory_manager_init(&manager);
     uwb_ed_list_init(&uwb_ed_list, &manager, &ebid);
@@ -271,19 +354,9 @@ int main(void)
     desire_ble_adv_init();
     desire_ble_adv_set_cb(_adv_cb);
     desire_ble_scan_init(&desire_ble_scanner_params, _detection_cb);
-    desire_ble_set_time_update_cb(_time_update_cb);
-    /* setup end of uwb_epoch timeout event */
-    uint32_t modulo = ztimer_now(ZTIMER_EPOCH) % CONFIG_EBID_ROTATION_T_S;
-    uint32_t diff = modulo ? CONFIG_EBID_ROTATION_T_S - modulo : modulo;
-    /* setup end of uwb_epoch timeout event */
-    event_periodic_init(&uwb_epoch_end, ZTIMER_EPOCH, EVENT_PRIO_HIGHEST,
-                        &_end_of_uwb_epoch.super);
-    LOG_INFO("[pepper]: delay for %" PRIu32 "s to align uwb_epoch start\n",
-             diff);
-    ztimer_sleep(ZTIMER_EPOCH, diff);
-    event_periodic_start(&uwb_epoch_end, CONFIG_EBID_ROTATION_T_S);
-    /* bootstrap new uwb_epoch */
-    _boostrap_new_now();
+    desire_ble_set_time_update_cb(time_update_cb);
+    /* aligned start of epoch */
+    _aligned_epoch_start();
     /* start shell */
     char line_buf[SHELL_DEFAULT_BUFSIZE];
     shell_run(_commands, line_buf, SHELL_DEFAULT_BUFSIZE);
