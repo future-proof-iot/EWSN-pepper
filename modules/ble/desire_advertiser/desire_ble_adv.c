@@ -224,7 +224,7 @@ static void ble_advertise_once(desire_ble_adv_payload_t *adv_payload)
 {
     int nimlble_ret;
 
-    nimble_autoadv_init();
+    nimble_autoadv_reset();
 
     adv_params.conn_mode = BLE_GAP_CONN_MODE_NON;
     adv_params.disc_mode = BLE_GAP_DISC_MODE_NON;
