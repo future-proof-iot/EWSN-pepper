@@ -24,7 +24,7 @@
 
 #include <stdio.h>
 #include <stdint.h>
-
+#include <time.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -63,6 +63,22 @@ typedef union __attribute__((packed)) {
     uint8_t bytes[CURRENT_TIME_ADV_PAYLOAD_SIZE];
 } current_time_ble_adv_payload_t;
 
+/**
+ * @brief   Parses ble advertisemnt current time payload and return time struct
+ *
+ * @param[in]       payload current_time advertisement payload
+ * @param[inout]    time    time structure loaded from advertisement data
+ *
+ */
+static inline void current_time_ble_adv_parse(const current_time_ble_adv_payload_t *payload, struct tm *time)
+{
+    time->tm_year = payload->data.year - 1900;
+    time->tm_mon = payload->data.month - 1;
+    time->tm_mday = payload->data.day;
+    time->tm_hour = payload->data.hours;
+    time->tm_min = payload->data.minutes;
+    time->tm_sec = payload->data.seconds;
+}
 
 static inline void dbg_print_curr_time_pkt(const current_time_ble_adv_payload_t *pkt)
 {
