@@ -45,7 +45,7 @@ extern "C" {
  *          the amount of encounters that can be tracked per epoch
  */
 #ifndef CONFIG_UWB_ED_BUF_SIZE
-#define CONFIG_UWB_ED_BUF_SIZE      (50U)
+#define CONFIG_UWB_ED_BUF_SIZE      (10U)
 #endif
 
 /**
