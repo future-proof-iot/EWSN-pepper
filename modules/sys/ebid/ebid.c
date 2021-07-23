@@ -32,9 +32,6 @@ void ebid_init(ebid_t* ebid)
 int ebid_generate(ebid_t* ebid, crypto_manager_keys_t *keys)
 {
     int ret = 0;
-    if (!IS_ACTIVE(EBID_FIXED_KEYS)) {
-        ret = crypto_manager_gen_keypair(keys);
-    }
     if (ret == 0) {
         memcpy(ebid->parts.ebid.u8, keys->pk, C25519_KEY_SIZE);
     }
