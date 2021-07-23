@@ -61,9 +61,10 @@ static void _handle_netif_data(const ble_addr_t *addr, bluetil_ad_t *ad)
 
     bluetil_addr_swapped_cp(addr->val, addrn);
 
-    if (_filter_uuid(ad) && !nimble_netif_conn_connected(addrn)) {
+    if (_filter_uuid(ad) && !nimble_netif_conn_connected(addrn) &&
+        !desire_ble_is_connected()) {
         nimble_scanner_stop();
-        DEBUG_PUTS("[desire_scanner]: found EP, initiating connection");
+        DEBUG_PUTS("[desire_scanner]: found AP, initiating connection");
         int ret = nimble_netif_connect(addr, &_conn_params, _conn_timeout);
         if (ret < 0) {
             DEBUG("[desire_scanner]: unable to connect ret =%d\n", ret);
@@ -85,6 +86,7 @@ static void _handle_time_service_data(bluetil_ad_t *ad)
 {
     bluetil_ad_data_t field; /*= {.data=desire_adv_payload.bytes,
                                   .len=DESIRE_ADV_PAYLOAD_SIZE}; */
+
     if (BLUETIL_AD_OK ==
         bluetil_ad_find(ad, BLE_GAP_AD_SERVICE_DATA_UUID16, &field)) {
         current_time_ble_adv_payload_t *cts_adv_payload =
@@ -102,7 +104,7 @@ static void _handle_time_service_data(bluetil_ad_t *ad)
         }
     }
     else {
-            DEBUG_PUTS("[desire_scanner]: malformed current time adv packet");
+        DEBUG_PUTS("[desire_scanner]: malformed current time adv packet");
     }
 }
 #endif
@@ -178,7 +180,7 @@ static void _on_scan_evt(uint8_t type, const ble_addr_t *addr, int8_t rssi,
 static void _evt_dbg(const char *msg, int handle, const uint8_t *addr)
 {
     if (IS_ACTIVE(ENABLE_DEBUG)) {
-        printf("[autoconn] %s (%i|", msg, handle);
+        printf("[desire_scanner] %s (%i|", msg, handle);
         if (addr) {
             bluetil_addr_print(addr);
         }
@@ -280,7 +282,6 @@ void desire_ble_scan_start(int32_t scan_duration_ms)
 #if IS_USED(MODULE_DESIRE_SCANNER_NETIF)
     nimble_netif_accept_stop();
 #endif
->>>>>>> 7e60acc... fixup! modules/ble/desire_scanner: add netif support
     /* set scan duration */
     nimble_scanner_set_scan_duration(scan_duration_ms);
     /* start scanning */

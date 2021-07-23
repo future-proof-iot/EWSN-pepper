@@ -31,12 +31,12 @@ extern "C" {
  * @{
  */
 /* TODO: curent values means its allways scanning, but currently this has a high impact
-on ranging so keep it as is for now */
+         on ranging so keep it as is for now */
 #ifndef DESIRE_SCANNER_SCAN_ITVL_MS
 #define DESIRE_SCANNER_SCAN_ITVL_MS        (220U)          /* 220ms */
 #endif
 #ifndef DESIRE_SCANNER_SCAN_WIN_MS
-#define DESIRE_SCANNER_SCAN_WIN_MS         (220U)          /* 110ms */
+#define DESIRE_SCANNER_SCAN_WIN_MS         (220U)          /* 220ms */
 #endif
 #if IS_USED(MODULE_DESIRE_SCANNER_NETIF)
 #ifndef DESIRE_SCANNER_CONN_TIMEOUT_MS
