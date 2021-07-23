@@ -185,7 +185,7 @@ static void _twr_rng_listen(void *arg)
                        UWB_NONBLOCKING);
     }
     else {
-        LOG_ERROR("[twr]: rng listen aborted, busy");
+        LOG_ERROR("[twr]: rng listen aborted, busy\n");
     }
 }
 
