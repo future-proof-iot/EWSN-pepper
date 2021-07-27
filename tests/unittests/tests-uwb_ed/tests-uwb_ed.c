@@ -199,7 +199,7 @@ static void test_uwb_ed_list_process(void)
     TEST_ASSERT_EQUAL_INT(1, clist_count(&list.list));
 }
 
-#if IS_USED(MODULE_BPF)
+#if IS_USED(MODULE_UWB_ED_BPF)
 static void test_uwb_ed_finish_rbpf(void)
 {
     uwb_ed_t ed;
@@ -231,7 +231,7 @@ Test *tests_uwb_ed_all(void)
         new_TestFixture(test_uwb_ed_add_slice),
         new_TestFixture(test_uwb_ed_process_data),
         new_TestFixture(test_uwb_ed_list_process),
-#if IS_USED(MODULE_BPF)
+#if IS_USED(MODULE_UWB_ED_BPF)
         new_TestFixture(test_uwb_ed_finish_rbpf),
 #endif
     };

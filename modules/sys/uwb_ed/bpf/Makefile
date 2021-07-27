@@ -1,9 +1,9 @@
-BINS = meaningfull_contact.bin
-OBJS = meaningfull_contact.o
+BINS = contact_filter.bin
+OBJS = contact_filter.o
 
-LLC = llc
-CLANG = clang
-OBJCOPY = llvm-objcopy
+LLC = llc-12
+CLANG = clang-12
+OBJCOPY = llvm-objcopy-12
 INC_FLAGS = -nostdinc -isystem `$(CLANG) -print-file-name=include`
 EXTRA_CFLAGS = -Os -emit-llvm
 

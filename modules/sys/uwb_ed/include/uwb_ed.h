@@ -260,17 +260,6 @@ void uwb_ed_list_finish(uwb_ed_list_t *list);
 bool uwb_ed_finish(uwb_ed_t *uwb_ed);
 
 /**
- * @brief   Process an encounter data, data validaton is done in a VM
- *
- * This will calculate the average distance for the encounters in the list if
- * the EBID can be reconstructed and if the encounter time was enough.
- *
- * @param[in]      list     the encounter data list
- * @return  true if valid encounter, false otherwise (can be discarded)
- */
-bool uwb_ed_finish_bpf(uwb_ed_t *uwb_ed);
-
-/**
  * @brief   Init the memory manager
  *
  * @param[in]   manager     the memory manager structure to init
@@ -294,6 +283,24 @@ void uwb_ed_memory_manager_free(uwb_ed_memory_manager_t *manager,
  * @returns         pointer to the allocated encounter data structure
  */
 uwb_ed_t *uwb_ed_memory_manager_calloc(uwb_ed_memory_manager_t *manager);
+
+/**
+ * @brief   Process an encounter data, data validaton is done in a VM
+ *
+ * This will calculate the average distance for the encounters in the list if
+ * the EBID can be reconstructed and if the encounter time was enough.
+ *
+ * @param[in]      list     the encounter data list
+ * @return  true if valid encounter, false otherwise (can be discarded)
+ */
+bool uwb_ed_finish_bpf(uwb_ed_t *uwb_ed);
+
+/**
+ * @brief   Initiates UWB encounter data bpf handling
+ *
+ * This will setup storage used for bpf and a thread for suit updates
+ */
+void uwb_ed_bpf_init(void);
 
 #ifdef __cplusplus
 }

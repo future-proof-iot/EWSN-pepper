@@ -1,11 +1,12 @@
-ifneq (,$(filter bpf,$(USEMODULE)))
-  BLOBS += bpf/meaningfull_contact.bin
+BASE_MODULE = uwb_ed
+SUBMODULES = 1
+
+SRC := uwb_ed.c
+
+ifneq (,$(filter uwb_ed_bpf,$(USEMODULE)))
+  SRC += uwb_ed_bpf.c
+  BLOBS += bpf/contact_filter.bin
   UWB_ED_BPF_DIR := $(CURDIR)/bpf
 endif
 
 include $(RIOTBASE)/Makefile.base
-
-.PHONY: FORCE
-bpf/meaningfull_contact.bin: FORCE
-	$(Q)/usr/bin/env -i \
-	"$(MAKE)" --no-print-directory -C $(UWB_ED_BPF_DIR) clean all
