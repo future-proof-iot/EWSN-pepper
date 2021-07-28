@@ -31,6 +31,13 @@
 extern "C" {
 #endif
 
+
+/**
+ * @brief   The time window for witch to switch on rng listening
+ */
+#ifndef CONFIG_TWR_PAN_ID
+#define CONFIG_TWR_PAN_ID     (0xCAFE)
+#endif
 /**
  * @brief   The time window for witch to switch on rng listening
  */
