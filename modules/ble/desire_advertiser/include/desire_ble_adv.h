@@ -27,6 +27,10 @@
 #include <stdbool.h>
 
 #include "timex.h"
+#include "event.h"
+#if IS_USED(MODULE_DESIRE_ADVERTISER_THREADED)
+#include "event/thread.h"
+#endif
 
 #include "ebid.h"
 #include "desire_ble_pkt.h"
@@ -43,10 +47,20 @@ extern "C" {
 #endif
 
 /**
+ * @brief       Initialize the advertising module internal structure
+ *
+ * @param[in]   Receives an already initialized event_queue_t to handler the advertisment
+ *              events
+ */
+void desire_ble_adv_init(event_queue_t *queue);
+
+#if IS_USED(MODULE_DESIRE_ADVERTISER_THREADED)
+/**
  * @brief       Initialize the advertising module internal structure and advertising thread.
  *
  */
-void desire_ble_adv_init(void);
+void desire_ble_adv_init_threaded(void);
+#endif
 
 /**
  * @brief       Advertises an EBID following Desire Carousel scheme.

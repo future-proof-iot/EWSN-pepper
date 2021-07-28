@@ -6,6 +6,7 @@ BOARD ?= dwm1001
 RIOTBASE ?= $(CURDIR)/../../RIOT
 
 USEMODULE += desire_advertiser
+USEMODULE += desire_advertiser_threaded
 USEMODULE += desire_scanner
 USEMODULE += desire_scanner_time_update
 USEMODULE += epoch

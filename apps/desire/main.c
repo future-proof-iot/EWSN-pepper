@@ -143,7 +143,7 @@ int main(void)
     ed_memory_manager_init(&manager);
     ed_list_init(&ed_list, &manager, &ebid);
     /* setup adv and scanning */
-    desire_ble_adv_init();
+    desire_ble_adv_init_threaded();
     desire_ble_scan_init(&desire_ble_scanner_params, _detection_cb);
     desire_ble_set_time_update_cb(_time_update_cb);
     /* setup end of epoch timeout event */

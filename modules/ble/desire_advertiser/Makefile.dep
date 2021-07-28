@@ -14,7 +14,10 @@ CFLAGS += -DEBID_FIXED_KEYS=0
 EXTERNAL_MODULE_DIRS += $(MODULE_DESIRE_ADVERTISER_DIR)/../../sys
 
 # event module
+USEMODULE += event
 USEMODULE += event_timeout_ztimer
-USEMODULE += event_thread
+ifneq (,$(filter desire_advertiser_threaded,$(USEMODULE)))
+  USEMODULE += event_thread
+endif
 
 USEMODULE += ztimer_msec
