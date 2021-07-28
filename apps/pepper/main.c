@@ -17,6 +17,9 @@
 #include "desire_ble_scan.h"
 #include "desire_ble_scan_params.h"
 #include "desire_ble_adv.h"
+
+#include "suit/transport/coap.h"
+
 #if IS_USED(MODULE_DESIRE_SCANNER_NETIF)
 #include "coap/utils.h"
 #endif
@@ -58,6 +61,7 @@
 
 #if IS_USED(MODULE_DESIRE_SCANNER_NETIF)
 static sock_udp_ep_t remote;
+/* TODO: this should handle the worst scenario CBOR length */
 static uint8_t buf[2048];
 #endif
 static uwb_epoch_data_t uwb_epoch_data;
@@ -316,7 +320,7 @@ static int _cmd_id(int argc, char **argv)
 {
     (void)argc;
     (void)argv;
-    printf("id: DW%s\n", state_manager_get_id());
+    printf("dwm1001 id: DW%s\n", state_manager_get_id());
     return 0;
 }
 
@@ -332,30 +336,31 @@ int main(void)
     gpio_init_int(BTN0_PIN, BTN0_MODE, GPIO_FALLING, _declare_positive, NULL);
 #endif
 #if IS_USED(MODULE_DESIRE_SCANNER_NETIF)
-    /* initialize coap endpoint */
+    /* initialize remote endpoint endpoint */
     coap_init_remote(&remote, CONFIG_PEPPER_SERVER_ADDR,
                      CONFIG_PEPPER_SERVER_PORT);
 #endif
     event_timeout_ztimer_init(&_silent_timeout, ZTIMER_EPOCH,
                               EVENT_PRIO_HIGHEST,
                               (event_t *)&_scan_adv_start_ev);
-
+    /* init global state manager */
     state_manager_init();
-    /* initiate encounter management */
+    /* init encounters manager */
     uwb_ed_memory_manager_init(&manager);
     uwb_ed_list_init(&uwb_ed_list, &manager, &ebid);
+    uwb_ed_bpf_init();
     /* init twr */
     twr_event_mem_manager_init(&twr_manager);
     twr_managed_set_manager(&twr_manager);
     twr_init(EVENT_PRIO_HIGHEST);
     twr_register_rng_cb(_twr_complete_cb);
-    twr_set_pan_id(0xaa);
-    /* setup adv and scanning */
-    desire_ble_adv_init();
+    /* init ble advertiser */
+    desire_ble_adv_init(EVENT_PRIO_HIGHEST);
     desire_ble_adv_set_cb(_adv_cb);
+    /* init ble scanner */
     desire_ble_scan_init(&desire_ble_scanner_params, _detection_cb);
     desire_ble_set_time_update_cb(time_update_cb);
-    /* aligned start of epoch */
+    /* begin and align epoch */
     _aligned_epoch_start();
     /* start shell */
     char line_buf[SHELL_DEFAULT_BUFSIZE];
