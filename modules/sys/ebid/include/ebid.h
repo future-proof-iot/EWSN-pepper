@@ -147,11 +147,10 @@ void ebid_init(ebid_t* ebid);
  * @brief       Generates an EBID from a public/secret key pair
  *
  * @param[inout]    ebid    The preallocated EBID structure to initialize
- * @param[in]       keys    The already generate key pair
+ * @param[in]       keys    The already generated key pair
  *
- * @return      0 on success, -1 otherwise
  */
-int ebid_generate(ebid_t* ebid, crypto_manager_keys_t *keys);
+void ebid_generate(ebid_t* ebid, crypto_manager_keys_t *keys);
 
 /**
  * @brief       Reconstruct an EBID when a slice or the xor of the slices is

@@ -31,11 +31,9 @@ int8_t array_a_greater_than_b(uint8_t *a, uint8_t *b)
     for (uint8_t i = 0; i < C25519_KEY_SIZE; i++) {
         if (a[i] > b[i]) {
             return 1;
-            break;
         }
         else if (a[i] < b[i]) {
             return 0;
-            break;
         }
     }
     return -1;

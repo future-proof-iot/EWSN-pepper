@@ -262,7 +262,7 @@ int coap_block_post(sock_udp_ep_t *remote, coap_block_ctx_t *ctx)
 {
     assert(ctx->last_blknum == 0);
 
-    uint8_t buf[CONFIG_GCOAP_PDU_BUF_SIZE];
+    uint8_t buf[CONFIG_GCOAP_PDU_BUF_SIZE] = {0};
     coap_pkt_t pdu;
     pdu.hdr = (coap_hdr_t *)buf;
     return _do_block_post(&pdu, remote, ctx);

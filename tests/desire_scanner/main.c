@@ -13,7 +13,6 @@
 #define DEFAULT_DURATION_MS       (20 * MS_PER_SEC)
 
 static struct {
-    bool active;
     uint32_t cid;
     ebid_t ebid;
 } ebid_tracker;
