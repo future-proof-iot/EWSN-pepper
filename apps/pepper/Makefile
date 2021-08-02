@@ -15,13 +15,13 @@ RIOTBASE ?= $(CURDIR)/../../RIOT
 
 USEMODULE += desire_advertiser
 USEMODULE += desire_scanner
-USEMODULE += desire_scanner_time_update
 USEMODULE += desire_scanner_netif
 USEMODULE += desire_scanner_netif
 USEMODULE += uwb_epoch
 USEMODULE += uwb_ed_bpf
 USEMODULE += twr
 USEMODULE += state_manager
+USEMODULE += current_time
 EXTERNAL_MODULE_DIRS += $(CURDIR)/../../modules/sys/
 EXTERNAL_MODULE_DIRS += $(CURDIR)/../../modules/ble/
 EXTERNAL_MODULE_DIRS += $(CURDIR)/../../modules/uwb/

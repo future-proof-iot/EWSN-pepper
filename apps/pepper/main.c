@@ -17,6 +17,7 @@
 #include "desire_ble_scan.h"
 #include "desire_ble_scan_params.h"
 #include "desire_ble_adv.h"
+#include "current_time.h"
 
 #include "suit/transport/coap.h"
 
@@ -39,8 +40,8 @@
 #define CONFIG_EPOCH_SILENT_PERIOD_MAX_S        5
 #endif
 
-#ifndef CONFIG_EPOCH_MARGIN_S
-#define CONFIG_EPOCH_MARGIN_S                   5
+#ifndef CONFIG_EPOCH_MAX_TIME_OFFSET
+#define CONFIG_EPOCH_MAX_TIME_OFFSET            (CONFIG_EBID_ROTATION_T_S / 10)
 #endif
 
 #ifndef CONFIG_TWR_EARLY_LISTEN
@@ -274,47 +275,31 @@ static void _aligned_epoch_start(void)
     _boostrap_new_epoch();
 }
 
-static bool _time_is_in_range(uint32_t now, uint32_t new_now, uint32_t marge)
+static bool _epoch_reset = false;
+static void _pre_adjust_time(int32_t offset, void *arg)
 {
-    if (now > new_now) {
-        return (now - new_now) < marge;
-    }
-    else {
-        return new_now - now < marge;
+    (void)arg;
+    _epoch_reset = offset > 0 ? offset > CONFIG_EPOCH_MAX_TIME_OFFSET :
+                   -offset > CONFIG_EPOCH_MAX_TIME_OFFSET;
+    if (_epoch_reset) {
+        LOG_INFO("[pepper]: time was set back too much, bootstrap from 0\n");
+        event_timeout_clear(&_silent_timeout);
+        event_periodic_stop(&uwb_epoch_end);
+        desire_ble_adv_stop();
+        desire_ble_scan_stop();
     }
 }
-
-void time_update_cb(const current_time_ble_adv_payload_t *time)
+static current_time_hook_t _pre_hook;
+static void _post_adjust_time(int32_t offset, void *arg)
 {
-    struct tm t;
-
-    current_time_ble_adv_parse(time, &t);
-    uint32_t new_now = rtc_mktime(&t);
-    uint32_t now = ztimer_now(ZTIMER_EPOCH);
-    LOG_DEBUG("[pepper]: epoch\n");
-    LOG_DEBUG("\tcurrent:     %" PRIu32 "\n", now);
-    LOG_DEBUG("\treceived:    %" PRIu32 "\n", new_now);
-    /* adjust time only if out of CONFIG_EPOCH_MARGIN_S */
-    bool adjust_time = !_time_is_in_range(now, new_now, CONFIG_EPOCH_MARGIN_S);
-    /* if time change is too large reset epoch */
-    bool reset_epoch = !_time_is_in_range(now, new_now,
-                                          CONFIG_EPOCH_MARGIN_S / 10);
-    if (adjust_time) {
-        if (reset_epoch) {
-            LOG_INFO("[pepper]: time was set back too much, bootstrap from 0\n");
-            event_timeout_clear(&_silent_timeout);
-            event_periodic_stop(&uwb_epoch_end);
-            desire_ble_adv_stop();
-            desire_ble_scan_stop();
-        }
-        ztimer_adjust_time(ZTIMER_EPOCH, new_now - now);
-        LOG_DEBUG("\tnew-current: %" PRIu32 "\n",
-                  (uint32_t)ztimer_now(ZTIMER_EPOCH));
-        if (reset_epoch) {
-            _aligned_epoch_start();
-        }
+    (void)offset;
+    bool *epoch_restart = (bool *)arg;
+    if (*epoch_restart) {
+        _aligned_epoch_start();
+        *epoch_restart = false;
     }
 }
+static current_time_hook_t _post_hook;
 
 static int _cmd_id(int argc, char **argv)
 {
@@ -357,9 +342,13 @@ int main(void)
     /* init ble advertiser */
     desire_ble_adv_init(EVENT_PRIO_HIGHEST);
     desire_ble_adv_set_cb(_adv_cb);
-    /* init ble scanner */
+    /* init ble scanner and current_time */
     desire_ble_scan_init(&desire_ble_scanner_params, _detection_cb);
-    desire_ble_set_time_update_cb(time_update_cb);
+    current_time_init();
+    current_time_hook_init(&_pre_hook, _pre_adjust_time, &_epoch_reset);
+    current_time_hook_init(&_post_hook, _post_adjust_time, &_epoch_reset);
+    current_time_add_pre_cb(&_pre_hook);
+    current_time_add_post_cb(&_post_hook);
     /* begin and align epoch */
     _aligned_epoch_start();
     /* start shell */

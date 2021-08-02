@@ -75,15 +75,6 @@ typedef void (*detection_cb_t)(uint32_t ts,
                                const desire_ble_adv_payload_t *adv_payload);
 
 /**
- * @brief   Callback signature triggered by this module for each discovered
- *          advertising Current Time Service packet
- *
- * @param[in] adv_payload   Decoded time payload
- */
-typedef void (*time_update_cb_t) (const current_time_ble_adv_payload_t *
-                                  adv_payload);
-
-/**
  * @brief       Initialize the scanning module internal structure and scanning thread.
  *
  * @param[in] params        new parameters to apply

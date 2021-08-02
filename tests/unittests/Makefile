@@ -30,6 +30,7 @@ FEATURES_BLACKLIST += highlevel_stdio
 -include $(UNIT_TESTS:%=$(CURDIR)/%/Makefile.dep)
 -include $(UNIT_TESTS:%=$(CURDIR)/%/Makefile.include)
 EXTERNAL_MODULE_DIRS += $(CURDIR)/../../modules/sys
+EXTERNAL_MODULE_DIRS += $(CURDIR)/../../modules/ble
 
 DIRS += $(UNIT_TESTS)
 BASELIBS += $(UNIT_TESTS:%=%.module)
