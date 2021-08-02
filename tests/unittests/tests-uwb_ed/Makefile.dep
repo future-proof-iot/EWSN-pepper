@@ -1,3 +1,4 @@
 USEMODULE += uwb_ed
+USEMODULE += bpf
 
 CFLAGS += -DLOG_LEVEL=LOG_ERROR

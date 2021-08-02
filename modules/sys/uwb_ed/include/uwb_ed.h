@@ -34,6 +34,8 @@
 #include "clist.h"
 #include "ebid.h"
 
+#include "bpf/uwb_ed_shared.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -44,13 +46,6 @@ extern "C" {
  */
 #ifndef CONFIG_UWB_ED_BUF_SIZE
 #define CONFIG_UWB_ED_BUF_SIZE      (50U)
-#endif
-
-/**
- * @brief   Step between windows in seconds
- */
-#ifndef MIN_EXPOSURE_TIME_S
-#define MIN_EXPOSURE_TIME_S     (10 * 60LU)
 #endif
 
 /**
@@ -256,12 +251,24 @@ void uwb_ed_list_finish(uwb_ed_list_t *list);
 /**
  * @brief   Process an encounter data
  *
- * This will calculate the average rssi for the encounters in the list if
+ * This will calculate the average distance for the encounters in the list if
  * the EBID can be reconstructed and if the encounter time was enough.
  *
  * @param[in]      list     the encounter data list
+ * @return  true if valid encounter, false otherwise (can be discarded)
  */
-int uwb_ed_finish(uwb_ed_t *uwb_ed);
+bool uwb_ed_finish(uwb_ed_t *uwb_ed);
+
+/**
+ * @brief   Process an encounter data, data validaton is done in a VM
+ *
+ * This will calculate the average distance for the encounters in the list if
+ * the EBID can be reconstructed and if the encounter time was enough.
+ *
+ * @param[in]      list     the encounter data list
+ * @return  true if valid encounter, false otherwise (can be discarded)
+ */
+bool uwb_ed_finish_bpf(uwb_ed_t *uwb_ed);
 
 /**
  * @brief   Init the memory manager

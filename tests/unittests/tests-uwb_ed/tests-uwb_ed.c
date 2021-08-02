@@ -5,6 +5,8 @@
 #include "uwb_ed.h"
 #include "clist.h"
 
+#include "bpf/uwb_ed_shared.h"
+
 static const uint8_t ebid_slice[][EBID_SLICE_SIZE_LONG] = {
     { 0x5c, 0x24, 0x4c, 0x6e, 0xf9, 0x7a, 0x02, 0x9c, 0x83, 0xe3, 0x67, 0xac },
     { 0x3c, 0x31, 0xd0, 0x20, 0x97, 0xdc, 0x59, 0xf8, 0xab, 0xe4, 0xa5, 0xb8 },
@@ -146,14 +148,14 @@ static void test_uwb_ed_process_data(void)
 
     uwb_ed_init(&uwb_ed, 0x01);
     uwb_ed_process_data(&uwb_ed, 10, 200);
-    uwb_ed_process_data(&uwb_ed, 40, 300);
-    uwb_ed_process_data(&uwb_ed, 300, 400);
-    uwb_ed_process_data(&uwb_ed, MIN_EXPOSURE_TIME_S, 700);
-    TEST_ASSERT_EQUAL_INT(1600, uwb_ed.cumulative_d_cm);
+    uwb_ed_process_data(&uwb_ed, 40, 100);
+    uwb_ed_process_data(&uwb_ed, 300, 50);
+    uwb_ed_process_data(&uwb_ed, MIN_EXPOSURE_TIME_S, 50);
+    TEST_ASSERT_EQUAL_INT(400, uwb_ed.cumulative_d_cm);
     TEST_ASSERT_EQUAL_INT(MIN_EXPOSURE_TIME_S, uwb_ed.seen_last_s);
     TEST_ASSERT_EQUAL_INT(4, uwb_ed.req_count);
-    TEST_ASSERT_EQUAL_INT(0, uwb_ed_finish(&uwb_ed));
-    TEST_ASSERT_EQUAL_INT(400, uwb_ed.cumulative_d_cm);
+    TEST_ASSERT_EQUAL_INT(true, uwb_ed_finish(&uwb_ed));
+    TEST_ASSERT_EQUAL_INT(100, uwb_ed.cumulative_d_cm);
 }
 
 static void test_uwb_ed_list_process(void)
@@ -173,9 +175,9 @@ static void test_uwb_ed_list_process(void)
     uwb_ed_list_process_rng_data(&list, (uint16_t)cid_1, MIN_EXPOSURE_TIME_S,
                                  200);
     uwb_ed_list_process_rng_data(&list, (uint16_t)cid_1, MIN_EXPOSURE_TIME_S,
-                                 300);
+                                 100);
     uwb_ed_list_process_rng_data(&list, (uint16_t)cid_1, MIN_EXPOSURE_TIME_S,
-                                 500);
+                                 150);
 
     /* new encounter that will have EBID reconstructed */
     uwb_ed_list_process_slice(&list, cid_2, 0, ebid_slice[2], EBID_SLICE_3);
@@ -184,9 +186,9 @@ static void test_uwb_ed_list_process(void)
     uwb_ed_list_process_slice(&list, cid_2, 0, ebid_slice[0], EBID_SLICE_1);
     /* data is added but with not enough exposure time */
     uwb_ed_list_process_rng_data(&list, (uint16_t)cid_2,
-                                 MIN_EXPOSURE_TIME_S - 1, 200);
+                                 MIN_EXPOSURE_TIME_S - 1, 150);
     uwb_ed_list_process_rng_data(&list, (uint16_t)cid_2,
-                                 MIN_EXPOSURE_TIME_S - 1, 300);
+                                 MIN_EXPOSURE_TIME_S - 1, 100);
 
     /* new encounter that wont be able to reconstruct the EBID */
     uwb_ed_list_process_slice(&list, cid_3, 0, ebid_slice[2], EBID_SLICE_3);
@@ -194,8 +196,29 @@ static void test_uwb_ed_list_process(void)
 
     /* finish list processing, only one encounter should remain */
     uwb_ed_list_finish(&list);
-    TEST_ASSERT(clist_count(&list.list) == 1);
+    TEST_ASSERT_EQUAL_INT(1, clist_count(&list.list));
 }
+
+#if IS_USED(MODULE_BPF)
+static void test_uwb_ed_finish_rbpf(void)
+{
+    uwb_ed_t ed;
+    ed.cumulative_d_cm = MAX_DISTANCE_CM * 4;
+    ed.seen_first_s = 0;
+    ed.seen_last_s = MIN_EXPOSURE_TIME_S + 1;
+    ed.ebid.status.status = EBID_HAS_ALL;
+    ed.req_count = 4;
+    TEST_ASSERT_EQUAL_INT(true, uwb_ed_finish_bpf(&ed));
+    TEST_ASSERT_EQUAL_INT(MAX_DISTANCE_CM, ed.cumulative_d_cm);
+    ed.cumulative_d_cm = MAX_DISTANCE_CM * 4;
+    ed.req_count = 2;
+    TEST_ASSERT_EQUAL_INT(false, uwb_ed_finish_bpf(&ed));
+    ed.cumulative_d_cm = MAX_DISTANCE_CM * 4;
+    ed.req_count = 4;
+    ed.seen_last_s = 1;
+    TEST_ASSERT_EQUAL_INT(false, uwb_ed_finish_bpf(&ed));
+}
+#endif
 
 Test *tests_uwb_ed_all(void)
 {
@@ -208,6 +231,9 @@ Test *tests_uwb_ed_all(void)
         new_TestFixture(test_uwb_ed_add_slice),
         new_TestFixture(test_uwb_ed_process_data),
         new_TestFixture(test_uwb_ed_list_process),
+#if IS_USED(MODULE_BPF)
+        new_TestFixture(test_uwb_ed_finish_rbpf),
+#endif
     };
 
     EMB_UNIT_TESTCALLER(uwb_ed_tests, setUp, tearDown, fixtures);

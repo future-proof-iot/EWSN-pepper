@@ -23,6 +23,13 @@
 
 #include "irq.h"
 #include "uwb_ed.h"
+
+#include "bpf/uwb_ed_shared.h"
+#if IS_USED(MODULE_BPF)
+#include "bpf.h"
+#include "blob/bpf/meaningfull_contact.bin.h"
+#endif
+
 #ifndef LOG_LEVEL
 #define LOG_LEVEL   LOG_INFO
 #endif
@@ -167,7 +174,7 @@ void uwb_ed_list_process_rng_data(uwb_ed_list_t *list, const uint16_t addr,
     }
 }
 
-int uwb_ed_finish(uwb_ed_t *uwb_ed)
+bool uwb_ed_finish(uwb_ed_t *uwb_ed)
 {
     /* if exposure time was enough then the ebid must have been
        reconstructed */
@@ -175,15 +182,46 @@ int uwb_ed_finish(uwb_ed_t *uwb_ed)
         if (uwb_ed->req_count > 0) {
             uwb_ed->cumulative_d_cm = uwb_ed->cumulative_d_cm /
                                       uwb_ed->req_count;
+            if (uwb_ed->cumulative_d_cm <= MAX_DISTANCE_CM) {
+                return true;
+            }
         }
-        return 0;
     }
     else {
         LOG_DEBUG("[uwb_ed]: not enough exposure %" PRIu32 " %" PRIu32 "\n",
                   uwb_ed->seen_last_s, uwb_ed->seen_first_s);
     }
-    return -1;
+    return false;
 }
+
+#if IS_USED(MODULE_BPF)
+static uint8_t _application[512] = {0};
+static size_t _application_len = 0;
+static uint8_t _stack[512] = { 0 };
+bool uwb_ed_finish_bpf(uwb_ed_t *uwb_ed)
+{
+    if (uwb_ed->req_count > 0) {
+        uwb_ed->cumulative_d_cm = uwb_ed->cumulative_d_cm /
+                                  uwb_ed->req_count;
+    }
+    uint32_t time = uwb_ed_exposure_time(uwb_ed);
+    bpf_uwb_ed_ctx_t ctx = { .time = time, .distance = uwb_ed->cumulative_d_cm };
+
+    _application_len = sizeof(meaningfull_contact_bin);
+    memcpy(_application, meaningfull_contact_bin, _application_len);
+
+    bpf_t bpf = {
+        .application = _application,
+        .application_len = _application_len,
+        .stack = _stack,
+        .stack_size = sizeof(_stack),
+    };
+    int64_t result = 0;
+    bpf_setup(&bpf);
+    bpf_execute_ctx(&bpf, &ctx, sizeof(ctx), &result);
+    return result == 1;
+}
+#endif
 
 /* since we will always know the before node this will update the clist more
    efficiently */
@@ -215,7 +253,11 @@ void uwb_ed_list_finish(uwb_ed_list_t *list)
             }
             before = node;
             node = node->next;
-            if (uwb_ed_finish((uwb_ed_t *)node)) {
+#if IS_USED(MODULE_BPF)
+            if (!uwb_ed_finish_bpf((uwb_ed_t *)node)) {
+#else
+            if (!uwb_ed_finish((uwb_ed_t *)node)) {
+#endif
                 LOG_DEBUG("[uwb_ed]: discarding node\n");
                 /* if unable to reconstruct uwb_ed, or if exposure time is not enough then
                    discard encounter */
