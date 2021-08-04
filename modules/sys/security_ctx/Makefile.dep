@@ -1,0 +1,4 @@
+USEPKG += libcose
+USEMODULE += libcose_crypt_tinycrypt
+# Explicit tinycrypt dependency since used for key derivation
+USEPKG += tinycrypt
