@@ -78,4 +78,4 @@ def main(uid_list: List[str], port:int, bind: bool):
 
 if __name__ == "__main__":
     args = parser.parse_args()
-    main(args.node_uid, args.port, bind=True)
+    main(args.node_uid, args.port, bind=False)
