@@ -46,7 +46,7 @@ extern "C" {
 typedef struct coap_block_ctx {
     void (*cleanup)(void *);    /**< cleanup callback */
     void *arg;                  /**< optional argument o pass the the callback */
-    uint16_t last_blknum;       /**< last transmitted blknum */
+    size_t last_blknum;       /**< last transmitted blknum */
     uint8_t *data;              /**< pointer to data to transmit */
     size_t len;                 /**< length of data to be transmitted */
     uint8_t format;             /**< media format */
@@ -94,7 +94,7 @@ static inline void coap_get_ctx_init(coap_get_ctx_t *ctx, coap_get_cb_t cb,
  * @param[in]       format  media type format
  */
 static inline void coap_block_ctx_init(coap_block_ctx_t *ctx, uint8_t *data,
-                                       uint8_t len, const char *uri,
+                                       size_t len, const char *uri,
                                        void (*cleanup)(void *), void *arg,
                                        uint8_t format)
 {
