@@ -7,7 +7,7 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 from cryptography.hazmat.primitives import serialization
 
-from cose.curves import Ed25519
+from cose.curves import Ed25519, X25519
 from cose.keys import OKPKey, CoseKey
 from cose.keys.keyparam import KpKid
 from edhoc.roles.edhoc import CoseHeaderMap
@@ -19,7 +19,7 @@ DEFAULT_AUTHCRED_FILENAME = "{}/.pepper/authcred.pem".format(
     os.path.expanduser("~"))
 DEFAULT_PEER_CRED_FILENAME = "{}/.pepper/peercred".format(
     os.path.expanduser("~"))
-DEFAULT_GATEWAY_RPK_KID = b'20'
+DEFAULT_SERVER_RPK_KID = b'20'
 Creds = namedtuple('Creds', ['authkey', 'authcred'])
 
 
@@ -97,7 +97,7 @@ def parse_edhoc_authcred_file(filename=DEFAULT_AUTHCRED_FILENAME):
     x = authcred.public_bytes(serialization.Encoding.Raw,
                               serialization.PublicFormat.Raw)
     authcred = OKPKey(crv=Ed25519, x=x, optional_params={
-                      KpKid: DEFAULT_GATEWAY_RPK_KID})
+                      KpKid: DEFAULT_SERVER_RPK_KID})
     return authcred
 
 
@@ -110,7 +110,7 @@ def parse_edhoc_authkey_file(filename=DEFAULT_AUTHKEY_FILENAME):
     x = authkey.public_key().public_bytes(serialization.Encoding.Raw,
                                           serialization.PublicFormat.Raw)
     authkey = OKPKey(crv=Ed25519, d=d, x=x, optional_params={
-                     KpKid: DEFAULT_GATEWAY_RPK_KID})
+                     KpKid: DEFAULT_SERVER_RPK_KID})
     return authkey
 
 
@@ -120,6 +120,7 @@ def get_edhoc_keys(cred_filename=DEFAULT_AUTHCRED_FILENAME,
        OKPKey for each"""
     authcred = parse_edhoc_authcred_file(cred_filename)
     authkey = parse_edhoc_authkey_file(authkey_filename)
+    # authcred.crv = X25519
     return Creds(authkey=authkey, authcred=authcred)
 
 
@@ -167,5 +168,6 @@ def get_peer_cred(cred_id: CoseHeaderMap, filename=DEFAULT_PEER_CRED_FILENAME):
         for line in f:
             key = CoseKey.decode(OKPKey.base64decode(line.strip('\n')))
             if cred_id[KID.identifier] == key.kid:
+                # key.crv = X25519
                 return key
     return None

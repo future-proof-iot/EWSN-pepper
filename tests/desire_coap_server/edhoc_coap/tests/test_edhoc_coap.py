@@ -41,7 +41,7 @@ def event_loop():
 def responder(request):
     cmd = ['python', EDHOC_SERVER_PATH]
     proc = subprocess.Popen(cmd)
-    time.sleep(1)
+    time.sleep(0.2)
     request.addfinalizer(proc.kill)
 
 

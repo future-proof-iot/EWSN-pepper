@@ -10,7 +10,7 @@ from edhoc.roles.initiator import Initiator
 
 from cose.headers import KID
 
-import security.edhoc_keys as edhoc_keys
+import security.edhoc_keys as auth
 
 logger = logging.getLogger("coap.edhoc")
 
@@ -56,4 +56,4 @@ async def handshake(addr, cred, authkey, conn_idi=None):
 
 
 def get_peer_cred(cred_id: CoseHeaderMap):
-    return edhoc_keys.get_peer_cred(cred_id=cred_id)
+    return auth.get_peer_cred(cred_id=cred_id)

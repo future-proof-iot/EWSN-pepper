@@ -9,7 +9,7 @@ from security.edhoc_keys import (generate_ed25519_priv_key,
                                  rmv_peer_cred,
                                  DEFAULT_AUTHKEY_FILENAME,
                                  DEFAULT_AUTHCRED_FILENAME,
-                                 DEFAULT_GATEWAY_RPK_KID)
+                                 DEFAULT_SERVER_RPK_KID)
 
 
 def main():
@@ -21,8 +21,8 @@ def main():
         encoding=serialization.Encoding.Raw,
         format=serialization.PublicFormat.Raw,
     )
-    rmv_peer_cred(DEFAULT_GATEWAY_RPK_KID)
-    add_peer_cred(rpk_bytes, DEFAULT_GATEWAY_RPK_KID)
+    rmv_peer_cred(DEFAULT_SERVER_RPK_KID)
+    add_peer_cred(rpk_bytes, DEFAULT_SERVER_RPK_KID)
     message = ("EDHOC credentials generation done:\n\n"
                "   - Authentication Key:  \t\n{}\n"
                "   - Credentials: \t\n{}\n"

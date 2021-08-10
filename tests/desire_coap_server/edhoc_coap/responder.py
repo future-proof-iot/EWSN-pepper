@@ -6,7 +6,7 @@ from typing import ByteString, Dict
 import aiocoap
 import aiocoap.resource as resource
 
-from edhoc.messages import MessageThree
+from edhoc.messages import EdhocMessage, MessageThree
 from edhoc.definitions import EdhocState, CipherSuite0
 from edhoc.exceptions import EdhocException
 from edhoc.roles.edhoc import CoseHeaderMap
@@ -19,6 +19,7 @@ import security.edhoc_keys as auth
 
 
 logger = logging.getLogger("coap.edhoc")
+logger.setLevel(logging.DEBUG)
 
 
 class EdhocResource(resource.Resource):
@@ -38,7 +39,9 @@ class EdhocResource(resource.Resource):
 
     def create_responder(self, conn_idr=None):
         # TODO: make sure that the Responder is eventually freed.
-        resp = Responder(conn_idr=conn_idr,
+        # TODO: make sure the conn_idr is not longer than what RIOT
+        # can handle
+        resp = Responder(conn_idr=b'20',
                          cred_idr=self.cred_idr,
                          auth_key=self.auth_key,
                          cred=self.cred,
@@ -48,6 +51,7 @@ class EdhocResource(resource.Resource):
         return resp
 
     def add_responder(self, resp: Responder):
+        logger.debug(f"EDHOC Responder add responder with id {resp.conn_idr}")
         self.responders[resp.conn_idr] = resp
 
     def del_responder(self, resp: Responder):
@@ -64,23 +68,30 @@ class EdhocResource(resource.Resource):
 
     async def render_post(self, request):
         resp = None
-        try:
+        decoded = EdhocMessage.decode(request.payload)
+        if len(decoded) >= 4:
+            logger.debug("EDHOC create responder ctx")
+            resp = self.create_responder()
+        else:
             msg_3 = MessageThree.decode(request.payload)
             resp = self.get_responder_by_id(msg_3.conn_idr)
-        except Exception:
-            logger.debug('Create responder ctx')
-            resp = self.create_responder()
+            if resp:
+                logger.debug("EDHOC found responder ctx")
+            else:
+                logger.debug(f"EDHOC no matching id {msg_3.conn_idr}")
+                return aiocoap.Message(code=aiocoap.Code.INTERNAL_SERVER_ERROR)
+
         if resp.edhoc_state == EdhocState.EDHOC_WAIT:
             logger.debug('EDHOC got message 1')
             msg_2 = resp.create_message_two(request.payload)
             self.add_responder(resp)
-            return aiocoap.Message(code=aiocoap.Code.CHANGED,
-                                   payload=msg_2)
+            return aiocoap.Message(code=aiocoap.Code.CHANGED, payload=msg_2)
         elif resp.edhoc_state == EdhocState.MSG_2_SENT:
             logger.debug('EDHOC got message 3')
             resp.finalize(request.payload)
+            logger.debug(f'EDHOC initiator cred {resp.cred_idi}')
             logger.debug('EDHOC key exchange successfully completed')
-            # if thre is a node then generate crypto_ctx keys
+            # if there is a node then generate crypto_ctx keys
             node = self.nodes.get_node(resp.cred_idi.get(KID.identifier))
             if node:
                 if node.has_crypto_ctx:
@@ -88,6 +99,8 @@ class EdhocResource(resource.Resource):
                     secret = resp.exporter('OSCORE Master Secret', 16)
                     salt = resp.exporter('OSCORE Master Salt', 8)
                     node.ctx.generate_aes_ccm_keys(salt, secret)
+            else:
+                logger.debug('ERROR Could not Find node')
 
             # remove responder from dict
             self.del_responder(resp)
