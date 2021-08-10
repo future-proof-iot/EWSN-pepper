@@ -1,5 +1,13 @@
 #!/usr/bin/env python3
 
+"""
+This script generates and stores keys for EDHOC SIGN_SIGN key exchange using
+CipherSuite0 and stores them under ~/.pepper/*
+
+Example
+-------
+python tools/edhoc_generate_keys.py
+"""
 from cryptography.hazmat.primitives import serialization
 from security.edhoc_keys import (generate_ed25519_priv_key,
                                  priv_key_serialize_pem,
