@@ -68,6 +68,13 @@ def test_get_edhoc_keys(tmp_path):
     assert isinstance(creds.authcred, OKPKey)
 
 
+def test_generate_edhoc_keys():
+    creds = edhoc_keys.generate_edhoc_keys(b'20')
+    assert isinstance(creds.authkey, OKPKey)
+    assert isinstance(creds.authcred, OKPKey)
+    assert creds.authcred.kid == b'20'
+
+
 def test_add_peer_cred(tmp_path):
     path = tmp_path / "peercred"
     cred1 = "0zwe1YPaPxdq3fOtQPkzvvDoiOyPOo1jTmJMgnpo2SA="
@@ -99,3 +106,5 @@ def test_get_peer_cred(tmp_path):
     assert key.x == cred1
     key = edhoc_keys.get_peer_cred({KID.identifier: b'22'}, path)
     assert key is None
+
+

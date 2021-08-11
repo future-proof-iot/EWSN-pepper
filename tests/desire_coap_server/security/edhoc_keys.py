@@ -2,6 +2,7 @@
 
 import os.path
 from collections import namedtuple
+from typing import ByteString
 
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
@@ -19,13 +20,28 @@ DEFAULT_AUTHCRED_FILENAME = "{}/.pepper/authcred.pem".format(
     os.path.expanduser("~"))
 DEFAULT_PEER_CRED_FILENAME = "{}/.pepper/peercred".format(
     os.path.expanduser("~"))
-DEFAULT_SERVER_RPK_KID = b'20'
+DEFAULT_SERVER_RPK_KID = b'PEPPER'
 Creds = namedtuple('Creds', ['authkey', 'authcred'])
 
 
 def generate_ed25519_priv_key():
     """Generate Ed25519 private key"""
     return Ed25519PrivateKey.generate()
+
+
+def generate_edhoc_keys(kid: ByteString):
+    """Generates and returns an OPKKey authkey and authcred"""
+    authkey_raw = generate_ed25519_priv_key()
+    d = authkey_raw.private_bytes(serialization.Encoding.Raw,
+                                  serialization.PrivateFormat.Raw,
+                                  serialization.NoEncryption())
+    x = authkey_raw.public_key().public_bytes(serialization.Encoding.Raw,
+                                              serialization.PublicFormat.Raw)
+    authcred = OKPKey(crv=Ed25519, x=x, optional_params={
+                      KpKid: kid})
+    authkey = OKPKey(crv=Ed25519, d=d, x=x, optional_params={
+                     KpKid: kid})
+    return Creds(authkey=authkey, authcred=authcred)
 
 
 def priv_key_serialize_pem(key):
@@ -97,7 +113,7 @@ def parse_edhoc_authcred_file(filename=DEFAULT_AUTHCRED_FILENAME):
     x = authcred.public_bytes(serialization.Encoding.Raw,
                               serialization.PublicFormat.Raw)
     authcred = OKPKey(crv=Ed25519, x=x, optional_params={
-                      KpKid: DEFAULT_SERVER_RPK_KID})
+        KpKid: DEFAULT_SERVER_RPK_KID})
     return authcred
 
 
@@ -110,7 +126,7 @@ def parse_edhoc_authkey_file(filename=DEFAULT_AUTHKEY_FILENAME):
     x = authkey.public_key().public_bytes(serialization.Encoding.Raw,
                                           serialization.PublicFormat.Raw)
     authkey = OKPKey(crv=Ed25519, d=d, x=x, optional_params={
-                     KpKid: DEFAULT_SERVER_RPK_KID})
+        KpKid: DEFAULT_SERVER_RPK_KID})
     return authkey
 
 
