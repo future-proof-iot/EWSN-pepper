@@ -1,7 +1,9 @@
 """Pyaiot COAP EDHOC Responder module"""
 
+import os
 import logging
 from typing import ByteString, Dict
+from binascii import hexlify
 
 import aiocoap
 import aiocoap.resource as resource
@@ -39,9 +41,7 @@ class EdhocResource(resource.Resource):
 
     def create_responder(self, conn_idr=None):
         # TODO: make sure that the Responder is eventually freed.
-        # TODO: make sure the conn_idr is not longer than what RIOT
-        # can handle
-        resp = Responder(conn_idr=b'20',
+        resp = Responder(conn_idr=conn_idr,
                          cred_idr=self.cred_idr,
                          auth_key=self.auth_key,
                          cred=self.cred,
@@ -71,7 +71,8 @@ class EdhocResource(resource.Resource):
         decoded = EdhocMessage.decode(request.payload)
         if len(decoded) >= 4:
             logger.debug("EDHOC create responder ctx")
-            resp = self.create_responder()
+            # generate the conn_idr here since RIOT can handle only a 4 byte id
+            resp = self.create_responder(conn_idr=os.urandom(4))
         else:
             msg_3 = MessageThree.decode(request.payload)
             resp = self.get_responder_by_id(msg_3.conn_idr)
@@ -92,12 +93,14 @@ class EdhocResource(resource.Resource):
             logger.debug(f'EDHOC initiator cred {resp.cred_idi}')
             logger.debug('EDHOC key exchange successfully completed')
             # if there is a node then generate crypto_ctx keys
-            node = self.nodes.get_node(resp.cred_idi.get(KID.identifier))
+            node = self.nodes.get_node(resp.cred_idi.get(KID.identifier).decode())
             if node:
                 if node.has_crypto_ctx:
                     logger.info("EDHOC reset crypto ctx")
                     secret = resp.exporter('OSCORE Master Secret', 16)
                     salt = resp.exporter('OSCORE Master Salt', 8)
+                    logger.debug(f"\tsalt: {hexlify(salt)}")
+                    logger.debug(f"\tsecret: {hexlify(secret)}")
                     node.ctx.generate_aes_ccm_keys(salt, secret)
             else:
                 logger.debug('ERROR Could not Find node')

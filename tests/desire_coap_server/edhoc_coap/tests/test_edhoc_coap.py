@@ -20,7 +20,7 @@ from security.edhoc_keys import (add_peer_cred,
                                  generate_ed25519_priv_key)
 
 dirname = os.path.dirname(__file__)
-EDHOC_SERVER_PATH = os.path.join(dirname, '../../tools/edhoc-server.py')
+EDHOC_SERVER_PATH = os.path.join(dirname, '../../tools/edhoc_server.py')
 EDHOC_RESPONDER_EP = 'coap://localhost:5683'
 
 
@@ -72,19 +72,19 @@ def credentials():
         encoding=serialization.Encoding.Raw,
         format=serialization.PublicFormat.Raw,
     )
-    rmv_peer_cred(TEST_NODE_UID_0)
-    add_peer_cred(rpk_bytes, TEST_NODE_UID_0)
+    rmv_peer_cred(TEST_NODE_UID_0.encode())
+    add_peer_cred(rpk_bytes, TEST_NODE_UID_0.encode())
     x = authcred.public_bytes(serialization.Encoding.Raw,
                               serialization.PublicFormat.Raw)
     authcred = OKPKey(crv=Ed25519, x=x, optional_params={
-                      KpKid: TEST_NODE_UID_0})
+                      KpKid: TEST_NODE_UID_0.encode()})
     d = authkey.private_bytes(serialization.Encoding.Raw,
                               serialization.PrivateFormat.Raw,
                               serialization.NoEncryption())
     x = authkey.public_key().public_bytes(serialization.Encoding.Raw,
                                           serialization.PublicFormat.Raw)
     authkey = OKPKey(crv=Ed25519, d=d, x=x, optional_params={
-                     KpKid: TEST_NODE_UID_0})
+                     KpKid: TEST_NODE_UID_0.encode()})
     return authcred, authkey
 
 
@@ -99,7 +99,7 @@ async def test_well_known(event_loop):
 async def test_well_known_edhoc_and_decode(event_loop):
     authcred, authkey = credentials()
     salt, secret = await initiator.handshake('localhost', authcred, authkey)
-    ctx = CryptoCtx(TEST_NODE_UID_0.encode('utf-8'), SERVER_CTX_ID)
+    ctx = CryptoCtx(TEST_NODE_UID_0.encode(), SERVER_CTX_ID)
     ctx.generate_aes_ccm_keys(salt, secret)
     secret_msg = "A Secret Message"
     msg = ctx.encrypt_txt(secret_msg)
@@ -113,7 +113,7 @@ async def test_well_known_edhoc_and_decode(event_loop):
 async def test_well_known_edhoc_and_encode(event_loop):
     authcred, authkey = credentials()
     salt, secret = await initiator.handshake('localhost', authcred, authkey)
-    ctx = CryptoCtx(TEST_NODE_UID_0.encode('utf-8'), SERVER_CTX_ID)
+    ctx = CryptoCtx(TEST_NODE_UID_0.encode(), SERVER_CTX_ID)
     ctx.generate_aes_ccm_keys(salt, secret)
     plain_msg = "Plain Text"
     code, payload = await _coap_resource(

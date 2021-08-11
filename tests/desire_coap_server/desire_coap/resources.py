@@ -15,7 +15,6 @@ from desire_coap.payloads import ErtlPayload, InfectedPayload, EsrPayload
 from security.edhoc_keys import get_edhoc_keys
 from edhoc_coap.responder import EdhocResource
 from common.node import Node, Nodes
-from security.crypto import CryptoCtx
 
 # Coap Request handler to whom we formward the requests
 

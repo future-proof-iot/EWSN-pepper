@@ -1,4 +1,5 @@
 import os
+from typing import ByteString
 from security.crypto import CryptoCtx
 import subprocess
 import time
@@ -82,7 +83,7 @@ def desire(request):
 @pytest.mark.asyncio
 async def nodeFactory(event_loop, desire):
     async def test_node(uid: str) -> Node:
-        authcred, authkey = credentials(uid)
+        authcred, authkey = credentials(uid.encode())
         salt, secret = await initiator.handshake('localhost', authcred, authkey)
         node = Node(uid)
         node.ctx = CryptoCtx(uid.encode('utf-8'), SERVER_CTX_ID)
@@ -113,7 +114,7 @@ async def _coap_resource(url, method=GET, payload=b'',
     return code, payload
 
 
-def credentials(uid):
+def credentials(uid: ByteString):
     authkey = generate_ed25519_priv_key()
     authcred = authkey.public_key()
     rpk_bytes = authcred.public_bytes(

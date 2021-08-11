@@ -10,12 +10,16 @@ from common import SERVER_CTX_ID
 class Node():
     """Class for managed nodes."""
 
-    def __init__(self, uid):
+    def __init__(self, uid: str):
         self.uid = uid  # also is cred_id
-        self.ctx = CryptoCtx(SERVER_CTX_ID, uid.encode('utf-8'))
+        self.ctx = CryptoCtx(SERVER_CTX_ID, self.ctx_id)
         self.infected = False
         self.exposed = False
         self.ertl: List[ErtlPayload] = list()
+
+    @property
+    def ctx_id(self):
+        return self.uid.encode('utf-8')
 
     def has_crypto_ctx(self):
         return self.ctx.recv_ctx_key is not None
@@ -52,7 +56,7 @@ class Nodes():
     def __init__(self, nodes: List[Node]):
         self.nodes = nodes
 
-    def get_node(self, uid):
+    def get_node(self, uid:str):
         for node in self.nodes:
             if node.uid == uid:
                 return node
