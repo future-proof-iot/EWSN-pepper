@@ -32,9 +32,80 @@
 #include "fmt.h"
 
 #ifndef LOG_LEVEL
-#define LOG_LEVEL   LOG_ERROR
+#define LOG_LEVEL   LOG_DEBUG
 #endif
 #include "log.h"
+
+/* forward declaration */
+static int _do_block_post(coap_pkt_t *pdu, const sock_udp_ep_t *remote,
+                          coap_block_ctx_t *ctx);
+
+void _resp_handler(const gcoap_request_memo_t *memo, coap_pkt_t *pdu,
+                   const sock_udp_ep_t *remote)
+{
+    int res = 0;
+    void *data = NULL;
+    size_t data_len = 0;
+    coap_req_ctx_t *context = NULL;
+
+    /* attemp to recover a request context */
+    if (memo->context) {
+        context = memo->context;
+    }
+
+    if (memo->state == GCOAP_MEMO_TIMEOUT) {
+        LOG_ERROR("[coap/utils]: timeout for msg ID %02u\n", coap_get_id(pdu));
+        res = -ETIMEDOUT;
+        goto unlock;
+    }
+    else if (memo->state == GCOAP_MEMO_ERR) {
+        LOG_ERROR("[coap/utils]: error in response\n");
+        res = -EBADMSG;
+        goto unlock;
+    }
+
+    if (coap_get_code_class(pdu) != COAP_CLASS_SUCCESS) {
+        LOG_DEBUG("[coap/utils]: unsuccessful response: %1u.%02u\n",
+                  coap_get_code_class(pdu), coap_get_code_detail(pdu));
+        res = -EBADMSG;
+        goto unlock;
+    }
+
+    if (coap_get_code_raw(pdu) == COAP_CODE_CONTINUE && context) {
+        coap_block_ctx_t *block_context = (coap_block_ctx_t *)context;
+        res = _do_block_post(pdu, remote, block_context);
+
+        if (res < 0) {
+            goto unlock;
+        }
+        res = 0;
+        return;
+    }
+
+    data = pdu->payload;
+    data_len = pdu->payload_len;
+unlock:
+    if (context) {
+        if (context->cb) {
+            context->cb(res, data, data_len, context->arg);
+        }
+        mutex_unlock(&context->resp_wait);
+    }
+    else if (data_len) {
+        unsigned content_type = coap_get_content_type(pdu);
+        if (content_type == COAP_FORMAT_TEXT
+            || content_type == COAP_FORMAT_LINK
+            || coap_get_code_class(pdu) == COAP_CLASS_CLIENT_FAILURE
+            || coap_get_code_class(pdu) == COAP_CLASS_SERVER_FAILURE) {
+            /* Expecting diagnostic payload in failure cases */
+            LOG_DEBUG(", %u bytes\n%.*s\n", pdu->payload_len, pdu->payload_len,
+                      (char *)pdu->payload);
+        }
+        else if (LOG_LEVEL == LOG_DEBUG) {
+            od_hex_dump(pdu->payload, pdu->payload_len, OD_WIDTH_DEFAULT);
+        }
+    }
+}
 
 int coap_init_remote(sock_udp_ep_t *remote, char *addr_str, uint16_t port)
 {
@@ -82,96 +153,7 @@ int coap_init_remote(sock_udp_ep_t *remote, char *addr_str, uint16_t port)
     return 0;
 }
 
-int _common_resp_handler(const gcoap_request_memo_t *memo, coap_pkt_t *pdu,
-                         const sock_udp_ep_t *remote)
-{
-    (void)remote;       /* not interested in the source currently */
-
-    if (memo->state == GCOAP_MEMO_TIMEOUT) {
-        LOG_ERROR("[coap/utils]: timeout for msg ID %02u\n", coap_get_id(pdu));
-        return -ETIMEDOUT;
-    }
-    else if (memo->state == GCOAP_MEMO_ERR) {
-        LOG_ERROR("[coap/utils]: error in response\n");
-        return -EBADMSG;
-    }
-
-    char *class_str = (coap_get_code_class(pdu) == COAP_CLASS_SUCCESS)
-                      ? "Success" : "Error";
-
-    LOG_DEBUG("[coap/utils]: response %s, code %1u.%02u", class_str,
-              coap_get_code_class(pdu),
-              coap_get_code_detail(pdu));
-    if (pdu->payload_len) {
-        unsigned content_type = coap_get_content_type(pdu);
-        if (content_type == COAP_FORMAT_TEXT
-            || content_type == COAP_FORMAT_LINK
-            || coap_get_code_class(pdu) == COAP_CLASS_CLIENT_FAILURE
-            || coap_get_code_class(pdu) == COAP_CLASS_SERVER_FAILURE) {
-            /* Expecting diagnostic payload in failure cases */
-            LOG_DEBUG(", %u bytes\n%.*s\n", pdu->payload_len, pdu->payload_len,
-                      (char *)pdu->payload);
-        }
-        else {
-            LOG_DEBUG(", %u bytes\n", pdu->payload_len);
-            if (memo->context) {
-                coap_get_ctx_t *ctx = (coap_get_ctx_t *)memo->context;
-                if (ctx->cb) {
-                    LOG_DEBUG("[coap_utils]: usr cb\n");
-                    ctx->cb(pdu->payload, pdu->payload_len, ctx->arg);
-                }
-            }
-            else if (LOG_LEVEL == LOG_DEBUG) {
-                od_hex_dump(pdu->payload, pdu->payload_len, OD_WIDTH_DEFAULT);
-            }
-        }
-    }
-    else {
-        LOG_DEBUG(", empty payload\n");
-    }
-    return coap_get_code_class(pdu) == COAP_CLASS_SUCCESS ? 0 : 1;
-}
-
-/* TODO: this could eventually also handle block2 */
-void _default_resp_handler(const gcoap_request_memo_t *memo, coap_pkt_t *pdu,
-                           const sock_udp_ep_t *remote)
-{
-    _common_resp_handler(memo, pdu, remote);
-}
-
-size_t coap_post(sock_udp_ep_t *remote, gcoap_resp_handler_t handler,
-                 const char *uri, uint8_t *data, size_t len, uint8_t format,
-                 bool conf)
-{
-    uint8_t buf[CONFIG_GCOAP_PDU_BUF_SIZE];
-    coap_pkt_t pdu;
-    size_t msg_len;
-
-    gcoap_req_init(&pdu, &buf[0], CONFIG_GCOAP_PDU_BUF_SIZE, COAP_METHOD_POST,
-                   uri);
-    coap_hdr_set_type(pdu.hdr, conf);
-    coap_opt_add_format(&pdu, format);
-    msg_len = coap_opt_finish(&pdu, COAP_OPT_FINISH_PAYLOAD);
-
-    if (pdu.payload_len >= len) {
-        memcpy(pdu.payload, data, len);
-        msg_len += len;
-    }
-    else {
-        LOG_ERROR("[coap/utils]: msg buffer too small\n");
-    }
-
-    /* if no handler is set use the default handler */
-    if (!handler) {
-        return gcoap_req_send(buf, msg_len, remote, _default_resp_handler,
-                              NULL);
-    }
-    else {
-        return gcoap_req_send(buf, msg_len, remote, handler, NULL);
-    }
-}
-
-size_t coap_get(sock_udp_ep_t *remote, coap_get_ctx_t *ctx,
+size_t coap_get(sock_udp_ep_t *remote, coap_req_ctx_t *ctx,
                 const char *uri, uint8_t format, uint8_t type)
 {
     uint8_t buf[CONFIG_GCOAP_PDU_BUF_SIZE];
@@ -184,42 +166,44 @@ size_t coap_get(sock_udp_ep_t *remote, coap_get_ctx_t *ctx,
     coap_opt_add_format(&pdu, format);
     msg_len = coap_opt_finish(&pdu, COAP_OPT_FINISH_PAYLOAD);
 
-    /* if no handler is set use the default handler */
-    return gcoap_req_send(buf, msg_len, remote, _default_resp_handler,
-                          ctx);
+    if (ctx) {
+        if (!mutex_trylock(&ctx->resp_wait)) {
+            LOG_ERROR("[coap/utils]: ERROR context is locked\n");
+            return -1;
+        }
+    }
+    return gcoap_req_send(buf, msg_len, remote, _resp_handler, ctx);
 }
 
-/* forward declaration */
-static int _do_block_post(coap_pkt_t *pdu, const sock_udp_ep_t *remote,
-                          coap_block_ctx_t *ctx);
-
-void _block_resp_handler(const gcoap_request_memo_t *memo, coap_pkt_t *pdu,
-                         const sock_udp_ep_t *remote)
+size_t coap_post(sock_udp_ep_t *remote, coap_req_ctx_t *ctx,
+                 void *data, size_t data_len,
+                 const char *uri, uint8_t format, uint8_t type)
 {
-    coap_block_ctx_t *ctx = (coap_block_ctx_t *)memo->context;
+    uint8_t buf[CONFIG_GCOAP_PDU_BUF_SIZE];
+    coap_pkt_t pdu;
+    size_t msg_len;
 
-    /* call common handler first to parse errors and debug information */
-    if (_common_resp_handler(memo, pdu, remote) == 0) {
-        /* send next block if present */
-        if (coap_get_code_raw(pdu) == COAP_CODE_CONTINUE) {
-            int ret = _do_block_post(pdu, remote, ctx);
-            /* if last block is sent then call cleanup cb, eg: to free a msg
-               buffer */
-            if (ret == 0) {
-                LOG_DEBUG("[coap/utils]: blockwise complete, cleanup cb\n");
-                if (ctx->cleanup) {
-                    ctx->cleanup(ctx->arg);
-                }
-            }
-        }
+    gcoap_req_init(&pdu, &buf[0], CONFIG_GCOAP_PDU_BUF_SIZE, COAP_METHOD_POST,
+                   uri);
+    coap_hdr_set_type(pdu.hdr, type);
+    coap_opt_add_format(&pdu, format);
+    msg_len = coap_opt_finish(&pdu, COAP_OPT_FINISH_PAYLOAD);
+
+    if (pdu.payload_len >= data_len) {
+        memcpy(pdu.payload, data, data_len);
+        msg_len += data_len;
     }
     else {
-        /* if blockwise failed then call cleanup cb, eg: to free a msg buffer */
-        LOG_DEBUG("[coap/utils]: blockwise failed, cleanup cb\n");
-        if (ctx->cleanup) {
-            ctx->cleanup(ctx->arg);
+        LOG_ERROR("[coap/utils]: msg buffer too small\n");
+        return -1;
+    }
+    if (ctx) {
+        if (!mutex_trylock(&ctx->resp_wait)) {
+            LOG_ERROR("[coap/utils]: ERROR context is locked\n");
+            return -1;
         }
     }
+    return gcoap_req_send(buf, msg_len, remote, _resp_handler, ctx);
 }
 
 static int _do_block_post(coap_pkt_t *pdu, const sock_udp_ep_t *remote,
@@ -240,7 +224,7 @@ static int _do_block_post(coap_pkt_t *pdu, const sock_udp_ep_t *remote,
     coap_opt_add_format(pdu, ctx->format);
     coap_opt_add_block1(pdu, &slicer, 1);
     int len = coap_opt_finish(pdu, COAP_OPT_FINISH_PAYLOAD);
-    len += coap_blockwise_put_bytes(&slicer, pdu->payload, ctx->data, ctx->len);
+    len += coap_blockwise_put_bytes(&slicer, pdu->payload, ctx->data, ctx->data_len);
 
     int more = coap_block1_finish(&slicer);
 
@@ -250,7 +234,7 @@ static int _do_block_post(coap_pkt_t *pdu, const sock_udp_ep_t *remote,
     }
 
     ssize_t res = gcoap_req_send((uint8_t *)pdu->hdr, len, remote,
-                                 _block_resp_handler, ctx);
+                                 _resp_handler, ctx);
     if (res <= 0) {
         LOG_ERROR("[coap/utils]: msg send failed: %d\n", (int)res);
         return res;
@@ -258,12 +242,26 @@ static int _do_block_post(coap_pkt_t *pdu, const sock_udp_ep_t *remote,
     return more;
 }
 
-int coap_block_post(sock_udp_ep_t *remote, coap_block_ctx_t *ctx)
+int coap_block_post(sock_udp_ep_t *remote, coap_block_ctx_t *ctx,
+                    void *data, size_t data_len,
+                    const char *uri, uint8_t format, uint8_t type)
 {
-    assert(ctx->last_blknum == 0);
+    (void) type;
+    assert(ctx);
+
+    if (!mutex_trylock(&ctx->req_ctx.resp_wait)) {
+        LOG_ERROR("[coap/utils]: ERROR context is locked\n");
+        return -1;
+    }
 
     uint8_t buf[CONFIG_GCOAP_PDU_BUF_SIZE] = { 0 };
     coap_pkt_t pdu;
     pdu.hdr = (coap_hdr_t *)buf;
+    ctx->data = data;
+    ctx->data_len = data_len;
+    ctx->uri = uri;
+    ctx->format = format;
+    ctx->last_blknum = 0;
+
     return _do_block_post(&pdu, remote, ctx);
 }

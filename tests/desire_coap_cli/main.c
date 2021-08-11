@@ -51,18 +51,24 @@ static uint8_t ertl[] = {
 static bool infected = false;
 
 static sock_udp_ep_t remote;
-static coap_block_ctx_t ctx;
-static coap_get_ctx_t get_ctx;
+static coap_block_ctx_t block_ctx;
+static coap_req_ctx_t get_ctx;
+
+void _block_end_callback(int ret, void *data, size_t len, void *arg)
+{
+    (void)data;
+    (void)len;
+    (void)arg;
+    printf("block transactions finished ret=(%d)\n", ret);
+}
 
 int _cmd_post_ertl(int argc, char **argv)
 {
     (void)argc;
     (void)argv;
-
-    coap_block_ctx_init(&ctx, ertl, sizeof(ertl), "/dw0456/ertl",
-                        NULL, NULL, COAP_FORMAT_CBOR);
-    coap_block_post(&remote, &ctx);
-
+    coap_req_ctx_init(&block_ctx.req_ctx, _block_end_callback, NULL);
+    coap_block_post(&remote, &block_ctx, ertl, sizeof(ertl), "/DW0456/ertl",
+                    COAP_FORMAT_CBOR, COAP_TYPE_NON);
     return 0;
 }
 
@@ -100,14 +106,15 @@ int _cmd_post_infected(int argc, char **argv)
     nanocbor_fmt_bool(&enc, infected);
     size_t len = nanocbor_encoded_len(&enc);
 
-    coap_post(&remote, NULL, "/dw0456/infected", buf, len,
-              COAP_FORMAT_CBOR, true);
+    coap_post(&remote, NULL, buf, len, "/DW0456/infected",
+              COAP_FORMAT_CBOR, COAP_TYPE_CON);
 
     return 0;
 }
 
-void _get_callback(uint8_t *data, uint16_t len, void *arg)
+void _get_callback(int ret, void *data, size_t len, void *arg)
 {
+    (void)ret;
     (void)arg;
     bool status = state_manager_get_esr();
     state_manager_esr_load_cbor(data, len);
@@ -118,8 +125,8 @@ int _cmd_get_esr(int argc, char **argv)
 {
     (void)argc;
     (void)argv;
-    coap_get_ctx_init(&get_ctx, _get_callback, NULL);
-    coap_get(&remote, &get_ctx, "/dw0456/esr", COAP_FORMAT_CBOR, COAP_TYPE_NON);
+    coap_req_ctx_init(&get_ctx, _get_callback, NULL);
+    coap_get(&remote, &get_ctx, "/DW0456/esr", COAP_FORMAT_CBOR, COAP_TYPE_NON);
 
     return 0;
 }

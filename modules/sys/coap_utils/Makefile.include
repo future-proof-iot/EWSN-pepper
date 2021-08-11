@@ -1,2 +1,5 @@
 USEMODULE_INCLUDES_coap_utils := $(LAST_MAKEFILEDIR)/include
 USEMODULE_INCLUDES += $(USEMODULE_INCLUDES_coap_utils)
+
+# Increase GCOAP request buffer to handle waiting for a block/get
+CFLAGS += -DCONFIG_GCOAP_REQ_WAITING_MAX=4
