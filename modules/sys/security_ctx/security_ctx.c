@@ -18,11 +18,21 @@
  * @}
  */
 
+#include "kernel_defines.h"
 #include "assert.h"
 #include "security_ctx.h"
 #include "cose.h"
 #include "tinycrypt/constants.h"
 #include "tinycrypt/hkdf.h"
+
+#if IS_USED(MODULE_EDHOC_COAP)
+#include "net/sock.h"
+#include "random.h"
+#include "edhoc/coap.h"
+#endif
+
+#define ENABLE_DEBUG    0
+#include "debug.h"
 
 void security_ctx_init(security_ctx_t *ctx, uint8_t *send_id,
                        size_t send_id_len, uint8_t *recv_id,
@@ -39,6 +49,19 @@ void security_ctx_init(security_ctx_t *ctx, uint8_t *send_id,
     ctx->recv_id_len = recv_id_len;
     ctx->seqnr = 0;
     ctx->valid = false;
+}
+
+static void print_bstr(const uint8_t *bstr, size_t bstr_len)
+{
+    for (size_t i = 0; i < bstr_len; i++) {
+        if ((i + 1) % 8 == 0) {
+            DEBUG("0x%02x \n", bstr[i]);
+        }
+        else {
+            DEBUG("0x%02x ", bstr[i]);
+        }
+    }
+    DEBUG("\n");
 }
 
 int security_ctx_key_gen(security_ctx_t *ctx,
@@ -70,7 +93,6 @@ int security_ctx_key_gen(security_ctx_t *ctx,
 
     /* valid security context */
     ctx->valid = true;
-
     return 0;
 }
 
@@ -79,10 +101,11 @@ void security_ctx_gen_nonce(security_ctx_t *ctx, uint8_t *ctx_id,
                             size_t ctx_id_len, uint8_t *nonce)
 {
     uint8_t partial_iv[SECURITY_CTX_NONCE_LEN];
+
     memset(partial_iv, '\0', sizeof(partial_iv));
     memcpy(partial_iv + (SECURITY_CTX_NONCE_LEN - 5 - ctx_id_len), ctx_id, ctx_id_len);
-    partial_iv[SECURITY_CTX_NONCE_LEN -2] = ctx->seqnr >> 8;
-    partial_iv[SECURITY_CTX_NONCE_LEN -1] = ctx->seqnr & 0xFF;
+    partial_iv[SECURITY_CTX_NONCE_LEN - 2] = ctx->seqnr >> 8;
+    partial_iv[SECURITY_CTX_NONCE_LEN - 1] = ctx->seqnr & 0xFF;
     ctx->seqnr++;
     for (uint8_t i = 0; i < SECURITY_CTX_NONCE_LEN; i++) {
         *nonce++ = partial_iv[i] ^ ctx->common_iv[i];
@@ -119,7 +142,7 @@ int security_ctx_encode(security_ctx_t *ctx, uint8_t *data, size_t data_len,
 }
 
 int security_ctx_decode(security_ctx_t *ctx, uint8_t *in, size_t in_len,
-                        uint8_t *buf, size_t buf_len, uint8_t *out, size_t* olen)
+                        uint8_t *buf, size_t buf_len, uint8_t *out, size_t *olen)
 {
     cose_key_t key;
 
@@ -132,3 +155,50 @@ int security_ctx_decode(security_ctx_t *ctx, uint8_t *in, size_t in_len,
     cose_encrypt_decode(&decrypt, in, in_len);
     return cose_encrypt_decrypt(&decrypt, NULL, &key, buf, buf_len, out, olen);
 }
+
+#if IS_USED(MODULE_EDHOC_COAP)
+int security_ctx_edhoc_handshake(security_ctx_t *ctx, edhoc_ctx_t *e_ctx,
+                                 sock_udp_ep_t *remote)
+{
+    /* create a random 4 bytes token */
+    uint8_t token[4];
+    uint32_t rand = random_uint32();
+
+    memcpy(&token, &rand, sizeof(token));
+    DEBUG_PUTS("[security_ctx]: start edhoc handshake");
+    int ret = edhoc_coap_handshake(e_ctx, remote, EDHOC_AUTH_SIGN_SIGN,
+                                   EDHOC_CIPHER_SUITE_0);
+    if (ret == 0) {
+        DEBUG_PUTS("[security_ctx]: derive security ctx");
+        uint8_t secret[16];
+        uint8_t salt[8];
+        edhoc_exporter(e_ctx,
+                       SECURITY_CTX_SECRET_LABEL,
+                       sizeof(secret),
+                       secret, sizeof(secret));
+        edhoc_exporter(e_ctx,
+                       SECURITY_CTX_SALT_LABEL,
+                       sizeof(salt),
+                       salt,
+                       sizeof(salt));
+        ret = security_ctx_key_gen(ctx,
+                                   salt,
+                                   sizeof(salt),
+                                   secret,
+                                   sizeof(secret));
+
+        DEBUG_PUTS("OSCORE secret:");
+        print_bstr(secret, 16);
+        DEBUG_PUTS("OSCORE salt:");
+        print_bstr(salt, 8);
+
+        if (ret == 0) {
+            return 0;
+        }
+        DEBUG_PUTS("[security_ctx]: error generating context");
+        return -1;
+    }
+    DEBUG_PUTS("[security_ctx]: failed handshake");
+    return -1;
+}
+#endif

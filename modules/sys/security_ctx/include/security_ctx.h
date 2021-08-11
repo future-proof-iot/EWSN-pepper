@@ -24,6 +24,12 @@
 #include <stdbool.h>
 #include <inttypes.h>
 
+#if IS_USED(MODULE_EDHOC_COAP)
+#include "edhoc/coap.h"
+#include "net/sock.h"
+#include "random.h"
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -32,6 +38,9 @@ extern "C" {
 #define     SECURITY_CTX_COMMON_IV_LEN    (13)
 #define     SECURITY_CTX_NONCE_LEN        (13)
 #define     SECURITY_CTX_ID_MAX_LEN       (6)
+
+#define     SECURITY_CTX_SALT_LABEL     "OSCORE Master Salt"
+#define     SECURITY_CTX_SECRET_LABEL   "OSCORE Master Secret"
 
 typedef struct security_ctx {
     uint8_t send_ctx_key[SECURITY_CTX_KEY_LEN];
@@ -60,6 +69,11 @@ int security_ctx_encode(security_ctx_t *ctx, uint8_t *data, size_t data_len,
 
 int security_ctx_decode(security_ctx_t *ctx, uint8_t *in, size_t in_len,
                         uint8_t *buf, size_t buf_len, uint8_t *out, size_t *olen);
+
+#if IS_USED(MODULE_EDHOC_COAP)
+int security_ctx_edhoc_handshake(security_ctx_t *ctx, edhoc_ctx_t *e_ctx,
+                                 sock_udp_ep_t *remote);
+#endif
 
 #ifdef __cplusplus
 }

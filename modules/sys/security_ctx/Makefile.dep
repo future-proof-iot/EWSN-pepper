@@ -2,3 +2,6 @@ USEPKG += libcose
 USEMODULE += libcose_crypt_tinycrypt
 # Explicit tinycrypt dependency since used for key derivation
 USEPKG += tinycrypt
+
+# Dependency when using EDHOC-C
+USEMODULE += random
