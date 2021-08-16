@@ -1,0 +1,5 @@
+USEPKG += edhoc-c
+USEMODULE += edhoc-c_crypto_tinycrypt
+USEMODULE += edhoc-c_cbor_nanocbor
+# TODO: use gcoap instead to be consistent
+USEMODULE += nanocoap_sock
