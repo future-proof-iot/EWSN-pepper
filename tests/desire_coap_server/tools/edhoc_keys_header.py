@@ -9,7 +9,8 @@ credential file in ~/.pepper/*.
 Example
 -------
 python tools/edhoc_keys_header.py RFcxMjM0Cg==
-echo "DW1234" | base64 | xargs python tools/edhoc_keys_header.py
+echo "DW1234" | base64 | xargs python tools/edhoc_keys_header.py --kid
+python tools/edhoc_keys_header.py
 
 Usage
 -----

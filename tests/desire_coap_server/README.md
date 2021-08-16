@@ -2,13 +2,14 @@ desire_coap_server
 ==
 A python coap server for offloading RTL, ETL (for debug) and Exposure Status Request (ESR).
 
-Enrollement is done by declaring the list of nodes uuids on sever start as args.
+Enrollment is done by declaring the list of nodes uuids on sever start as args.
 
-Example of a server with nodes DW01E2 and DW0AB34 enrolled.
+Example of a server with nodes DW01E2 and DW0AB34 enrolled (Two default test
+nodes UIDs are always enrolled DW0001 and DW0002)
+
 ```shell
-$ python desire_coap_srv.py DW01E2 DW0AB34
+$ python desire_coap_srv.py --nodes-uid DW01E2 DW0AB34
 ```
-The node ids are built from their IEEE long mac address by using the last two bytes.
 
 For each node, identified by a 16-bit uid in hex format, the following resources are exposes:
 
@@ -19,17 +20,17 @@ For each node, identified by a 16-bit uid in hex format, the following resources
 | `coap://localhost/<uid>/esr`      | [GET] return an json/cbor(tag=51967) object integer equal to true if the node `<uid>`<br>was exposed to an infected user, and false otherwise      |
 
 *Example of aiocoap-client session with the server:*
-- POST ERTL data [static/ertl.json](static/ertl.json) for node `dw0456`
+- POST ERTL data [static/ertl.json](static/ertl.json) for node `DW0456`
 ```shell
-$ aiocoap-client -q coap://localhost/dw0456/ertl -m POST --content-format application/json --payload @static/ertl.json
+$ aiocoap-client -q coap://localhost/DW0456/ertl -m POST --content-format application/json --payload @static/ertl.json
 ```
-- POST ERTL data [static/ertl.cbor](static/ertl.cbor) for node `dw0456`
+- POST ERTL data [static/ertl.cbor](static/ertl.cbor) for node `DW0456`
 ```shell
-$ aiocoap-client -q coap://localhost/dw0456/ertl -m POST --content-format application/cbor --payload @static/ertl.cbor
+$ aiocoap-client -q coap://localhost/DW0456/ertl -m POST --content-format application/cbor --payload @static/ertl.cbor
 ```
-- GET ERTL data in `json` format for node `dw0456`
+- GET ERTL data in `json` format for node `DW0456`
 ```shell
-$ aiocoap-client -q coap://localhost/dw0456/ertl --content-format application/json
+$ aiocoap-client -q coap://localhost/DW0456/ertl --content-format application/json
 {
     "epoch": 332,
     "pets": [
@@ -54,46 +55,46 @@ $ aiocoap-client -q coap://localhost/dw0456/ertl --content-format application/js
     ]
 }
 ```
-- GET ERTL data in `cbor` format for node `dw0456`
+- GET ERTL data in `cbor` format for node `DW0456`
 ```shell
-$ aiocoap-client -q coap://localhost/dw0456/ertl --content-format application/cbor
+$ aiocoap-client -q coap://localhost/DW0456/ertl --content-format application/cbor
 CBORTag(51966, [332, [[b'\xbf\n\x8c\x1e:\xe9b\xbb\xb7\xb3pad\x9a\x8d\xa5\xdb\xfb\xc9T\xdc\xbaK\xfd\x8fm\x8f4q3JB', b'PQ\x93@+1\xbbw\xfb\x97d,+\ng\x8ad\x96\xd6\xf7\xee\x04\x1aw\x0b`\xbc\xad\xd0&\x83^', 780, 432, 151], [b'\xd8\x80\xc6vi\xcb\x97bC\x05\x1c_\x8d[\x02\xe4\xc3*1\xd05\x94h\xe5\xab5#\x9eY\x92\xf4L', b'\x107\xc5\xc7\xec@^\xbb\x00h\x82Z5\xb5 uQ_\xd1d\xe4\xb5\x92"\xc8\x9c3\x84^\xdd\xa8\x14', 640, 323, 71]]])
 ```
 
-- GET infected data in `json` format for node `dw0456` - allows him to recover
+- GET infected data in `json` format for node `DW0456` - allows him to recover
 the infection status
 ```shell
-$ aiocoap-client -q coap://localhost/dw0456/infected --content-format application/json
+$ aiocoap-client -q coap://localhost/DW0456/infected --content-format application/json
 {"infected": false}
 ```
 
-- GET infected data in `cbor` format for node `dw0456` - allows him to recover the infection status
+- GET infected data in `cbor` format for node `DW0456` - allows him to recover the infection status
 ```shell
-$ aiocoap-client -q coap://localhost/dw0456/infected --content-format application/cbor
+$ aiocoap-client -q coap://localhost/DW0456/infected --content-format application/cbor
 CBORTag(51962, [False])
 ```
 
-- POST infected data in `json` format for node `dw0456` - allows him to declare an infection
+- POST infected data in `json` format for node `DW0456` - allows him to declare an infection
 ```shell
-$ aiocoap-client -q coap://localhost/dw0456/infected -m POST --content-format application/json --payload @static/infected.json
+$ aiocoap-client -q coap://localhost/DW0456/infected -m POST --content-format application/json --payload @static/infected.json
 ```
 
-- POST infected data in `cbor` format for node `dw0456` - allows him to declare an infection
+- POST infected data in `cbor` format for node `DW0456` - allows him to declare an infection
 ```shell
-$ aiocoap-client -q coap://localhost/dw0456/infected -m POST --content-format application/cbor --payload @static/infected.cbor
+$ aiocoap-client -q coap://localhost/DW0456/infected -m POST --content-format application/cbor --payload @static/infected.cbor
 ```
 
-- GET exposure data in `json` for node `dw0456` - allows him to check if he was in contact with another infected user
+- GET exposure data in `json` for node `DW0456` - allows him to check if he was in contact with another infected user
 ```shell
-$ aiocoap-client -q coap://localhost/dw0456/esr --content-format application/json
+$ aiocoap-client -q coap://localhost/DW0456/esr --content-format application/json
 {
     "contact": false
 }
 ```
 
-- GET exposure data in `cbor` for node `dw0456` - allows him to check if he was in contact with another infected user
+- GET exposure data in `cbor` for node `DW0456` - allows him to check if he was in contact with another infected user
 ```shell
-$ aiocoap-client -q coap://localhost/dw0456/esr --content-format application/cbor
+$ aiocoap-client -q coap://localhost/DW0456/esr --content-format application/cbor
 CBORTag(51967, [False])
 ```
 
@@ -139,3 +140,72 @@ ErtlPayload(epoch=10, pets=[PetElement(pet=EncounterData(etl=b'\x97-\x8f^\xaf\xd
 cbor packet length = 169
 D9CAFE820A82855820972D8F5EAFD2F5EB0A1C95065E23767243773200FA444FD71C04E77590E445745820653631EA6C84EF8EB10F85BEDAD0DC575A432562A03FFFF4082C049665F347B618431838FB4052221CAC083127855820520907A9ADCCB0F9B4CF845587956C61F6D60B411983079BE5DDE53C8CF7A1715820677FD8A4B6B20DED5DF169631989720632C52D7E9DBEB3BD1210A616A591C8E30F1861FB402532B020C49BA6
 ```
+
+## EDHOC support
+
+The coap_server has been extended with [EDHOC](https://datatracker.ietf.org/doc/draft-ietf-lake-edhoc/)
+support, when starting the server a `</.well-known/edhoc>,` resources is exposed
+acting as the `responder` in and EDHOC exchange. Enrolled devices will then be
+able to perform an EDHOC key-exchange with the server, once a key exchange is
+successfully performed the server will derive a security context (CryptoCtx python
+module) to encrypt all future transactions with the device.
+
+Currently support is only CipherSuite0 with SIGN_SIGN method. So AES-CCM is
+used for encryption.
+
+### Modified Enrollment
+
+For an EDHOC key exchange to succeed the server must know the devices credentials
+and the devices must know the servers credentials. To easily fetch the credentials
+credentials are registered with and ID matching the identifier used for enrollment.
+
+Helper scripts are provided to generate and export:
+
+* Server credentials
+
+    generate server side keys (call only once or update keys on client side every time
+    keys are updated.
+
+    ```python
+    python tools/edhoc_generate_keys.py
+    ```
+
+    export the server credentials to a c formatted array:
+
+    ```python
+    python tools/edhoc_keys_header.py --out-dir <some-dir>
+    ```
+
+    The server KID (key id) will always be `PEPPER`
+
+* Device credentials:
+
+    The script takes as an input a base64 encode id and outputs a c file holding
+    all the required credentials. If for example the device ID was `DW1234` then
+    on a unix system one can do:
+
+    ```python
+    echo "DW1234" | base64 | xargs python tools/edhoc_keys_header.py --out-dir <some-dir> --kid
+    ```
+
+Both generate c files (`DW****_keys.c` and `PEPPER_keys.c`) will contain all the
+boiler plate code to be directly included by the matching `edhoc_coap` c module.
+
+The server will be willing to server nodes over an unsecure channel (no EDHOC
+key exchange, no encryption), but if a security context is derived once the all
+future exchanges will be encrypted. A security context can be reset from the client
+side by performing a new EDHOC key exchange.
+
+### Automatic Test
+
+A pytest based test infrastructure is provided, to run install the requirements:
+
+$ pip install -r test_requirements.txt
+
+Then simply run by calling:
+
+$ pytest
+
+Test servers are spawn for some of the tests, these will turn on 5683 PORT by
+default (although this can be parameterized), so check that no other process
+is turning on that PORT.
