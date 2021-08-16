@@ -337,7 +337,9 @@ int main(void)
     /* init encounters manager */
     uwb_ed_memory_manager_init(&manager);
     uwb_ed_list_init(&uwb_ed_list, &manager, &ebid);
+#if IS_USED(MODULE_UWB_ED_BPF)
     uwb_ed_bpf_init();
+#endif
     /* init twr */
     twr_event_mem_manager_init(&twr_manager);
     twr_managed_set_manager(&twr_manager);

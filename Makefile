@@ -1,6 +1,8 @@
 .PHONY: all clean build test init-submodules static-checks
 
-APPLICATIONS = $(wildcard $(CURDIR)/tests/* $(CURDIR)/apps/*)
+# Missing tools in the docker image
+IGNORE_APPS ?= tests/uwb_ed_bpf_suit
+APPLICATIONS = $(wildcard $(filter-out $(IGNORE_APPS),$(CURDIR)/tests/* $(CURDIR)/apps/*))
 TEST_APPLICATIONS = $(wildcard $(CURDIR)/tests/unittests)
 
 all: build

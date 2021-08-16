@@ -191,7 +191,7 @@ The exposed device:
 
 ### Add SUIT BPF updates
 
-Device are running an updatable BPF container, the threshold for contacts
+If `uwb_ed_bpf` is included devices are running an updatable BPF container, the threshold for contacts
 can be lowered or increased (or even bigger changes can be made to [contact_filter.c](../../modules/sys/uwb_ed/bpf/contact_filter.c)).
 
 For this a firmware server needs to be setup, the easiest is using `aiocoap-fileserver`,
