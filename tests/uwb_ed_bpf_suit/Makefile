@@ -26,6 +26,26 @@ USEMODULE += gnrc_ipv6_router_default
 USEMODULE += gnrc_icmpv6_echo
 USEMODULE += gnrc_netdev_default
 
+ifneq (native,$(BOARD))
+  USEMODULE += stdio_ethos
+  USEMODULE += gnrc_uhcpc
+  # ethos baudrate can be configured from make command
+  ETHOS_BAUDRATE ?= 115200
+  CFLAGS += -DETHOS_BAUDRATE=$(ETHOS_BAUDRATE)
+
+  # make sure ethos and uhcpd are built
+  TERMDEPS += host-tools
+
+  # For local testing, run
+  #
+  #     $ cd dist/tools/ethos; sudo ./setup_network.sh riot0 2001:db8::0/64
+  #
+  #... in another shell and keep it running.
+  export TAP ?= riot0
+  TERMPROG = $(RIOTTOOLS)/ethos/ethos
+  TERMFLAGS = $(TAP) $(PORT)
+endif
+
 # Include the shell
 USEMODULE += shell
 USEMODULE += shell_commands
@@ -38,3 +58,8 @@ SUIT_COAP_FSROOT ?= $(CURDIR)/coaproot
 
 include $(RIOTBASE)/Makefile.include
 include $(RIOTMAKE)/default-radio-settings.inc.mk
+
+.PHONY: host-tools
+
+host-tools:
+	$(Q)env -u CC -u CFLAGS $(MAKE) -C $(RIOTTOOLS)

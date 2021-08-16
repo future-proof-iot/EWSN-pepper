@@ -27,5 +27,5 @@ BUILD_FILES += $(SUIT_UWB_ED_PAYLOAD)
 .PHONY: FORCE
 $(UWB_ED_BPF_DIR)/contact_filter.bin: FORCE
 	$(Q)/usr/bin/env -i \
+	EXTRA_CFLAGS="$(BPF_CFLAGS)" \
 	"$(MAKE)" --no-print-directory -C $(UWB_ED_BPF_DIR) clean all
-
