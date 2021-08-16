@@ -18,9 +18,15 @@ USEMODULE += desire_scanner
 USEMODULE += desire_scanner_netif
 USEMODULE += desire_scanner_time_update
 USEMODULE += uwb_epoch
+USEMODULE += uwb_ed_bpf
 USEMODULE += twr
 USEMODULE += state_manager
 USEMODULE += current_time
+# Add Edhoc realted Modules
+USEMODULE += edhoc_coap
+USEMODULE += security_ctx
+# Add coap utility
+USEMODULE += coap_utils
 
 EXTERNAL_MODULE_DIRS += $(CURDIR)/../../modules/sys/
 EXTERNAL_MODULE_DIRS += $(CURDIR)/../../modules/ble/
@@ -42,11 +48,38 @@ CFLAGS+=-DMIN_EXPOSURE_TIME_S=10
 # * twr
 # * start/end of epoch
 # * other app event
-CFLAGS += -DEVENT_THREAD_MEDIUM_STACKSIZE=THREAD_STACKSIZE_MAIN
+# CFLAGS += -DEVENT_THREAD_MEDIUM_STACKSIZE=THREAD_STACKSIZE_MAIN
+# A very large stack is required when adding EDHOC
+CFLAGS += -DEVENT_THREAD_MEDIUM_STACKSIZE=3*THREAD_STACKSIZE_LARGE
+CFLAGS += -DCONFIG_GCOAP_RESEND_BUFS_MAX=4
+CFLAGS += -DGCOAP_STACK_SIZE=THREAD_STACKSIZE_LARGE
 
 # Include shell and, process information fonctionality
 USEMODULE += shell
 USEMODULE += shell_commands
 USEMODULE += ps
+
+# This will enable demo features on the buttons
+FEATURES_OPTIONAL += periph_gpio_irq
+
+# Add Ipv6
+USEMODULE += gnrc_netdev_default
+USEMODULE += auto_init_gnrc_netif
+USEMODULE += gnrc_ipv6_default
+USEMODULE += gnrc_icmpv6_echo
+USEMODULE += nanocoap_sock
+
+# SUIT configuration
+# If following the README this will be the SUIT_COAP server configuration
+SUIT_COAP_SERVER ?= [fd00:dead:beef::1]
+SUIT_CLIENT ?= [2001:db8::d359:5dff:fe10:4cf8]
+SUIT_COAP_FSROOT ?= $(CURDIR)/coaproot
+
+# GNRC PKTBUF is allocated in order to handler 4 full-MTU IPV6 packets,
+# we are not using the full MTU so there should be no need for such a huge
+# buffer size
+ifndef CONFIG_GNRC_PKTBUF_SIZE
+  CFLAGS += -DCONFIG_GNRC_PKTBUF_SIZE=2048
+endif
 
 include $(RIOTBASE)/Makefile.include

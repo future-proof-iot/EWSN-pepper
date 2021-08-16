@@ -18,13 +18,20 @@
 #include "desire_ble_scan_params.h"
 #include "desire_ble_adv.h"
 #include "current_time.h"
-#include "state_manager.h"
 
+#include "suit/transport/coap.h"
+
+#if IS_USED(MODULE_DESIRE_SCANNER_NETIF)
+#include "coap/utils.h"
+#endif
+#include "state_manager.h"
 #ifndef LOG_LEVEL
 #define LOG_LEVEL   LOG_INFO
 #endif
 #include "log.h"
 
+#include "board.h"
+#include "periph/gpio.h"
 #ifndef CONFIG_EPOCH_SILENT_PERIOD_MIN_S
 #define CONFIG_EPOCH_SILENT_PERIOD_MIN_S        1
 #endif
@@ -45,16 +52,46 @@
 #define CONFIG_TWR_MIN_OFFSET                   3
 #endif
 
+#ifndef CONFIG_PEPPER_SERVER_PORT
+#define CONFIG_PEPPER_SERVER_PORT               5683
+#endif
+
+#ifndef CONFIG_PEPPER_SERVER_ADDR
+#define CONFIG_PEPPER_SERVER_ADDR               "fd00:dead:beef::1"
+#endif
+
+#if IS_USED(MODULE_DESIRE_SCANNER_NETIF)
+static sock_udp_ep_t remote;
+#endif
 static uwb_epoch_data_t uwb_epoch_data;
 static uwb_epoch_data_t uwb_epoch_data_serialize;
 static uwb_ed_list_t uwb_ed_list;
 static uwb_ed_memory_manager_t manager;
 static crypto_manager_keys_t keys;
 static ebid_t ebid;
-/* start time for the epoch taken from ZTIMER_MSEC */
 static uint32_t start_time;
 static event_periodic_t uwb_epoch_end;
 static twr_event_mem_manager_t twr_manager;
+
+#if defined(MODULE_PERIPH_GPIO_IRQ) && defined(BTN0_PIN)
+static void _update_infected_status(void *arg)
+{
+    (void)arg;
+#if IS_USED(MODULE_DESIRE_SCANNER_NETIF)
+    if (desire_ble_is_connected()) {
+        state_manager_coap_send_infected();
+    }
+#endif
+}
+static event_callback_t _infected_event = EVENT_CALLBACK_INIT(
+    _update_infected_status, NULL);
+static void _declare_positive(void *arg)
+{
+    (void)arg;
+    state_manager_set_infected_status(!state_manager_get_infected_status());
+    event_post(EVENT_PRIO_MEDIUM, &_infected_event.super);
+}
+#endif
 
 uint16_t _get_txrx_offset(ebid_t *ebid)
 {
@@ -143,8 +180,7 @@ static event_callback_t _scan_adv_start_ev = EVENT_CALLBACK_INIT(
 static void _boostrap_new_epoch(void)
 {
     start_time = ztimer_now(ZTIMER_MSEC) / MS_PER_SEC;
-    LOG_INFO("[pepper]: new uwb_epoch t=%" PRIu32 "\n",
-             (uint32_t)ztimer_now(ZTIMER_EPOCH));
+    LOG_INFO("[pepper]: new uwb_epoch t=%" PRIu32 "\n", ztimer_now(ZTIMER_EPOCH));
     /* initiate epoch and generate new keys */
     uwb_epoch_init(&uwb_epoch_data, ztimer_now(ZTIMER_EPOCH), &keys);
     /* update local ebid */
@@ -171,8 +207,19 @@ static void _serialize_uwb_epoch_handler(event_t *event)
 {
     uwb_epoch_data_event_t *d_event = (uwb_epoch_data_event_t *)event;
 
-    LOG_INFO("[pepper]: dumping epoch data\n");
+#if IS_USED(MODULE_DESIRE_SCANNER_NETIF)
+    if (desire_ble_is_connected()) {
+        if (uwb_epoch_contacts(d_event->data)) {
+            state_manager_coap_send_ertl(d_event->data);
+        }
+    }
+    else {
+#endif
+    LOG_INFO("[pepper]: not connected, dumping epoch data\n");
     uwb_epoch_serialize_printf(d_event->data);
+#if IS_USED(MODULE_DESIRE_SCANNER_NETIF)
+}
+#endif
 }
 
 static uwb_epoch_data_event_t _serialize_uwb_epoch =
@@ -197,6 +244,12 @@ static void _end_of_uwb_epoch_handler(void *arg)
     _boostrap_new_epoch();
     /* post after bootstrapping the new epoch */
     event_post(EVENT_PRIO_MEDIUM, &_serialize_uwb_epoch.super);
+#if IS_USED(MODULE_DESIRE_SCANNER_NETIF)
+    /* if connected then update exposure status */
+    if (desire_ble_is_connected()) {
+        state_manager_coap_get_esr();
+    }
+#endif
 }
 
 static event_callback_t _end_of_uwb_epoch = EVENT_CALLBACK_INIT(
@@ -260,14 +313,28 @@ static const shell_command_t _commands[] = {
 
 int main(void)
 {
+#if defined(MODULE_PERIPH_GPIO_IRQ) && defined(BTN0_PIN)
+    /* initialize a button to manually trigger an update */
+    gpio_init_int(BTN0_PIN, BTN0_MODE, GPIO_FALLING, _declare_positive, NULL);
+#endif
+#if IS_USED(MODULE_DESIRE_SCANNER_NETIF)
+    /* initialize remote endpoint endpoint */
+    coap_init_remote(&remote, CONFIG_PEPPER_SERVER_ADDR,
+                     CONFIG_PEPPER_SERVER_PORT);
+#endif
     event_timeout_ztimer_init(&_silent_timeout, ZTIMER_EPOCH,
                               EVENT_PRIO_HIGHEST,
                               (event_t *)&_scan_adv_start_ev);
     /* init global state manager */
     state_manager_init();
+#if IS_USED(MODULE_DESIRE_SCANNER_NETIF)
+    state_manager_set_remote(&remote);
+#endif
+    state_manager_security_init(EVENT_PRIO_MEDIUM);
     /* init encounters manager */
     uwb_ed_memory_manager_init(&manager);
     uwb_ed_list_init(&uwb_ed_list, &manager, &ebid);
+    uwb_ed_bpf_init();
     /* init twr */
     twr_event_mem_manager_init(&twr_manager);
     twr_managed_set_manager(&twr_manager);
