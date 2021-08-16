@@ -145,7 +145,7 @@ int edhoc_coap_handshake(edhoc_ctx_t *ctx, sock_udp_ep_t *remote, uint8_t method
         printf("[initiator]: sending msg3 (%d bytes):\n", (int)msg_len);
         print_bstr(msg, msg_len);
         _build_coap_pkt(&pkt, buf, sizeof(buf), msg, msg_len);
-        len = nanocoap_request(&pkt, NULL, remote, CONFIG_COAP_EDHOC_BUF_SIZE);
+        nanocoap_request(&pkt, NULL, remote, CONFIG_COAP_EDHOC_BUF_SIZE);
     }
     else {
         puts("[initiator]: failed to create msg3");

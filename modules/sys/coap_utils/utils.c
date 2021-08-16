@@ -78,7 +78,6 @@ void _resp_handler(const gcoap_request_memo_t *memo, coap_pkt_t *pdu,
         if (res < 0) {
             goto unlock;
         }
-        res = 0;
         return;
     }
 
