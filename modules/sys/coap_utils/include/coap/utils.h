@@ -41,7 +41,6 @@ extern "C" {
 #define CONFIG_COAP_UTILS_BLOCK_SIZE    64
 #endif
 
-
 /**
  * @brief CoAP response callback, passes the returned payload and optional arg,
  *        the payload can be NULL.
@@ -60,7 +59,7 @@ typedef struct coap_req_ctx {
 typedef struct coap_block_ctx {
     coap_req_ctx_t req_ctx;
     size_t last_blknum;         /**< last transmitted blknum */
-    void *data;              /**< pointer to data to transmit */
+    void *data;                 /**< pointer to data to transmit */
     size_t data_len;            /**< length of data to be transmitted */
     uint8_t format;             /**< media format */
     const char *uri;            /**< uri for block exchange */
@@ -88,7 +87,7 @@ static inline void coap_req_ctx_init(coap_req_ctx_t *ctx, coap_req_cb_t cb,
  *
  * @return  true if free, false otherwise
  */
-static inline bool coap_req_ctx_is_free(coap_req_ctx_t* ctx)
+static inline bool coap_req_ctx_is_free(coap_req_ctx_t *ctx)
 {
     if (mutex_trylock(&ctx->resp_wait)) {
         mutex_unlock(&ctx->resp_wait);
