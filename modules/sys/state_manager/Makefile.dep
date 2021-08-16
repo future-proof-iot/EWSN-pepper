@@ -1,0 +1,11 @@
+USEPKG += nanocbor
+USEMODULE += uwb_epoch
+USEMODULE += luid
+USEMODULE += fmt
+
+USEMODULE += periph_gpio
+
+ifneq (,$(filter state_manager_security,$(USEMODULE)))
+  USEMODULE += edhoc_coap
+  USEMODULE += security_ctx
+endif

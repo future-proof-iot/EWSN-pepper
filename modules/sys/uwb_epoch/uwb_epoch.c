@@ -71,7 +71,7 @@ static int _add_to_top_list(clist_node_t *node, void *arg)
     return 0;
 }
 
-void uwb_epoch_init(uwb_epoch_data_t *epoch, uint16_t timestamp,
+void uwb_epoch_init(uwb_epoch_data_t *epoch, uint32_t timestamp,
                     crypto_manager_keys_t *keys)
 {
     memset(epoch, '\0', sizeof(uwb_epoch_data_t));
@@ -144,13 +144,13 @@ void uwb_epoch_serialize_printf(uwb_epoch_data_t *epoch)
             turo_array_hex(&ctx, epoch->contacts[i].pet.et, PET_SIZE);
             turo_dict_key(&ctx, "rtl");
             turo_array_hex(&ctx, epoch->contacts[i].pet.rt, PET_SIZE);
-            turo_dict_close(&ctx);
             turo_dict_key(&ctx, "exposure");
             turo_u32(&ctx, epoch->contacts[i].exposure_s);
             turo_dict_key(&ctx, "reqcount");
             turo_u32(&ctx, epoch->contacts[i].req_count);
             turo_dict_key(&ctx, "avg_d_cm");
             turo_u32(&ctx, epoch->contacts[i].avg_d_cm);
+            turo_dict_close(&ctx);
             turo_dict_close(&ctx);
         }
     }
@@ -262,7 +262,7 @@ int uwb_contact_load_cbor(uint8_t *buf, size_t len,
     nanocbor_decoder_init(&dec, buf, len);
     nanocbor_get_tag(&dec, &tag);
     /* workaround nanocbor bug see https://github.com/bergzand/NanoCBOR/pull/55 */
-    if ((uint16_t) tag != UWB_EPOCH_CBOR_TAG) {
+    if ((uint16_t)tag != UWB_EPOCH_CBOR_TAG) {
         return -1;
     }
     nanocbor_enter_array(&dec, &arr);
@@ -278,4 +278,25 @@ int uwb_contact_load_cbor(uint8_t *buf, size_t len,
     nanocbor_get_uint8(&arr, &contact->avg_d_cm);
     nanocbor_leave_container(&dec, &arr);
     return 0;
+}
+
+void uwb_epoch_data_memory_manager_init(
+    uwb_epoch_data_memory_manager_t *manager)
+{
+    memset(manager, '\0', sizeof(uwb_epoch_data_memory_manager_t));
+    memarray_init(&manager->mem, manager->buf, sizeof(uwb_epoch_data_t),
+                  CONFIG_UWB_ED_BUF_SIZE);
+}
+
+void uwb_epoch_data_memory_manager_free(
+    uwb_epoch_data_memory_manager_t *manager,
+    uwb_epoch_data_t *uwb_epoch_data)
+{
+    memarray_free(&manager->mem, uwb_epoch_data);
+}
+
+uwb_epoch_data_t *uwb_epoch_data_memory_manager_calloc(
+    uwb_epoch_data_memory_manager_t *manager)
+{
+    return memarray_calloc(&manager->mem);
 }

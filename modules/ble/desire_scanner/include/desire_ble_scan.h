@@ -26,16 +26,40 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#include "timex.h"
-
 #include "host/ble_hs.h"
 #include "desire_ble_pkt.h"
 #include "time_ble_pkt.h"
+#if IS_USED(MODULE_DESIRE_SCANNER_NETIF)
+#include "nimble_netif.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+
+/**
+ * @brief   Set of configuration parameters needed to run autoconn
+ */
+typedef struct {
+    /** scan interval applied while in scanning state [in ms] */
+    uint32_t scan_itvl;
+    /** scan window applied while in scanning state [in ms] */
+    uint32_t scan_win;
+#if IS_USED(MODULE_DESIRE_SCANNER_NETIF)
+    /** opening a new connection is aborted after this time [in ms] */
+    uint32_t conn_timeout;
+    /** connection interval used when opening a new connection, lower bound.
+     *  [in ms] */
+    uint32_t conn_itvl_min;
+    /** connection interval, upper bound [in ms] */
+    uint32_t conn_itvl_max;
+    /** slave latency used for new connections [in ms] */
+    uint16_t conn_latency;
+    /** supervision timeout used for new connections [in ms] */
+    uint32_t conn_super_to;
+#endif
+} desire_ble_scanner_params_t;
 
 /**
  * @brief   Callback signature triggered by this module for each discovered
@@ -51,19 +75,13 @@ typedef void (*detection_cb_t)(uint32_t ts,
                                const desire_ble_adv_payload_t *adv_payload);
 
 /**
- * @brief   Callback signature triggered by this module for each discovered
- *          advertising Current Time Service packet
- *
- * @param[in] adv_payload   Decoded time payload
- */
-typedef void (*time_update_cb_t) (const current_time_ble_adv_payload_t* adv_payload);
-
-
-/**
  * @brief       Initialize the scanning module internal structure and scanning thread.
  *
+ * @param[in] params        new parameters to apply
+ * @param[in] cb            callback to register, may not be null
  */
-void desire_ble_scan_init(void);
+void desire_ble_scan_init(const desire_ble_scanner_params_t *params,
+                          detection_cb_t cb);
 
 /**
  * @brief       Scans Desire packets and reports detection blocking call.
@@ -71,15 +89,19 @@ void desire_ble_scan_init(void);
  * Triggers a scan, and filters Desire packets, then reports decoded Desire payload.
  *
  * @param[in]       scan_duration_ms    The scan window duration in miliseconds
- * @param[in]       detection_cb        Callback for each detected packet (offload asap).
  *
  */
-void desire_ble_scan(uint32_t scan_duration_ms,
-                     detection_cb_t detection_cb);
-
+void desire_ble_scan_start(int32_t scan_duration_ms);
 
 /**
- * @brief       Sops any ongoing scan.
+ * @brief   Updates the used parameters
+ *
+ * @param[in] params        new parameters to apply
+ */
+void desire_ble_scan_update(const desire_ble_scanner_params_t *params);
+
+/**
+ * @brief       Stops any ongoing scan.
  *
  */
 void desire_ble_scan_stop(void);
@@ -87,10 +109,32 @@ void desire_ble_scan_stop(void);
 /**
  * @brief   Sets a callback or each discovered advertising Current Time Service packet
  *
- * @param[in] usr_callback   user callback with decode time structure
+ * @param[in] callback   user callback with decode time structure
  */
-void desire_ble_set_time_update_cb(time_update_cb_t usr_callback);
+void desire_ble_set_time_update_cb(time_update_cb_t cb);
 
+/**
+ * @brief   Sets the callback called on each scanned desire advertisement packet
+ *
+ * @param[in] cb            the callback may not be null
+ */
+void desire_ble_set_detection_cb(detection_cb_t cb);
+
+#if IS_USED(MODULE_DESIRE_SCANNER_NETIF)
+/**
+ * @brief   If the there is a ipv6 connection
+ *
+ * @return  true if connected, false otherwise
+ */
+bool desire_ble_is_connected(void);
+
+/**
+ * @brief   Register a callback that is called on netif events
+ *
+ * @param[in] cb            event callback to register
+ */
+void desire_ble_set_netif_cb(nimble_netif_eventcb_t cb);
+#endif
 
 #ifdef __cplusplus
 }

@@ -23,6 +23,9 @@
 
 #include "irq.h"
 #include "uwb_ed.h"
+
+#include "bpf/uwb_ed_shared.h"
+
 #ifndef LOG_LEVEL
 #define LOG_LEVEL   LOG_INFO
 #endif
@@ -167,7 +170,7 @@ void uwb_ed_list_process_rng_data(uwb_ed_list_t *list, const uint16_t addr,
     }
 }
 
-int uwb_ed_finish(uwb_ed_t *uwb_ed)
+bool uwb_ed_finish(uwb_ed_t *uwb_ed)
 {
     /* if exposure time was enough then the ebid must have been
        reconstructed */
@@ -175,14 +178,16 @@ int uwb_ed_finish(uwb_ed_t *uwb_ed)
         if (uwb_ed->req_count > 0) {
             uwb_ed->cumulative_d_cm = uwb_ed->cumulative_d_cm /
                                       uwb_ed->req_count;
+            if (uwb_ed->cumulative_d_cm <= MAX_DISTANCE_CM) {
+                return true;
+            }
         }
-        return 0;
     }
     else {
         LOG_DEBUG("[uwb_ed]: not enough exposure %" PRIu32 " %" PRIu32 "\n",
                   uwb_ed->seen_last_s, uwb_ed->seen_first_s);
     }
-    return -1;
+    return false;
 }
 
 /* since we will always know the before node this will update the clist more
@@ -215,7 +220,14 @@ void uwb_ed_list_finish(uwb_ed_list_t *list)
             }
             before = node;
             node = node->next;
-            if (uwb_ed_finish((uwb_ed_t *)node)) {
+            bool discard;
+            if (IS_USED(MODULE_UWB_ED_BPF)) {
+                discard = !uwb_ed_finish_bpf((uwb_ed_t *)node);
+            }
+            else {
+                discard = !uwb_ed_finish((uwb_ed_t *)node);
+            }
+            if (discard) {
                 LOG_DEBUG("[uwb_ed]: discarding node\n");
                 /* if unable to reconstruct uwb_ed, or if exposure time is not enough then
                    discard encounter */

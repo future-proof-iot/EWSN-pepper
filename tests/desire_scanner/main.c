@@ -1,22 +1,23 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "timex.h"
 #include "shell.h"
 #include "shell_commands.h"
 
 #include "desire_ble_scan.h"
+#include "desire_ble_scan_params.h"
 #include "ble_pkt_dbg.h"
 
 /* default scan duration (20s) */
 #define DEFAULT_DURATION_MS       (20 * MS_PER_SEC)
 
 static struct {
-    bool active;
     uint32_t cid;
     ebid_t ebid;
 } ebid_tracker;
 
-static void init_ebid_tracker(uint32_t cid) 
+static void init_ebid_tracker(uint32_t cid)
 {
     ebid_init(&ebid_tracker.ebid);
     ebid_tracker.cid = cid;
@@ -55,8 +56,8 @@ void detection_cb(uint32_t ts,
         */
         ebid_set_slice(&ebid_tracker.ebid, adv_payload->data.ebid_slice+EBID_SLICE_SIZE_PAD, sid);
     }
-    
-    
+
+
     int rc = ebid_reconstruct(&ebid_tracker.ebid);
     printf("EBID Reconstruct status = %d\n", rc);
     if (!rc) {
@@ -68,10 +69,6 @@ void detection_cb(uint32_t ts,
         dbg_dump_buffer("\t slice_3 = ", ebid_get_slice3(ebid), EBID_SLICE_SIZE_LONG, '\n');
         dbg_dump_buffer("\t slice_xor = ", ebid_get_xor(ebid), EBID_SLICE_SIZE_LONG, '\n');
     }
-}
-
-void time_update_cb(const current_time_ble_adv_payload_t * time) {
-    dbg_print_curr_time_pkt(time);
 }
 
 int _cmd_desire_scan(int argc, char **argv)
@@ -86,9 +83,13 @@ int _cmd_desire_scan(int argc, char **argv)
         duration = (uint32_t)(atoi(argv[1]));
     }
     printf("Scanning for %"PRIu32"\n", duration);
-    desire_ble_scan(duration, detection_cb);
+    desire_ble_scan_start(duration);
 
     return 0;
+}
+
+void time_update_cb(const current_time_ble_adv_payload_t * time) {
+    dbg_print_curr_time_pkt(time);
 }
 
 int _cmd_desire_stop(int argc, char **argv)
@@ -110,7 +111,7 @@ int main(void)
     puts("Desire BLE Scanner Test Application");
 
     /* initialize the desire scanner */
-    desire_ble_scan_init();
+    desire_ble_scan_init(&desire_ble_scanner_params, detection_cb);
     desire_ble_set_time_update_cb(time_update_cb);
     init_ebid_tracker(0);
 

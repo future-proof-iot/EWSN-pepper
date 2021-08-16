@@ -20,17 +20,21 @@
 
 #define ENABLE_DEBUG    0
 #include "debug.h"
-// BLE Advetisement
+
+/* BLE Advetisement */
 #define BLE_NIMBLE_ADV_DURATION_MS 10
 static void ble_advertise_once(desire_ble_adv_payload_t *adv_payload);
 
 // Ticker Event thread
 #define TICK_EVENT_INTERVAL (1 * MS_PER_SEC)
-static event_queue_t _eq;
-static event_t _update_evt;
-static event_timeout_t _update_timeout_evt;
+/* pointer to the event queue to handle the advertisement events */
+static event_queue_t* _queue;
+
 static void _tick_event_handler(event_t *e);
-static char event_thread_stack[THREAD_STACKSIZE_MAIN];
+static event_t _update_evt = {
+    .handler = _tick_event_handler
+};
+static event_timeout_t _update_timeout_evt;
 
 static ble_adv_cb_t _user_adv_cb = NULL;
 
@@ -61,19 +65,27 @@ static void _ebid_mgr_init(ebid_t *ebid, uint16_t slice_adv_time_sec,
                            uint16_t ebid_adv_time_sec);
 static bool _ebid_mgr_tick(void);
 
-void desire_ble_adv_init(void)
+#if IS_USED(MODULE_DESIRE_ADVERTISER_THREADED)
+static char _stack[THREAD_STACKSIZE_DEFAULT];
+static event_queue_t _threaded_queue;
+void desire_ble_adv_init_threaded(void)
 {
-    _user_adv_cb = NULL;
-    // init event loop ticker thread
-    // create a thread that runs the event loop: event_thread_init
-    event_queue_init(&_eq);
-    _update_evt.handler = _tick_event_handler;
-    event_timeout_ztimer_init(&_update_timeout_evt, ZTIMER_MSEC, &_eq,
-                              &_update_evt);
+    /* init event queue */
+    event_queue_init(&_threaded_queue);
+    desire_ble_adv_init(&_threaded_queue);
+    /* Thread that will run an event loop (event_loop) for handling
+       TICK_EVENT_INTERVAL second tick */
+    event_thread_init(&_threaded_queue, _stack, sizeof(_stack),
+                      EVENT_QUEUE_PRIO_HIGHEST);
+}
+#endif
 
-    // Thread that will run an event loop (event_loop) for handling TICK_EVENT_INTERVAL second tick
-    event_thread_init(&_eq, event_thread_stack, sizeof(event_thread_stack),
-                      EVENT_QUEUE_PRIO_MEDIUM);
+void desire_ble_adv_init(event_queue_t *queue)
+{
+    _queue = queue;
+    _user_adv_cb = NULL;
+    event_timeout_ztimer_init(&_update_timeout_evt, ZTIMER_MSEC, _queue,
+                              &_update_evt);
 }
 
 void desire_ble_adv_start(ebid_t *ebid,
@@ -224,7 +236,7 @@ static void ble_advertise_once(desire_ble_adv_payload_t *adv_payload)
 {
     int nimlble_ret;
 
-    nimble_autoadv_init();
+    nimble_autoadv_reset();
 
     adv_params.conn_mode = BLE_GAP_CONN_MODE_NON;
     adv_params.disc_mode = BLE_GAP_DISC_MODE_NON;

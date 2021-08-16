@@ -122,10 +122,8 @@ static void test_crypto_manager_gen_pets_desire(void)
     /* init and generate the ebid*/
     ebid_init(&bob);
     ebid_init(&alice);
-    ret = ebid_generate(&bob, &desire_keys_bob);
-    TEST_ASSERT_EQUAL_INT(ret, 0);
-    ret = ebid_generate(&alice, &desire_keys_alice);
-    TEST_ASSERT_EQUAL_INT(ret, 0);
+    ebid_generate(&bob, &desire_keys_bob);
+    ebid_generate(&alice, &desire_keys_alice);
     /* generate pets */
     ret = crypto_manager_gen_pets(&desire_keys_alice, bob.parts.ebid.u8,
                                   &pet_alice);

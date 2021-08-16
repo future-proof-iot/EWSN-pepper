@@ -1,0 +1,4 @@
+USEMODULE += ztimer_epoch
+ifeq (,$(filter current_time_mock_adv,$(USEMODULE)))
+  USEMODULE += desire_scanner_time_update
+endif

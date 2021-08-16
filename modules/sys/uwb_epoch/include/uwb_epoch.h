@@ -18,11 +18,12 @@
  * @author      Francisco Molina <francois-xavier.molina@inria.fr>
  */
 
-#ifndef UBW_EPOCH_H
+#ifndef UWB_EPOCH_H
 #define UWB_EPOCH_H
 
 #include "crypto_manager.h"
 #include "uwb_ed.h"
+#include "memarray.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -38,6 +39,13 @@ extern "C" {
  */
 #ifndef CONFIF_EPOCH_MAX_ENOCUNTERS
 #define CONFIG_EPOCH_MAX_ENCOUNTERS        8
+#endif
+
+/**
+ * @brief   Size of the uwb epoch data memory buffer
+ */
+#ifndef CONFIG_UWB_EPOCH_DATA_BUF_SIZE
+#define CONFIG_UWB_EPOCH_DATA_BUF_SIZE      2
 #endif
 
 /**
@@ -60,6 +68,14 @@ typedef struct uwb_epoch_data {
 } uwb_epoch_data_t;
 
 /**
+ * @brief   UWB Epoch data memory manager structure
+ */
+typedef struct uwb_epoch_data_memory_manager {
+    uint8_t buf[CONFIG_UWB_EPOCH_DATA_BUF_SIZE * sizeof(uwb_epoch_data_t)]; /**< Task buffer */
+    memarray_t mem;                                                         /**< Memarray management */
+} uwb_epoch_data_memory_manager_t;
+
+/**
  * @brief   Start of an uwb_epoch
  *
  * @param[inout]    uwb_epoch   the uwb_epoch data element to initialize
@@ -67,7 +83,7 @@ typedef struct uwb_epoch_data {
  *                              start time
  * @param[in]       keys        the crypto keys for this uwb_epoch, can be NULL
  */
-void uwb_epoch_init(uwb_epoch_data_t *uwb_epoch, uint16_t timestamp,
+void uwb_epoch_init(uwb_epoch_data_t *uwb_epoch, uint32_t timestamp,
                     crypto_manager_keys_t *keys);
 /**
  * @brief   To be called at the end of an uwb_epoch to process all encounter data
@@ -140,6 +156,34 @@ size_t uwb_contact_serialize_cbor(uwb_contact_data_t *contact,
  */
 int uwb_contact_load_cbor(uint8_t *buf, size_t len, uwb_contact_data_t *contact,
                           uint32_t *timestamp);
+
+/**
+ * @brief   Init the memory manager
+ *
+ * @param[in]   manager     the memory manager structure to init
+ */
+void uwb_epoch_data_memory_manager_init(
+    uwb_epoch_data_memory_manager_t *manager);
+
+/**
+ * @brief   Free an allocated element
+ *
+ * @param[in]       manager         the memory manager
+ * @param[inout]    uwb_epoch_data  the encounter data to to free
+ */
+void uwb_epoch_data_memory_manager_free(
+    uwb_epoch_data_memory_manager_t *manager,
+    uwb_epoch_data_t *uwb_epoch_data);
+
+/**
+ * @brief   Allocate some space for a new encounter data entry
+ *
+ * @param[in]       manager         the memory manager
+ *
+ * @returns         pointer to the allocated encounter data structure
+ */
+uwb_epoch_data_t *uwb_epoch_data_memory_manager_calloc(
+    uwb_epoch_data_memory_manager_t *manager);
 
 
 #ifdef __cplusplus

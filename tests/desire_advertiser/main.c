@@ -4,6 +4,7 @@
 #include "shell.h"
 #include "shell_commands.h"
 
+#include "event/thread.h"
 #include "desire_ble_adv.h"
 #include "ble_pkt_dbg.h"
 
@@ -113,12 +114,12 @@ static const shell_command_t _commands[] = {
 
 int main(void)
 {
-    puts("Desire BLE Scanner Test Application");
+    puts("Desire BLE Advertiser Test Application");
 
     /* initialize the static ebid and desire advertiser */
 
     generate_ebid(&ebid);
-    desire_ble_adv_init();
+    desire_ble_adv_init(EVENT_PRIO_HIGHEST);
 
     /* start shell */
     char line_buf[SHELL_DEFAULT_BUFSIZE];

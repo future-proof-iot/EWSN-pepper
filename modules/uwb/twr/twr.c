@@ -153,6 +153,8 @@ void twr_init(event_queue_t *queue)
     /* apply config */
     uwb_mac_config(udev, NULL);
     uwb_txrf_config(udev, &udev->config.txrf);
+    /* set pan_id */
+    twr_set_pan_id(CONFIG_TWR_PAN_ID);
 
     /* set event queue */
     _twr_queue = queue;
@@ -178,21 +180,21 @@ void twr_set_pan_id(uint16_t pan_id)
 
 static void _twr_rng_listen(void *arg)
 {
-    (void) arg;
+    (void)arg;
     if (dpl_sem_get_count(&_rng->sem) == 1) {
         LOG_DEBUG("[twr]: rng listen start\n");
         uwb_rng_listen(_rng, CONFIG_TWR_LISTEN_WINDOW_MS * US_PER_MS,
                        UWB_NONBLOCKING);
     }
     else {
-        LOG_ERROR("[twr]: rng listen aborted, busy");
+        LOG_ERROR("[twr]: rng listen aborted, busy\n");
     }
 }
 
 static void _twr_rng_listen_managed(void *arg)
 {
     _twr_rng_listen(arg);
-    twr_event_mem_manager_free(_manager, (twr_event_t*) arg);
+    twr_event_mem_manager_free(_manager, (twr_event_t *)arg);
 }
 
 static void _twr_schedule_listen(twr_event_t *event, uint16_t offset, void (*callback)(void *))
@@ -223,6 +225,7 @@ void twr_schedule_listen_managed(uint16_t offset)
 static void _twr_rng_request(void *arg)
 {
     twr_event_t *event = (twr_event_t *)arg;
+
     if (dpl_sem_get_count(&_rng->sem) == 1) {
         LOG_DEBUG("[twr]: rng request to %4" PRIx16 "\n", event->addr);
         uwb_rng_request(_rng, event->addr, CONFIG_TWR_EVENT_ALGO_DEFAULT);
@@ -235,13 +238,13 @@ static void _twr_rng_request(void *arg)
 static void _twr_rng_request_managed(void *arg)
 {
     _twr_rng_request(arg);
-    twr_event_mem_manager_free(_manager, (twr_event_t*) arg);
+    twr_event_mem_manager_free(_manager, (twr_event_t *)arg);
 }
 
 static void _twr_schedule_request(twr_event_t *event, uint16_t dest, uint16_t offset,
                                   void (*callback)(void *))
 {
-    event->addr= dest;
+    event->addr = dest;
     LOG_DEBUG("[twr]: schedule rng request to %4" PRIx16 " in %" PRIu16 "\n",
               event->addr, offset);
     event_callback_init(&event->event, callback, event);

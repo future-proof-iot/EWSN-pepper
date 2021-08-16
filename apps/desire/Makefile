@@ -6,7 +6,9 @@ BOARD ?= dwm1001
 RIOTBASE ?= $(CURDIR)/../../RIOT
 
 USEMODULE += desire_advertiser
+USEMODULE += desire_advertiser_threaded
 USEMODULE += desire_scanner
+USEMODULE += desire_scanner_time_update
 USEMODULE += epoch
 EXTERNAL_MODULE_DIRS += $(CURDIR)/../../modules/sys/
 EXTERNAL_MODULE_DIRS += $(CURDIR)/../../modules/ble/

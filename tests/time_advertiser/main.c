@@ -164,7 +164,7 @@ int _cmd_adv_start(int argc, char **argv)
     (void)argv;
 
     if (((argc == 2) && (memcmp(argv[1], "help", 4) == 0))) {
-        printf("usage: %s <advertisement eriod in seconds>\n",
+        printf("usage: %s <advertisement period in seconds>\n",
                argv[0]);
         return 0;
     }

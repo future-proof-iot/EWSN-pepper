@@ -108,8 +108,8 @@ static void test_uwb_epoch_finalize(void)
         crypto_manager_gen_keypair(&ebid_k);
         memcpy(ed->ebid.parts.ebid.u8, ebid_k.pk, EBID_SIZE);
         ed->ebid.status.status = EBID_HAS_ALL;
-        ed->cumulative_d_cm = random_uint32_range(1, 10000);
-        ed->req_count = random_uint32_range(1, 100);
+        ed->cumulative_d_cm = 1000;
+        ed->req_count = 10;
         uwb_ed_add(&list, ed);
     }
     uwb_ed_list_finish(&list);

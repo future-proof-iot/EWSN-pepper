@@ -31,6 +31,13 @@
 extern "C" {
 #endif
 
+
+/**
+ * @brief   The time window for witch to switch on rng listening
+ */
+#ifndef CONFIG_TWR_PAN_ID
+#define CONFIG_TWR_PAN_ID     (0xCAFE)
+#endif
 /**
  * @brief   The time window for witch to switch on rng listening
  */
@@ -41,7 +48,7 @@ extern "C" {
  * @brief   TWR events to allocate, used to schedule rng_request/listen
  */
 #ifndef CONFIG_TWR_EVENT_BUF_SIZE
-#define CONFIG_TWR_EVENT_BUF_SIZE       (2 * 20)
+#define CONFIG_TWR_EVENT_BUF_SIZE       (2 * 10)
 #endif
 /**
  * @brief   TWR rng_request default algorithm

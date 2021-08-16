@@ -13,6 +13,7 @@
 #include "event/periodic.h"
 #include "event/callback.h"
 #include "desire_ble_scan.h"
+#include "desire_ble_scan_params.h"
 #include "desire_ble_adv.h"
 #include "periph/rtc.h"
 
@@ -67,7 +68,7 @@ static void _boostrap_new_epoch(void)
                          CONFIG_EBID_ROTATION_T_S);
     /* start scanning */
     LOG_INFO("[desire]: start scanning\n");
-    desire_ble_scan(CONFIG_EBID_ROTATION_T_S * MS_PER_SEC, _detection_cb);
+    desire_ble_scan_start(CONFIG_EBID_ROTATION_T_S * MS_PER_SEC);
 }
 
 static void _serialize_epoch_handler(event_t *event)
@@ -142,8 +143,8 @@ int main(void)
     ed_memory_manager_init(&manager);
     ed_list_init(&ed_list, &manager, &ebid);
     /* setup adv and scanning */
-    desire_ble_adv_init();
-    desire_ble_scan_init();
+    desire_ble_adv_init_threaded();
+    desire_ble_scan_init(&desire_ble_scanner_params, _detection_cb);
     desire_ble_set_time_update_cb(_time_update_cb);
     /* setup end of epoch timeout event */
     uint32_t modulo = ztimer_now(ZTIMER_EPOCH) % CONFIG_EBID_ROTATION_T_S;
