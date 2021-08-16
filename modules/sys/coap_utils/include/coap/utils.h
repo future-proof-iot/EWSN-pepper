@@ -110,7 +110,7 @@ int coap_init_remote(sock_udp_ep_t *remote, char *addr_str, uint16_t port);
 /**
  * @brief       Perform a CoAP POST
  *
- * @param[inout]    remote      the remote endpoint to initialize
+ * @param[inout]    remote      the remote endpoint
  * @param[in]       ctx         the coap get ctx, can be NULL
  * @param[in]       uri         the destination uri
  * @param[in]       data        the data to be sent
@@ -127,7 +127,7 @@ size_t coap_post(sock_udp_ep_t *remote, coap_req_ctx_t *ctx,
 /**
  * @brief       Perform a CoAP GET
  *
- * @param[inout]    remote      the remote endpoint to initialize
+ * @param[inout]    remote      the remote endpoint
  * @param[in]       ctx         the coap get ctx, can be NULL
  * @param[in]       uri         the destination uri
  * @param[in]       format      the media type format to use
@@ -142,7 +142,7 @@ size_t coap_get(sock_udp_ep_t *remote, coap_req_ctx_t *ctx,
 /**
  * @brief       Perform a CoAP block POST
  *
- * @param[inout]    remote      the remote endpoint to initialize
+ * @param[inout]    remote      the remote endpoint
  * @param[in]       ctx         the coap block ctx, cant be NULL
  * @param[in]       uri         the destination uri
  * @param[in]       data        the data to be sent
