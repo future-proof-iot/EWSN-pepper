@@ -24,13 +24,26 @@
 #include <inttypes.h>
 #include <stdbool.h>
 
-#include "uwb_epoch.h"
+#include "kernel_defines.h"
 #if (IS_USED(MODULE_COAP_UTILS))
 #include "net/sock/udp.h"
 #endif
+#include "uwb_epoch.h"
 
 #ifdef __cplusplus
 extern "C" {
+#endif
+
+#define CONFIG_STATE_MANAGER_EDHOC_S      5
+
+#if IS_USED(MODULE_SECURITY_CTX)
+/**
+ * @brief   PEPPER server CTX id 'PEPPER'
+ */
+static const uint8_t pepper_server_id[] =
+{
+    0x50, 0x45, 0x50, 0x50, 0x45, 0x52
+};
 #endif
 
 /**
@@ -49,6 +62,7 @@ extern "C" {
 #define STATE_MANAGER_TOKEN_ID_LEN          (2)
 
 /**
+ *
  * @brief   Initiate state manager
  */
 void state_manager_init(void);
@@ -110,29 +124,34 @@ char *state_manager_get_id(void);
 
 #if (IS_USED(MODULE_COAP_UTILS))
 /**
- * @brief   GET the exposure status from the remote endpoint
+ * @brief   Set the remote endpoint
  *
  * @param[in]       remote  the remote endpoint
  */
-void state_manager_coap_get_esr(sock_udp_ep_t *remote);
+void state_manager_set_remote(sock_udp_ep_t *remote);
+
+/**
+ * @brief   GET the exposure status from the remote endpoint
+ *
+ */
+int state_manager_coap_get_esr(void);
 
 /**
  * @brief   POST the epoch data to the remote endpoint
  *
- * @param[in]       remote  the remote endpoint
  * @param[in]       data    the epoch_data to serialize and POST
- * @param[in]       buf     buffer for CBOR serialization
- * @param[in]       len     input buffer length
  */
-void state_manager_coap_send_ertl(sock_udp_ep_t *remote, uwb_epoch_data_t *data,
-                                  uint8_t *buf, size_t len);
+int state_manager_coap_send_ertl(uwb_epoch_data_t *data);
 
 /**
  * @brief   POST the infection status to the remote endpoint
  *
- * @param[in]       remote  the remote endpoint
  */
-void state_manager_coap_send_infected(sock_udp_ep_t *remote);
+int state_manager_coap_send_infected(void);
+#endif
+
+#if IS_USED(MODULE_SECURITY_CTX)
+void state_manager_security_init(event_queue_t* queue);
 #endif
 
 #ifdef __cplusplus
