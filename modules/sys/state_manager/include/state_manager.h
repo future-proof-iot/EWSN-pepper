@@ -34,7 +34,12 @@
 extern "C" {
 #endif
 
+/**
+ * @brief   Frequency in seconds at which attemp EDHOC keys exchanges
+ */
+#ifndef CONFIG_STATE_MANAGER_EDHOC_S
 #define CONFIG_STATE_MANAGER_EDHOC_S      5
+#endif
 
 #if IS_USED(MODULE_SECURITY_CTX)
 /**
@@ -151,6 +156,10 @@ int state_manager_coap_send_infected(void);
 #endif
 
 #if IS_USED(MODULE_SECURITY_CTX)
+/**
+ * @brief   Sets up a periodic task to attemp EDHOC key exchange if
+ *          IPV6 connectivity is found
+ */
 void state_manager_security_init(event_queue_t* queue);
 #endif
 
