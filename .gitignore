@@ -53,6 +53,9 @@ scan-build/
 .viminfo
 
 # python venv on root
-/venv*/ 
+/venv*/
 
 .DS_Store
+
+# Ignore keys
+modules/sys/edhoc_coap/*_keys.c
