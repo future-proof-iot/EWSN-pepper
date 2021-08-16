@@ -180,7 +180,7 @@ static event_callback_t _scan_adv_start_ev = EVENT_CALLBACK_INIT(
 static void _boostrap_new_epoch(void)
 {
     start_time = ztimer_now(ZTIMER_MSEC) / MS_PER_SEC;
-    LOG_INFO("[pepper]: new uwb_epoch t=%" PRIu32 "\n", ztimer_now(ZTIMER_EPOCH));
+    LOG_INFO("[pepper]: new uwb_epoch t=%" PRIu32 "\n", (uint32_t) ztimer_now(ZTIMER_EPOCH));
     /* initiate epoch and generate new keys */
     uwb_epoch_init(&uwb_epoch_data, ztimer_now(ZTIMER_EPOCH), &keys);
     /* update local ebid */
@@ -330,7 +330,9 @@ int main(void)
 #if IS_USED(MODULE_DESIRE_SCANNER_NETIF)
     state_manager_set_remote(&remote);
 #endif
+#if IS_USED(MODULE_SECURITY_CTX)
     state_manager_security_init(EVENT_PRIO_MEDIUM);
+#endif
     /* init encounters manager */
     uwb_ed_memory_manager_init(&manager);
     uwb_ed_list_init(&uwb_ed_list, &manager, &ebid);

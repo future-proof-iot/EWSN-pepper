@@ -1,237 +1,343 @@
-# RIOT-DESIRE PoC
+# RIOT-PEPPER PoC
 
-RIOT-based desire implementation. This simple PoC wil start a DESIRE
-advertiser and scanner. The EBID slice is rotated according to
-`CONFIG_SLICE_ROTATION_T_S` (default 20s). Every `CONFIG_EBID_ROTATION_T_S`
-(default `15*60s`) the EBID is reset and an epoch ends. At the end of an
-epoch all EBID seen for more than `MIN_EXPOSURE_TIME` (default `10*60s`)
-trigger PET calculation. These as well as faded windows are printed as
-a JSON over serial.
+This application implements a naive and simple enhancement of the DESIRE contact
+tracing protocol. In a nutshell devices advertise unique identifiers over BLE
+and scan looking for other nodes performing those advertisements. Once a node
+is "seen" (enough EBID slices have been scanned to be able to reconstruct it)
+then TWR (two way raging) requests are exchanged between those devices to
+determine their distance. If a device is seen for enough time and at a close
+enough distance then its determined to be a relevant encounter and PET (Private
+Encounter Tokens) are generated.
 
-Currently devices are not time synchronized so if the `MIN_EXPOSE_TIME_S`
+The EBID slice is rotated according to `CONFIG_SLICE_ROTATION_T_S` (default 20s).
+Every `CONFIG_EBID_ROTATION_T_S` (default `15*60s`) the EBID is reset and an
+epoch ends. At the end of an epoch all EBID seen for more than `MIN_EXPOSURE_TIME`
+(default `10*60s`) and under `MAX_DISTANCE_CM` (default 200cm) trigger PET
+calculation.
+
+Different to the base application this demo adds IPV6 connectivity allowing
+devices to offload the ERTL tables as well as notify and get information on
+their infection/exposure status. A companion python server is required to receive
+the ERTL tables as well as perform PET matching to determine the exposure status
+(see [desire_coap_server](../../tests/desire_coap_server/README.md).
+
+This application also includes RIOT-fp related functionalities. Mainly:
+
+* BPF containerization: isolates logic determining relevant encounters
+* SUIT updates: allow updating the relevant encounter logic
+* EDHOC: secure key exchange for a poors-man OSCORE security context
+
+This example will therefore required more setup as seen in the following
+overview:
+
+| ![](https://notes.inria.fr/uploads/upload_bfefe396078a30b026f2ade1816ef694.png) |
+|:-------------------------------------------------------------------------------:|
+|                          *Demo Architecture Overview*                           |
+
+For the above:
+
+* a BLE border router needs to be deployed
+* a DESIRE CoAP server needs to be deployed and provisioned with EDHOC credentials
+(if used)
+* nodes need to be provided with EDHOC credentials (if used)
+* an firmware server needs to be provided for SUIT updates
+
+For more details on the demo workflow see [PEPPER-draft](../../rdm/riotfp_demo.md).
+
+By default devices are not time synchronized so if the `MIN_EXPOSE_TIME_S`
 is too large with respect to `CONFIG_EBID_ROTATION` they might miss each
-other.
+other. Optionally [time-advertiser](../../tests/time_advertiser/README.md) can
+be started which will advertise a current time to which the `PEPPER` nodes
+can synchronize to.
 
-## PRE-requisites
+## Setup
 
-* A valid [FIT IoT-LAB](https://www.iot-lab.info/) account.
-* Initialize this repository as described in [README.md](../../README.md)
+### Basic Setup (IPv6)
 
-## Running IoT-LAB
 
-0. Submit an experiment booking 3 nodes, and wait for experiment to start.
-
-```bash
-$ iotlab-experiment submit -d 120 -l saclay,dwm1001,3-5
-$ iotlab-experiment wait
-Waiting that experiment 267994 gets in state Running
-"Running"
-```
-
-0. Bootstrap all nodes
-
-```bash
-$ BUILD_IN_DOCKER=1 IOTLAB_NODE=dwm1001-3.saclay.iot-lab.info make flash
-$ BUILD_IN_DOCKER=1 IOTLAB_NODE=dwm1001-4.saclay.iot-lab.info make flash
-$ BUILD_IN_DOCKER=1 IOTLAB_NODE=dwm1001-5.saclay.iot-lab.info make flash
-```
-
-0. Open a terminal on each node adv_data will be received and at the end of
-an epoch PETS as well RTL window data will be printed:
-
-```bash
-$ BUILD_IN_DOCKER=1 IOTLAB_NODE=dwm1001-5.saclay.iot-lab.info make term
-main(): This is RIOT! (Version: 2021.07-devel-184-g072311-pepper/nimble-uwb-core)
-[desire]: new epoch t=0
-[desire]: starting new epoch
-[desire]: local ebid: [232, 103, 92, 134, 124, 213, 112, 239, 103, 25, 62, 236, 61, 4, 97, 199, 54, 214, 103, 2, 108, 154, 225, 66, 21, 111, 136, 18, 101, 19, 151, 99, ]
-[desire]: start adv
-[desire]: start scanning
-[desire]: schedule end of epoch
-> [desire]: adv_data 2a31f181: t=2264, RSSI=-55, sid=0
-[desire]: adv_data 2a31f181: t=3266, RSSI=-59, sid=0
-[desire]: adv_data 2a31f181: t=4269, RSSI=-53, sid=0
-[desire]: adv_data 23d1c64c: t=4472, RSSI=-51, sid=0
-[desire]: adv_data 2a31f181: t=5266, RSSI=-52, sid=0
-[desire]: adv_data 23d1c64c: t=5480, RSSI=-51, sid=0
-[desire]: adv_data 23d1c64c: t=6477, RSSI=-53, sid=0
-[desire]: adv_data 2a31f181: t=7266, RSSI=-53, sid=0
-[desire]: adv_data 23d1c64c: t=7473, RSSI=-53, sid=0
-[desire]: adv_data 2a31f181: t=8266, RSSI=-55, sid=0
-[desire]: adv_data 23d1c64c: t=8475, RSSI=-52, sid=0
-[desire]: adv_data 2a31f181: t=9267, RSSI=-59, sid=0
-[desire]: adv_data 23d1c64c: t=9482, RSSI=-53, sid=0
-....
-[desire]: adv_data 33de1dcd: t=898413, RSSI=-51, sid=0
-[desire]: end of epoch
-[desire]: process all epoch data
-[desire]: new epoch t=905
-[desire]: starting new epoch
-[desire]: local ebid: [11, 198, 54, 41, 96, 45, 132, 246, 251, 243, 32, 49, 161, 75, 111, 88, 18, 118, 137, 67, 17, 120, 163, 243, 7, 148, 207, 72, 24, 202, 44, 45, ]
-[desire]: start adv
-[desire]: start scanning
-[desire]: schedule end of epoch
-{"epoch": 0,"pets": [{"pet": {"etl": D3CB2F20212C56DC113C10B7ADAFA01498BA9E1C9E563A8FFE5893CA37E8BC1F,"rtl": 4B114029E062199B088F1007CA1A6A9E7BA7E2DC93B4A367F18CAE8B9AD2A222}},"duration": 857,"Gtx": 4294967241,"windows": [{"samples": 71,"rssi": -105.10498849},{"samples": 110,"rssi": -105.95103558},{"samples": 109,"rssi": -105.93759564},{"samples": 104,"rssi": -105.80062374},{"samples": 107,"rssi": -105.88862233},{"samples": 110,"rssi": -105.88059072},{"samples": 104,"rssi": -105.80673900},{"samples": 100,"rssi": -105.93794483},{"samples": 102,"rssi": -105.86290924},{"samples": 99,"rssi": -105.84642016},{"samples": 96,"rssi": -105.10355507},{"samples": 100,"rssi": -105.97363148},{"samples": 104,"rssi": -105.91124377},{"samples": 99,"rssi": -105.10572267},{"samples": 0,"rssi": 0}]},{"pet": {"etl": F2D24D014F125C31D0C2FCB6E54322FDB60AE7F2356466FAC879921EB3B433E3,"rtl": 871E7A80C4596AC2A88610108761E91B0AEF287AF373B17BF972C283E1E23B55}},"duration": 858,"Gtx": 4294967271,"windows": [{"samples": 64,"rssi": -87.72393587},{"samples": 97,"rssi": -87.54262400},{"samples": 95,"rssi": -87.10905455},{"samples": 99,"rssi": -87.81290540},{"samples": 100,"rssi": -87.40399977},{"samples": 103,"rssi": -87.27984611},{"samples": 103,"rssi": -86.10588960},{"samples": 96,"rssi": -86.10542798},{"samples": 100,"rssi": -87.32760147},{"samples": 106,"rssi": -87.43566633},{"samples": 109,"rssi": -87.25338350},{"samples": 112,"rssi": -87.21373644},{"samples": 108,"rssi": -87.60720057},{"samples": 104,"rssi": -87.70371628},{"samples": 0,"rssi": 0}]}]}
+* Provision 2 or more dwm1001 devices
 
 ```
+$ make -C apps/pepper_riotfp flash term
+```
 
-The epoch data is printed in JSON format, beautified it looks like:
+* Deploy a Border Router
 
-```JSON
-{
-  "epoch": 0,
-  "pets": [
-    {
-      "pet": {
-        "etl": "BEE0FEAEE177CD46059918B6F29625330DCFF339595535BB56EB848B32BAD345",
-        "rtl": "0E78E2C2D82BC49C30C35929B234EC1EE67044A48FE78DA704B12A9A6088458D"
-      }
-    },
-    {
-      "duration": 858
-    },
-    {
-      "Gtx": 4294967241
-    },
-    {
-      "windows": [
-        {
-          "samples": 63,
-          "rssi": -110.16920056
-        },
-        {
-          "samples": 102,
-          "rssi": -110.83850776
-        },
-        {
-          "samples": 102,
-          "rssi": -110.28992184
-        },
-        {
-          "samples": 104,
-          "rssi": -109.10971037
-        },
-        {
-          "samples": 104,
-          "rssi": -109.98127129
-        },
-        {
-          "samples": 103,
-          "rssi": -109.10552081
-        },
-        {
-          "samples": 101,
-          "rssi": -109.10418193
-        },
-        {
-          "samples": 100,
-          "rssi": -109.10457968
-        },
-        {
-          "samples": 104,
-          "rssi": -110.10109788
-        },
-        {
-          "samples": 105,
-          "rssi": -110.46852528
-        },
-        {
-          "samples": 109,
-          "rssi": -110.19166865
-        },
-        {
-          "samples": 112,
-          "rssi": -110.22245795
-        },
-        {
-          "samples": 108,
-          "rssi": -110.16462688
-        },
-        {
-          "samples": 103,
-          "rssi": -110.14613627
-        },
-        {
-          "samples": 0,
-          "rssi": 0
-        }
-      ]
-    },
-    {
-      "pet": {
-        "etl": "4B114029E062199B088F1007CA1A6A9E7BA7E2DC93B4A367F18CAE8B9AD2A222",
-        "rtl": "D3CB2F20212C56DC113C10B7ADAFA01498BA9E1C9E563A8FFE5893CA37E8BC1F"
-      }
-    },
-    {
-      "duration": 856
-    },
-    {
-      "Gtx": 4294967241
-    },
-    {
-      "windows": [
-        {
-          "samples": 65,
-          "rssi": -106.83964057
-        },
-        {
-          "samples": 108,
-          "rssi": -106.73073248
-        },
-        {
-          "samples": 111,
-          "rssi": -106.75569606
-        },
-        {
-          "samples": 114,
-          "rssi": -106.75563648
-        },
-        {
-          "samples": 108,
-          "rssi": -106.64097939
-        },
-        {
-          "samples": 99,
-          "rssi": -106.77170822
-        },
-        {
-          "samples": 96,
-          "rssi": -106.10172134
-        },
-        {
-          "samples": 98,
-          "rssi": -106.74163436
-        },
-        {
-          "samples": 103,
-          "rssi": -106.75557683
-        },
-        {
-          "samples": 107,
-          "rssi": -106.97290752
-        },
-        {
-          "samples": 104,4B114029E062199B088F1007CA1A6A9E7BA7E2DC93B4A367F18CAE8B9AD2A222}},"duration": 857,"Gtx": 4294967241,"windows": [{"samples": 71,"rssi": -105.10498849},{"samples": 110,"rssi": -105.95103558},{"samples": 109,"rssi": -105.93759564},{"samples": 104,"rssi": -105.80062374},{"samples": 107,"rssi": -105.88862233},{"samples": 110,"rssi": -105.88059072},{"samples": 104,"rssi": -105.80673900},{"samples": 100,"rssi": -105.93794483},{"samples": 102,"rssi": -105.86290924},{"samples": 99,"rssi": -105.84642016},{"samples": 96,"rssi": -105.10355507},{"samples": 100,"rssi": -105.97363148},{"samples": 104,"rssi": -105.91124377},{"samples": 99,"rssi": -105.10572267},{"samples": 0,"rssi": 0}]},{"pet": {"etl": F2D24D014F125C31D0C2FCB6E54322FDB60AE7F2356466FAC879921EB3B433E3,"rtl": 871E7A80C4596AC2A88610108761E91B0AEF287AF373B17BF972C283E1E23B55}},"duration": 858,"Gtx": 4294967271,"windows": [{"samples": 64,"rssi": -87.72393587},{"samples": 97,"rssi": -87.54262400},{"samples": 95,"rssi": -87.10905455},{"samples": 99,"rssi": -87.81290540},{"samples": 100,"rssi": -87.40399977},{"samples": 103,"rssi": -87.27984611},{"samples": 103,"rssi": -86.10588960},{"samples": 96,"rssi": -86.10542798},{"samples": 100,"rssi": -87.32760147},{"samples": 106,"rssi": -87.43566633},{"samples": 109,"rssi": -87.25338350},{"samples": 112,"rssi": -87.21373644},{"samples": 108,"rssi": -87.60720057},{"samples": 104,"rssi": -87.70371628},{"samples": 0,"rssi": 0}]}]}
+Any RIOT based border router will do, so choose on a BLE capable device any
+configuration as described in [gnrc_border_router](../../RIOT/examples/gnrc_border_router/README.md).
 
-        {
-          "samples": 103,
-          "rssi": -106.90990656
-        },
-        {
-          "samples": 106,
-          "rssi": -106.91429286
-        },
-        {
-          "samples": 109,
-          "rssi": -106.10786301
-        },
-        {
-          "samples": 1,
-          "rssi": -107
-        }
-      ]
-    }
-  ]
-}
+For convenience a `cdc-ecm` border router is used here on a `nrf52540-mdk-dongle`.
+Its important to include the `nimble_autoconn_ipsp` module. If using `DHCPV6`
+`STATIC_ROUTES` are used, otherwise something like `radvd` can be configured.
+
+Bootstrap the border router and keep the terminal open:
+
+```
+$ STATIC_ROUTES=1 USE_DHCPV6=0 UPLINK=cdc-ecm USEMODULE="nimble_autoconn_ipsp" BOARD=nrf52840-mdk-dongle make -C RIOT/examples/gnrc_border_router/ flash term
+```
+
+The border router should get a globally routable address (if this is the first
+time Kea will need to be installed).
+
+```
+Iface  9  HWaddr: FE:32:2A:89:4B:8D
+          L2-PDU:1500  MTU:1500  HL:64  RTR
+          Source address length: 6
+          Link type: wired
+          inet6 addr: fe80::fc32:2aff:fe89:4b8d  scope: link  VAL
+          inet6 addr: fe80::2  scope: link  VAL
+          inet6 group: ff02::2
+          inet6 group: ff02::1
+          inet6 group: ff02::1:ff89:4b8d
+          inet6 group: ff02::1:ff00:2
+Iface  7  HWaddr: FF:69:5A:5A:17:95
+          L2-PDU:1280  MTU:1280  HL:64  RTR
+          RTR_ADV  6LO  IPHC
+          Source address length: 6
+          Link type: wireless
+          inet6 addr: fe80::ff69:5aff:fe5a:1795  scope: link  VAL
+          inet6 addr: 2001:db8:0:2:ff69:5aff:fe5a:1795  scope: global  VAL
+          inet6 group: ff02::2
+          inet6 group: ff02::1
+          inet6 group: ff02::1:ff5a:1795
+```
+
+From host:
+
+```
+ping6 2001:db8:0:2:ff69:5aff:fe5a:1795
+PING 2001:db8:0:2:ff69:5aff:fe5a:1795(2001:db8:0:2:ff69:5aff:fe5a:1795) 56 data bytes
+64 bytes from 2001:db8:0:2:ff69:5aff:fe5a:1795: icmp_seq=1 ttl=64 time=1.84 ms
+64 bytes from 2001:db8:0:2:ff69:5aff:fe5a:1795: icmp_seq=2 ttl=64 time=1.04 ms
+64 bytes from 2001:db8:0:2:ff69:5aff:fe5a:1795: icmp_seq=3 ttl=64 time=0.992 ms
+^C
+--- 2001:db8:0:2:ff69:5aff:fe5a:1795 ping statistics ---
+3 packets transmitted, 3 received, 0% packet loss, time 2003ms
+rtt min/avg/max/mdev = 0.992/1.289/1.839/0.388 ms
+```
+
+* Deploy the CoAP server
+
+Instal the requirements:
+
+```
+pip install -r tests/desire_coap_server/requirements.txt
+```
+
+Recover the devices identifiers (this can be done by flashing the devices
+and using the `id` shell command):
+
+```
+> id
+dwm1001 id: DW5FC2
+```
+
+Then start the coap server declaring all devices to enroll, eg:
+
+```
+python desire_coap_srv.py --node-uid DW5FC2 DWED75
+```
+
+### Running the Demo
+
+With everything setup the demo can be started, devices will begin advertising
+their EBID and an scanning for neighboring tokens advertising theirs, once
+a neighbor is discovered TWR (two way ranging requests begin). Different than
+the [basic pepper examples](../pepper) if there is IPV6 connectivity the devices
+will periodically fetch the exposure status as well as offloading there ERTL
+tables:
+
+On devices:
+
+```
+[state_manager]: fetch esr
+[state_manager]: esr=(0)
+[state_manager]: serialized ertl, len=(81)
+```
+
+On server:
+
+```
+[DummyRqHandler] is_exposed: uid=DWED75 exposed=False
+DEBUG:coap-server:Sending message <aiocoap.Message at 0x7f40abedecd0: Type.NON 2.05 Content (MID 38732, token 3092) remote <UDP6EndpointAddress [2001:db8::d359:5dff:fe10:4cf8] (locally fd00:dead:beef::1%enxfe322a894b8f)>, 1 option(s), 5 byte(s) payload>
+DEBUG:coap-server:Incoming message <aiocoap.Message at 0x7f40ac755730: Type.NON POST (MID 6159, token 46d5) remote <UDP6EndpointAddress [2001:db8::d359:5dff:fe10:4cf8] (locally fd00:dead:beef::1%enxfe322a894b8f)>, 3 option(s), 64 byte(s) payload>
+DEBUG:coap-server:New unique message received
+DEBUG:coap-server:Sending message <aiocoap.Message at 0x7f40abee2970: Type.NON 2.31 Continue (MID 38733, token 46d5) remote <UDP6EndpointAddress [2001:db8::d359:5dff:fe10:4cf8] (locally fd00:dead:beef::1%enxfe322a894b8f)>, 1 option(s)>
+DEBUG:coap-server:Incoming message <aiocoap.Message at 0x7f40ac74f4f0: Type.NON POST (MID 6160, token 00fc) remote <UDP6EndpointAddress [2001:db8::d359:5dff:fe10:4cf8] (locally fd00:dead:beef::1%enxfe322a894b8f)>, 3 option(s), 17 byte(s) payload>
+DEBUG:coap-server:New unique message received
+[DummyRqHandler] update_ertl: uid=DWED75, ertl = ErtlPayload(epoch=242, pets=[PetElement(pet=EncounterData(etl=b"\xda\xc0>2\x05w'\xeb-5\xb3\xbfm\xc0 \x80\x90@\xd6\x86Sh\xd2b7\xf5.2\xcb\xc5%~", rtl=b'\xccP\xb5 \x05\xe7\xddU]\xd21;\x81x7\n\xb0\xc6\xce\xf9\xe1\xfa$O\xad 9\x10\x0c\x06\xc33', exposure=64359, req_count=19, avg_d_cm=0))]), json =
+{"epoch": 242, "pets": [{"pet": {"etl": "2sA+MgV3J+stNbO/bcAggJBA1oZTaNJiN/UuMsvFJX4=", "rtl": "zFC1IAXn3VVd0jE7gXg3CrDGzvnh+iRPrSA5EAwGwzM=", "exposure": 64359, "req_count": 19, "avg_d_cm": 0}}]}
+DEBUG:coap-server:Sending message <aiocoap.Message at 0x7f40abee7fa0: Type.NON 2.04 Changed (MID 38734, token 00fc) remote <UDP6EndpointAddress [2001:db8::d359:5dff:fe10:4cf8] (locally fd00:dead:beef::1%enxfe322a894b8f)>, 2 option(s)>
+```
+
+If a device is declared positive (by pressing the user button) then the server is
+notified and then devices that where in contact should see this and change their
+status LED:
+
+The infected device:
+
+```
+[state_manager]: COVID positive!
+[state_manager]: send infected=1, len=(5)
+```
+
+The exposed device:
+
+```
+[state_manager]: fetch esr
+[state_manager]: esr=(1)
+[state_manager]: exposed!
+```
+
+### Add SUIT BPF updates
+
+Device are running an updatable BPF container, the threshold for contacts
+can be lowered or increased (or even bigger changes can be made to [contact_filter.c](../../modules/sys/uwb_ed/bpf/contact_filter.c)).
+
+For this a firmware server needs to be setup, the easiest is using `aiocoap-fileserver`,
+in another terminal and in this directory (keep the terminal open)
+
+```
+$ mkdir coaproot
+$ aiocoap-fileserver coaproot
+```
+
+Now new firmware can be deployed and pushed to the devices, e.g: change the relevant distance threshold:
+
+```
+ BPF_CFLAGS=-DMAX_DISTANCE_CM=50 make -C apps/pepper_riotfp/ suit/publish
+Warning! EXTERNAL_MODULE_DIRS is a search folder since 2021.07-branch, see https://doc.riot-os.org/creating-modules.html#modules-outside-of-riotbase
+rm -f /home/francisco/workspace/pepper/desire/modules/sys/uwb_ed/bpf/contact_filter.o /home/francisco/workspace/pepper/desire/modules/sys/uwb_ed/bpf/contact_filter.bin
+published "/home/francisco/workspace/pepper/desire/apps/pepper_riotfp/bin/dwm1001/pepper_driotfp-riot.suit.1629124780.bin"
+       as "coap://[fd00:dead:beef::1]/fw/dwm1001/pepper_driotfp-riot.suit.1629124780.bin"
+published "/home/francisco/workspace/pepper/desire/apps/pepper_riotfp/bin/dwm1001/pepper_driotfp-riot.suit.latest.bin"
+       as "coap://[fd00:dead:beef::1]/fw/dwm1001/pepper_driotfp-riot.suit.latest.bin"
+published "/home/francisco/workspace/pepper/desire/apps/pepper_riotfp/bin/dwm1001/pepper_driotfp-riot.suit_signed.1629124780.bin"
+       as "coap://[fd00:dead:beef::1]/fw/dwm1001/pepper_driotfp-riot.suit_signed.1629124780.bin"
+published "/home/francisco/workspace/pepper/desire/apps/pepper_riotfp/bin/dwm1001/pepper_driotfp-riot.suit_signed.latest.bin"
+       as "coap://[fd00:dead:beef::1]/fw/dwm1001/pepper_driotfp-riot.suit_signed.latest.bin"
+published "/home/francisco/workspace/pepper/desire/apps/pepper_riotfp/bin/dwm1001/pepper_driotfp.1629124780.bin"
+       as "coap://[fd00:dead:beef::1]/fw/dwm1001/pepper_driotfp.1629124780.bin"
+```
+
+On the device the updates it should start ignoring devices further than 50cm away:
+
+```
+[pepper]: 0xeea8 at 88cm
+[pepper]: 0xeea8 at 86cm
+[pepper]: end of uwb_epoch
+[pepper]: process all uwb_epoch data
+[pepper]: new uwb_epoch t=331
+[pepper]: new ebid generation
+[pepper]: local ebid: [50, 42, 151, 39, 123, 86, 15, 210, 223, 112, 93, 62, 71, 198, 144, 62, 176, 229, 80, 12, 219, 231, 207, 75, 46, 220, 223, 130, 179, 120, 106, 9, ]
+[pepper]: not connected, dumping epoch data
+{"epoch": 302,"pets": [{"pet": {"etl": "7EF16D77A5B836A613BAAFCCF946CF1C66E29D0D90673405F0EC6596E5530537","rtl": "32E0B4D649659E2857A467185A08E2D9F197662A986D3393F9A932E74460B654","exposure": 64186,"reqcount": 13,"avg_d_cm": 90}}]}
+[uwb_ed_bpf]: lock region
+[uwb_ed_bpf]: unlock region
+[pepper]: 0x2c98 at 102cm
+[pepper]: 0x2c98 at 102cm
+[pepper]: 0x2c98 at 143cm
+[pepper]: 0x2c98 at 88cm
+[pepper]: end of uwb_epoch
+[pepper]: process all uwb_epoch data
+[pepper]: new uwb_epoch t=480
+[pepper]: new ebid generation
+[pepper]: local ebid: [187, 164, 247, 34, 38, 139, 141, 121, 32, 8, 29, 16, 243, 131, 167, 60, 78, 55, 20, 175, 41, 152, 155, 163, 244, 230, 239, 34, 204, 60, 150, 86, ]
+[pepper]: not connected, dumping epoch data
+{"epoch": 450,"pets": []}
+```
+
+### Add EDHOC, Security Context
+
+A security context used to secure server communication can also be used, this
+context will be bootstrapped via an EDHOC handshake.
+
+Before flashing the devices we need to make sure that each device is provided
+with credentials for the key exchange as well as the credentials to authenticate
+its counterpart (the CoAP server).
+
+0. Generate server side credentials and export them to `modules/sys/edhoc_coap`
+
+```bash
+$ cd
+$ python tools/edhoc_generate_keys.py
+$ tools/edhoc_keys_header.py
+```
+
+A file `PEPPER_keys.c` should now be in `modules/sys/edhoc_coap`
+
+0. Generate and export device credentials for every device of id `DWxxxx`
+
+```bash
+$ cd
+$ echo "DWxxxx" | base64 | xargs python tools/edhoc_generate_keys.py  --out-dir modules/sys/edhoc_coap --kid
+```
+
+A file named `DWxxxx_keys.c` should now be in `modules/sys/edhoc_coap`.
+
+0. Bootload the devices including `edhoc_coap` and `security_ctx` modules:
+
+```bash
+USEMODULE="edhoc_coap security_ctx" make -C apps/pepper_riotfp/ flash term
+```
+
+After a while once connected the devices should perform and EDHOC key exchange
+with the server... from there on all communication will be encrypted:
+
+```
+[initiator]: sending msg1 (41 bytes):
+[initiator]: received a message (116 bytes):
+[initiator]: sending msg3 (88 bytes):
+[initiator]: handshake successfully completed
+...
+...
+[state_manager]: fetch esr
+[state_manager]: attempt to decode...success
+[state_manager]: esr=(0)
+```
+
+On the server side, it will now always encrypt messages going to the device.
+
+### Setting up the time Advertiser
+
+0. Flash the time advertiser on a BLE capable device:
+
+```bash
+BUILD_IN_DOCKER=1 make -C tests/time_advertiser flash term
+```
+
+0. Set a desire time
+
+```
+> time
+time
+Current Time =  2020-01-01 00:00:17, epoch: 17
+> time 2021 08 16 14 08 00
+time 2021 08 16 14 08 00
+```
+
+0. Start advertising
+
+```
+> time
+time
+Current Time =  2020-01-01 00:00:17, epoch: 17
+> time 2021 08 16 14 08 00
+time 2021 08 16 14 08 00
+> start
+start
+[Tick]
+Current Time =  2021-08-16 14:12:29, epoch: 51286349
+[Tick]
+Current Time =  2021-08-16 14:12:30, epoch: 51286350
+[Tick]
+Current Time =  2021-08-16 14:12:31, epoch: 51286351
+```
+
+Nodes should synchronize and re-start their epochs accordingly
+
+```
+[pepper]: time was set back too much, bootstrap from 0
+[pepper]: delay for 27s to align uwb_epoch start
+[pepper]: new uwb_epoch t=51286350
 ```
