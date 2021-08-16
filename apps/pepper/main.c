@@ -62,8 +62,6 @@
 
 #if IS_USED(MODULE_DESIRE_SCANNER_NETIF)
 static sock_udp_ep_t remote;
-/* TODO: this should handle the worst scenario CBOR length */
-static uint8_t buf[2048];
 #endif
 static uwb_epoch_data_t uwb_epoch_data;
 static uwb_epoch_data_t uwb_epoch_data_serialize;
@@ -81,7 +79,7 @@ static void _update_infected_status(void *arg)
     (void)arg;
 #if IS_USED(MODULE_DESIRE_SCANNER_NETIF)
     if (desire_ble_is_connected()) {
-        state_manager_coap_send_infected(&remote);
+        state_manager_coap_send_infected();
     }
 #endif
 }
@@ -212,8 +210,7 @@ static void _serialize_uwb_epoch_handler(event_t *event)
 #if IS_USED(MODULE_DESIRE_SCANNER_NETIF)
     if (desire_ble_is_connected()) {
         if (uwb_epoch_contacts(d_event->data)) {
-            state_manager_coap_send_ertl(&remote, d_event->data, buf,
-                                         sizeof(buf));
+            state_manager_coap_send_ertl(d_event->data);
         }
     }
     else {
@@ -250,7 +247,7 @@ static void _end_of_uwb_epoch_handler(void *arg)
 #if IS_USED(MODULE_DESIRE_SCANNER_NETIF)
     /* if connected then update exposure status */
     if (desire_ble_is_connected()) {
-        state_manager_coap_get_esr(&remote);
+        state_manager_coap_get_esr();
     }
 #endif
 }
@@ -305,7 +302,7 @@ static int _cmd_id(int argc, char **argv)
 {
     (void)argc;
     (void)argv;
-    printf("dwm1001 id: DW%s\n", state_manager_get_id());
+    printf("dwm1001 id: %s\n", state_manager_get_id());
     return 0;
 }
 
@@ -330,6 +327,10 @@ int main(void)
                               (event_t *)&_scan_adv_start_ev);
     /* init global state manager */
     state_manager_init();
+#if IS_USED(MODULE_DESIRE_SCANNER_NETIF)
+    state_manager_set_remote(&remote);
+#endif
+    state_manager_security_init(EVENT_PRIO_MEDIUM);
     /* init encounters manager */
     uwb_ed_memory_manager_init(&manager);
     uwb_ed_list_init(&uwb_ed_list, &manager, &ebid);

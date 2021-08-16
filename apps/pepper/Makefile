@@ -16,12 +16,18 @@ RIOTBASE ?= $(CURDIR)/../../RIOT
 USEMODULE += desire_advertiser
 USEMODULE += desire_scanner
 USEMODULE += desire_scanner_netif
-USEMODULE += desire_scanner_netif
+USEMODULE += desire_scanner_time_update
 USEMODULE += uwb_epoch
 USEMODULE += uwb_ed_bpf
 USEMODULE += twr
 USEMODULE += state_manager
 USEMODULE += current_time
+# Add Edhoc realted Modules
+USEMODULE += edhoc_coap
+USEMODULE += security_ctx
+# Add coap utility
+USEMODULE += coap_utils
+
 EXTERNAL_MODULE_DIRS += $(CURDIR)/../../modules/sys/
 EXTERNAL_MODULE_DIRS += $(CURDIR)/../../modules/ble/
 EXTERNAL_MODULE_DIRS += $(CURDIR)/../../modules/uwb/
@@ -42,7 +48,11 @@ CFLAGS+=-DMIN_EXPOSURE_TIME_S=10
 # * twr
 # * start/end of epoch
 # * other app event
-CFLAGS += -DEVENT_THREAD_MEDIUM_STACKSIZE=THREAD_STACKSIZE_MAIN
+# CFLAGS += -DEVENT_THREAD_MEDIUM_STACKSIZE=THREAD_STACKSIZE_MAIN
+# A very large stack is required when adding EDHOC
+CFLAGS += -DEVENT_THREAD_MEDIUM_STACKSIZE=3*THREAD_STACKSIZE_LARGE
+CFLAGS += -DCONFIG_GCOAP_RESEND_BUFS_MAX=4
+CFLAGS += -DGCOAP_STACK_SIZE=THREAD_STACKSIZE_LARGE
 
 # Include shell and, process information fonctionality
 USEMODULE += shell
@@ -57,8 +67,7 @@ USEMODULE += gnrc_netdev_default
 USEMODULE += auto_init_gnrc_netif
 USEMODULE += gnrc_ipv6_default
 USEMODULE += gnrc_icmpv6_echo
-# Add coap utility
-USEMODULE += coap_utils
+USEMODULE += nanocoap_sock
 
 # SUIT configuration
 # If following the README this will be the SUIT_COAP server configuration

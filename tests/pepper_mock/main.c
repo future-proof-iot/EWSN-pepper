@@ -8,6 +8,7 @@
 #include "uwb_epoch.h"
 #include "bpf/uwb_ed_shared.h"
 #include "coap/utils.h"
+#include "edhoc/coap.h"
 
 #include "timex.h"
 #include "ztimer.h"
@@ -31,6 +32,9 @@ static sock_udp_ep_t remote;
 /* event for the end of EPOCH */
 static event_periodic_t _epoch_end;
 
+/* random data */
+static uwb_epoch_data_t _epoch_data;
+
 static void _random_uwb_contact(uwb_contact_data_t *data)
 {
     random_bytes(data->pet.et, PET_SIZE);
@@ -44,7 +48,7 @@ static void _random_uwb_contact(uwb_contact_data_t *data)
 static void _random_uwb_epoch(uwb_epoch_data_t *data)
 {
     memset(data, '\0', sizeof(uwb_epoch_data_t));
-    data->timestamp = (uint16_t)ztimer_now(ZTIMER_SEC);
+    data->timestamp = (uint16_t)ztimer_now(ZTIMER_EPOCH);
     for (uint8_t i = 0; i < CONFIG_EPOCH_MAX_ENCOUNTERS; i++) {
         _random_uwb_contact(&data->contacts[i]);
     }
@@ -53,18 +57,19 @@ static void _random_uwb_epoch(uwb_epoch_data_t *data)
 static void _serialize_event_handler(event_t *event)
 {
     (void)event;
-    uwb_epoch_data_t data;
 
-    _random_uwb_epoch(&data);
+    _random_uwb_epoch(&_epoch_data);
     printf("[pepper]: new uwb_epoch t=%" PRIu64 "\n",
-           ztimer_now(ZTIMER_SEC));
-    if (uwb_epoch_contacts(&data)) {
-        state_manager_coap_send_ertl(&remote, &data);
+           ztimer_now(ZTIMER_EPOCH));
+    if (uwb_epoch_contacts(&_epoch_data)) {
+        if (state_manager_coap_send_ertl(&_epoch_data) < 0) {
+            printf("[pepper]: failed to send dump contacts: \t");
+            uwb_epoch_serialize_printf(&_epoch_data);
+        }
     }
-    uwb_epoch_serialize_printf(&data);
 
     printf("[pepper]: fetch exposure status\n");
-    state_manager_coap_get_esr(&remote);
+    state_manager_coap_get_esr();
 }
 
 static event_t _serialize_event =
@@ -91,7 +96,7 @@ static int _cmd_uwb_rnd(int argc, char **argv)
     return 0;
 }
 
-int _cmd_post_infected(int argc, char **argv)
+static int _cmd_post_infected(int argc, char **argv)
 {
     if (argc < 2) {
         printf("usage: %s [y,n]\n", argv[0]);
@@ -110,7 +115,7 @@ int _cmd_post_infected(int argc, char **argv)
         return -2;
     }
 
-    state_manager_coap_send_infected(&remote);
+    state_manager_coap_send_infected();
     return 0;
 }
 
@@ -118,11 +123,11 @@ static int _cmd_id(int argc, char **argv)
 {
     (void)argc;
     (void)argv;
-    printf("dwm1001 id: DW%s\n", state_manager_get_id());
+    printf("dwm1001 id: %s\n", state_manager_get_id());
     return 0;
 }
 
-int _cmd_post_ertl(int argc, char **argv)
+static int _cmd_post_ertl(int argc, char **argv)
 {
     (void)argc;
     (void)argv;
@@ -130,7 +135,7 @@ int _cmd_post_ertl(int argc, char **argv)
     uwb_epoch_data_t data;
     _random_uwb_epoch(&data);
     uwb_epoch_serialize_printf(&data);
-    state_manager_coap_send_ertl(&remote, &data);
+    state_manager_coap_send_ertl(&data);
 
     return 0;
 }
@@ -148,21 +153,27 @@ int main(void)
 {
     /* Initialize state manager */
     state_manager_init();
-    printf("Pepper Native Mock, id: DW%s\n", state_manager_get_id());
+    state_manager_set_remote(&remote);
+    state_manager_security_init(EVENT_PRIO_MEDIUM);
+    printf("Pepper Mock, id: %s\n", state_manager_get_id());
 
     /* Set a default routable address for the native node */
+#ifdef BOARD_NATIVE
     ipv6_addr_t addr;
     const char addr_str[] = "2001:db8::2";
     ipv6_addr_from_str(&addr, addr_str);
     gnrc_netif_ipv6_addr_add(gnrc_netif_iter(NULL), &addr, 64, 0);
     coap_init_remote(&remote, "2001:db8::1", 5683);
+#else
+    coap_init_remote(&remote, "fd00:dead:beef::1", 5683);
+#endif
 
     /* Set up the message queue */
     msg_init_queue(_main_msg_queue, MAIN_QUEUE_SIZE);
     /* setup end of uwb_epoch timeout event */
     (void)_serialize_event;
     (void)_epoch_end;
-    event_periodic_init(&_epoch_end, ZTIMER_SEC, EVENT_PRIO_HIGHEST,
+    event_periodic_init(&_epoch_end, ZTIMER_EPOCH, EVENT_PRIO_HIGHEST,
                         &_serialize_event);
     event_periodic_start(&_epoch_end, CONFIG_EBID_ROTATION_T_S);
 
