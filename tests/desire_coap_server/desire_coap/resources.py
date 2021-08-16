@@ -46,7 +46,6 @@ class RqHandlerBase(ABC):
 
 
 # Coap resources
-
 class NodeResource(resource.Resource):
     def __init__(self, node: Node, handler: RqHandlerBase):
         super().__init__()

@@ -37,7 +37,7 @@ from security.edhoc_keys import (generate_edhoc_keys,
                                  rmv_peer_cred,
                                  Creds)
 
-KEYS_FILE_NAME = 'keys.h'
+KEYS_FILE_NAME = 'keys.c'
 DEFAULT_OUTPUT_DIR = '.'
 
 
