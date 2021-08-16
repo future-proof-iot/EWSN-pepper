@@ -1,4 +1,4 @@
-APPLICATION = pepper_driotfp
+APPLICATION = pepper_riotfp
 BOARD ?= dwm1001
 
 # Comment this out to disable code in RIOT that does safety checking
@@ -34,8 +34,7 @@ USEMODULE += coap_utils
 # Add bpf update related modules
 USEMODULE += uwb_ed_bpf
 # Add Edhoc realted Modules
-# USEMODULE += edhoc_coap
-# USEMODULE += security_ctx
+# USEMODULE += state_manager_security
 
 #### Application required modules ####
 USEMODULE += event_thread

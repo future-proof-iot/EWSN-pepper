@@ -276,8 +276,8 @@ static bool _epoch_reset = false;
 static void _pre_adjust_time(int32_t offset, void *arg)
 {
     (void)arg;
-    _epoch_reset = offset > 0 ? offset > CONFIG_EPOCH_MAX_TIME_OFFSET :
-                   -offset > CONFIG_EPOCH_MAX_TIME_OFFSET;
+    _epoch_reset = offset > 0 ? offset > (int32_t) CONFIG_EPOCH_MAX_TIME_OFFSET :
+                   -offset > (int32_t) CONFIG_EPOCH_MAX_TIME_OFFSET;
     if (_epoch_reset) {
         LOG_INFO("[pepper]: time was set back too much, bootstrap from 0\n");
         event_timeout_clear(&_silent_timeout);
@@ -330,9 +330,10 @@ int main(void)
 #if IS_USED(MODULE_DESIRE_SCANNER_NETIF)
     state_manager_set_remote(&remote);
 #endif
-#if IS_USED(MODULE_SECURITY_CTX)
+#if IS_USED(MODULE_STATE_MANAGER_SECURITY)
     state_manager_security_init(EVENT_PRIO_MEDIUM);
 #endif
+
     /* init encounters manager */
     uwb_ed_memory_manager_init(&manager);
     uwb_ed_list_init(&uwb_ed_list, &manager, &ebid);

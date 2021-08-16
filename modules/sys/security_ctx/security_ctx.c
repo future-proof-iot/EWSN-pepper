@@ -51,19 +51,6 @@ void security_ctx_init(security_ctx_t *ctx, uint8_t *send_id,
     ctx->valid = false;
 }
 
-static void print_bstr(const uint8_t *bstr, size_t bstr_len)
-{
-    for (size_t i = 0; i < bstr_len; i++) {
-        if ((i + 1) % 8 == 0) {
-            DEBUG("0x%02x \n", bstr[i]);
-        }
-        else {
-            DEBUG("0x%02x ", bstr[i]);
-        }
-    }
-    DEBUG("\n");
-}
-
 int security_ctx_key_gen(security_ctx_t *ctx,
                          uint8_t *salt, size_t salt_len,
                          uint8_t *secret, size_t secret_len)
@@ -157,6 +144,20 @@ int security_ctx_decode(security_ctx_t *ctx, uint8_t *in, size_t in_len,
 }
 
 #if IS_USED(MODULE_EDHOC_COAP)
+static void print_bstr(const uint8_t *bstr, size_t bstr_len)
+{
+    for (size_t i = 0; i < bstr_len; i++) {
+        if ((i + 1) % 8 == 0) {
+            DEBUG("0x%02x \n", bstr[i]);
+        }
+        else {
+            DEBUG("0x%02x ", bstr[i]);
+        }
+    }
+    DEBUG("\n");
+}
+
+
 int security_ctx_edhoc_handshake(security_ctx_t *ctx, edhoc_ctx_t *e_ctx,
                                  sock_udp_ep_t *remote)
 {

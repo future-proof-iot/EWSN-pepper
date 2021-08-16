@@ -19,7 +19,7 @@ Different to the base application this demo adds IPV6 connectivity allowing
 devices to offload the ERTL tables as well as notify and get information on
 their infection/exposure status. A companion python server is required to receive
 the ERTL tables as well as perform PET matching to determine the exposure status
-(see [desire_coap_server](../../tests/desire_coap_server/README.md).
+(see [desire_coap_server](../../dist/desire_coap_server/README.md).
 
 This application also includes RIOT-fp related functionalities. Mainly:
 
@@ -121,7 +121,7 @@ rtt min/avg/max/mdev = 0.992/1.289/1.839/0.388 ms
 Instal the requirements:
 
 ```
-pip install -r tests/desire_coap_server/requirements.txt
+pip install -r dist/desire_coap_server/requirements.txt
 ```
 
 Recover the devices identifiers (this can be done by flashing the devices
@@ -275,10 +275,10 @@ $ echo "DWxxxx" | base64 | xargs python tools/edhoc_generate_keys.py  --out-dir 
 
 A file named `DWxxxx_keys.c` should now be in `modules/sys/edhoc_coap`.
 
-0. Bootload the devices including `edhoc_coap` and `security_ctx` modules:
+0. Bootload the devices including `state_manager_security` module:
 
 ```bash
-USEMODULE="edhoc_coap security_ctx" make -C apps/pepper_riotfp/ flash term
+USEMODULE="state_manager_security" make -C apps/pepper_riotfp/ flash term
 ```
 
 After a while once connected the devices should perform and EDHOC key exchange
@@ -294,6 +294,9 @@ with the server... from there on all communication will be encrypted:
 [state_manager]: fetch esr
 [state_manager]: attempt to decode...success
 [state_manager]: esr=(0)
+[state_manager]: serialized ertl, len=(155)
+[state_manager]: encrypted ertl, len=(187)
+
 ```
 
 On the server side, it will now always encrypt messages going to the device.

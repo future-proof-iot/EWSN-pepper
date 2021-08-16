@@ -27,12 +27,12 @@
 #include "board.h"
 #include "periph/gpio.h"
 
-#if (IS_USED(MODULE_COAP_UTILS))
+#if IS_USED(MODULE_COAP_UTILS)
 #include "coap/utils.h"
 #include "net/coap.h"
 #endif
 
-#if (IS_USED(MODULE_SECURITY_CTX))
+#if IS_USED(MODULE_STATE_MANAGER_SECURITY)
 #include "ztimer.h"
 #include "event/periodic.h"
 #include "event/callback.h"
@@ -54,7 +54,7 @@ static bool _infected = false;
 static bool _esr = false;
 static char _uid[sizeof("DW") + STATE_MANAGER_TOKEN_ID_LEN * 2 + 1];
 
-#if (IS_USED(MODULE_COAP_UTILS))
+#if IS_USED(MODULE_COAP_UTILS)
 static sock_udp_ep_t *_remote;
 static coap_req_ctx_t _get_ctx;
 static coap_block_ctx_t _block_ctx;
@@ -65,7 +65,7 @@ char _ertl_uri[sizeof("/DW") + sizeof("/ertl") + 2 *
 void _esr_callback(int res, void *data, size_t data_len, void *arg);
 #endif
 
-#if IS_USED(MODULE_SECURITY_CTX)
+#if IS_USED(MODULE_STATE_MANAGER_SECURITY)
 static security_ctx_t _sec_ctx;
 static edhoc_coap_ctx_t _edhoc_ctx;
 static uint8_t ertl_cose_buf[1536];
@@ -201,7 +201,7 @@ char *state_manager_get_id(void)
 }
 
 #if IS_USED(MODULE_COAP_UTILS)
-#if IS_USED(MODULE_SECURITY_CTX)
+#if IS_USED(MODULE_STATE_MANAGER_SECURITY)
 void state_manager_security_init(event_queue_t *queue)
 {
     security_ctx_init(&_sec_ctx, (uint8_t *)_uid, strlen(_uid),
@@ -222,7 +222,7 @@ void _esr_callback(int res, void *data, size_t data_len, void *arg)
         LOG_DEBUG("[state manager]: esr get failed=(%d)\n", res);
         return;
     }
-#if IS_USED(MODULE_SECURITY_CTX)
+#if IS_USED(MODULE_STATE_MANAGER_SECURITY)
     if (_sec_ctx.valid) {
         uint8_t out[128];
         size_t out_len = 0;
@@ -251,7 +251,7 @@ void state_manager_set_remote(sock_udp_ep_t *remote)
 
 int state_manager_coap_get_esr(void)
 {
-#if IS_USED(MODULE_SECURITY_CTX)
+#if IS_USED(MODULE_STATE_MANAGER_SECURITY)
     if (!_sec_ctx.valid) {
         LOG_DEBUG("[state_manager]: invalid context\n");
         return -1;
@@ -273,7 +273,7 @@ int state_manager_coap_get_esr(void)
 static uint8_t ertl_buf[1024];
 int state_manager_coap_send_ertl(uwb_epoch_data_t *data)
 {
-#if IS_USED(MODULE_SECURITY_CTX)
+#if IS_USED(MODULE_STATE_MANAGER_SECURITY)
     if (!_sec_ctx.valid) {
         LOG_DEBUG("[state_manager]: invalid context\n");
         return -1;
@@ -289,7 +289,7 @@ int state_manager_coap_send_ertl(uwb_epoch_data_t *data)
     LOG_DEBUG("[state_manager]: serialized ertl, len=(%d)\n", data_len);
 
     if (data_len > 0) {
-#if IS_USED(MODULE_SECURITY_CTX)
+#if IS_USED(MODULE_STATE_MANAGER_SECURITY)
         ertl_cose_ptr = NULL;
         size_t cose_len = security_ctx_encode(&_sec_ctx,
                                               ertl_buf, data_len,
@@ -308,7 +308,7 @@ int state_manager_coap_send_ertl(uwb_epoch_data_t *data)
 
 int state_manager_coap_send_infected(void)
 {
-#if IS_USED(MODULE_SECURITY_CTX)
+#if IS_USED(MODULE_STATE_MANAGER_SECURITY)
     if (!_sec_ctx.valid) {
         LOG_DEBUG("[state_manager]: invalid context\n");
         return -1;
@@ -322,7 +322,7 @@ int state_manager_coap_send_infected(void)
     size_t len = state_manager_infected_serialize_cbor(buf, sizeof(buf));
     LOG_DEBUG("[state_manager]: send infected=%d, len=(%d)\n",
               state_manager_get_infected_status(), len);
-#if IS_USED(MODULE_SECURITY_CTX)
+#if IS_USED(MODULE_STATE_MANAGER_SECURITY)
     uint8_t *out = NULL;
     size_t out_len = security_ctx_encode(&_sec_ctx,
                                          buf, len,

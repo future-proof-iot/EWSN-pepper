@@ -223,8 +223,8 @@ static bool _epoch_reset = false;
 static void _pre_adjust_time(int32_t offset, void *arg)
 {
     (void)arg;
-    _epoch_reset = offset > 0 ? offset > CONFIG_EPOCH_MAX_TIME_OFFSET :
-                   -offset > CONFIG_EPOCH_MAX_TIME_OFFSET;
+    _epoch_reset = offset > 0 ? offset > (int32_t) CONFIG_EPOCH_MAX_TIME_OFFSET :
+                   -offset > (int32_t) CONFIG_EPOCH_MAX_TIME_OFFSET;
     if (_epoch_reset) {
         LOG_INFO("[pepper]: time was set back too much, bootstrap from 0\n");
         event_timeout_clear(&_silent_timeout);

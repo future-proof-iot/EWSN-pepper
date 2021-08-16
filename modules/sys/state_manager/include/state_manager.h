@@ -25,10 +25,14 @@
 #include <stdbool.h>
 
 #include "kernel_defines.h"
-#if (IS_USED(MODULE_COAP_UTILS))
+#if IS_USED(MODULE_COAP_UTILS)
 #include "net/sock/udp.h"
 #endif
 #include "uwb_epoch.h"
+
+#if IS_USED(MODULE_STATE_MANAGER_SECURITY)
+#include "event.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -41,7 +45,7 @@ extern "C" {
 #define CONFIG_STATE_MANAGER_EDHOC_S      5
 #endif
 
-#if IS_USED(MODULE_SECURITY_CTX)
+#if IS_USED(MODULE_STATE_MANAGER_SECURITY)
 /**
  * @brief   PEPPER server CTX id 'PEPPER'
  */
@@ -155,7 +159,7 @@ int state_manager_coap_send_ertl(uwb_epoch_data_t *data);
 int state_manager_coap_send_infected(void);
 #endif
 
-#if IS_USED(MODULE_SECURITY_CTX)
+#if IS_USED(MODULE_STATE_MANAGER_SECURITY)
 /**
  * @brief   Sets up a periodic task to attemp EDHOC key exchange if
  *          IPV6 connectivity is found

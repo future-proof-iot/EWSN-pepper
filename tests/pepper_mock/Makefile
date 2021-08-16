@@ -33,8 +33,7 @@ USEMODULE += uwb_epoch
 USEMODULE += uwb_ed_bpf
 USEMODULE += ztimer_epoch
 USEMODULE += state_manager
-USEMODULE += edhoc_coap
-USEMODULE += security_ctx
+USEMODULE += state_manager_security
 
 # Include event modules
 USEMODULE += event_thread

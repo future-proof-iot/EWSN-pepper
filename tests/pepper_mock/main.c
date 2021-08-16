@@ -154,7 +154,9 @@ int main(void)
     /* Initialize state manager */
     state_manager_init();
     state_manager_set_remote(&remote);
+#if IS_USED(MODULE_STATE_MANAGER_SECURITY)
     state_manager_security_init(EVENT_PRIO_MEDIUM);
+#endif
     printf("Pepper Mock, id: %s\n", state_manager_get_id());
 
     /* Set a default routable address for the native node */
