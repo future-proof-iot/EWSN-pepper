@@ -7,13 +7,14 @@
  */
 
 /**
- * @defgroup    sys_edho_coap
+ * @defgroup    sys_edhoc_coap
  * @ingroup     sys
  * @brief       EDHOC CoAP based utilities
  *
  * @{
  *
- * @file
+ * @file        Utilities to initiate an EDHOC CoAP context and perform simple
+ *              a key exchange (initiator side)
  *
  * @author      Francisco Molina <francois-xavier.molina@inria.fr>
  */
@@ -33,22 +34,59 @@
 extern "C" {
 #endif
 
+/**
+ * @brief       The default BUFFER size for EDHOC messages
+ */
+#ifndef CONFIG_COAP_EDHOC_BUF_SIZE
 #define CONFIG_COAP_EDHOC_BUF_SIZE          256
-#define CONFIG_COAP_EDHOC_RESOURCE          "/.well-known/edhoc"
+#endif
 
+/**
+ * @brief       The default EDHOC resource
+ */
+#ifndef CONFIG_COAP_EDHOC_RESOURCE
+#define CONFIG_COAP_EDHOC_RESOURCE          "/.well-known/edhoc"
+#endif
+
+/**
+ * @brief       Utility wrapper to hold all required EDHOC-C strucutres
+ */
 typedef struct edhoc_coap_ctx {
-    edhoc_ctx_t ctx;
-    edhoc_conf_t conf;
-    rpk_t rpk;
-    cred_id_t id;
-    edhoc_cose_key_t key;
-    struct tc_sha256_state_struct sha;
+    edhoc_ctx_t ctx;                    /**< the edhoc context */
+    edhoc_conf_t conf;                  /**< edhoc configuration struct */
+    rpk_t rpk;                          /**< the credentials */
+    cred_id_t id;                       /**< the credential id */
+    edhoc_cose_key_t key;               /**< authkey structure */
+    struct tc_sha256_state_struct sha;  /**< the hash context*/
 } edhoc_coap_ctx_t;
 
-int edhoc_coap_init(edhoc_coap_ctx_t *ctx, edhoc_role_t role, uint8_t* id, size_t id_len);
 
+/**
+ * @brief       Init an EDHOC CoAP context
+ *
+ * @param[inout]    ctx     The context to initiate
+ * @param[inout]    role    The edhoc role, EDHOC_IS_INITIATOR/EDHOC_IS_RESPONDER
+ * @param[in]       id      Pointer to the device ID matching its credentials ID
+ * @param[in]       id_len  The ID length
+ */
+int edhoc_coap_init(edhoc_coap_ctx_t *ctx, edhoc_role_t role, uint8_t *id,
+                    size_t id_len);
+
+/**
+ * @brief       Perform a EDHOC key exchange agains the remote endpoint
+ *
+ *
+ * @param[in]       ctx     The edhoc context
+ * @param[in]       remote  The remote endpoint
+ * @param[in]       methog  The authentication method, only EDHOC_AUTH_SIGN_SIGN
+ *                          currently supported
+ * @param[in]       suite   The cipher suit to use, only EDHOC_CIPHER_SUITE_0 is
+ *                          supported
+ *
+ * @returns     0 id succeeded, <0 otherwise
+ */
 int edhoc_coap_handshake(edhoc_ctx_t *ctx, sock_udp_ep_t *remote,
-                         uint8_t method, uint8_t cypher_suit);
+                         uint8_t method, uint8_t suite);
 
 #ifdef __cplusplus
 }

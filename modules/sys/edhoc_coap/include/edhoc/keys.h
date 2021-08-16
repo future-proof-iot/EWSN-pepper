@@ -7,16 +7,17 @@
  */
 
 /**
- * @ingroup     tests
  * @{
+ * @ingroup     sys_edhoc_coap
  *
  * @file
- * @brief       Certificates and keys for the edhoc example. This values
- *              are taken from the IETF lake WG test vectors, specifically
- *              test vector 34900, see:
- *              https://github.com/lake-wg/edhoc/blob/5ef58e6ee998f4b9aca4b53b35e87375ca356f32/test-vectors-05/vectors.txt
+ * @brief       This header describes utilities for a credential database, this
+ *              allows for multiple devices to be provided and access the same
+ *              credentials easily.
  *
- * @author      Timothy Claeys <timothy.claeys@inria.fr>
+ *              Credentials should be CBOR encoded to match the EDHOC-C keys
+ *              parsing API.
+ *
  * @author      Francisco Molina <francois-xavier.molina@inria.fr>
  *
  * @}
@@ -32,6 +33,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
 /**
  * @brief     Credential database  entry
  */
@@ -46,14 +48,52 @@ typedef struct {
     size_t cred_len;            /**< credential length */
 } cred_db_entry_t;
 
-const volatile cred_db_entry_t* edhoc_keys_get(uint8_t *id_value, size_t id_value_len);
+/**
+ * @brief   Retrieves a credential database entry based on an Key ID
+ *
+ * @param[in]   id_value        Pointer to the key ID
+ * @param[in]   id_value_len    Length of the key ID
+ *
+ * @return      pointer to the entry, NULL if not found
+ */
+const volatile cred_db_entry_t *edhoc_keys_get(uint8_t *id_value, size_t id_value_len);
 
+/**
+ * @brief   Returns CBOR encoded credentials (RPK) matching the provided key id
+ *
+ * @param[in]       k           The key to match
+ * @param[in]       k_len       The length of the key id to match
+ * @param[inout]    o           Pointer to the credential buffer, NULL if not found
+ * @param[inout]    o_len       Length of the matched credential, 0 if not found
+ *
+ * @returns         0 if found, <0 otherwise
+ */
 int edhoc_keys_get_cred(const uint8_t *k, size_t k_len, const uint8_t **o, size_t *o_len);
 
+
+/**
+ * @brief   Returns CBOR encoded authentication key matching the provided key id
+ *
+ * @param[in]       k           The key to match
+ * @param[in]       k_len       The length of the key id to match
+ * @param[inout]    o           Pointer to the credential buffer, NULL if not found
+ * @param[inout]    o_len       Length of the matched credential, 0 if not found
+ *
+ * @returns         0 if found, <0 otherwise
+ */
 int edhoc_keys_get_auth_key(const uint8_t *k, size_t k_len, const uint8_t **o, size_t *o_len);
 
+/**
+ * @brief   Returns CBOR encoded Key ID matching the provided key id
+ *
+ * @param[in]       k           The key to match
+ * @param[in]       k_len       The length of the key id to match
+ * @param[inout]    o           Pointer to the credential buffer, NULL if not found
+ * @param[inout]    o_len       Length of the matched credential, 0 if not found
+ *
+ * @returns         0 if found, <0 otherwise
+ */
 int edhoc_keys_get_cred_id(const uint8_t *k, size_t k_len, const uint8_t **o, size_t *o_len);
-
 
 #ifdef __cplusplus
 }
