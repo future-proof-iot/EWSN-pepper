@@ -2,7 +2,7 @@ variables:
   GIT_SUBMODULE_STRATEGY: normal
 
 default:
-  image: riot/riotbuild
+  image: fjmolinas/riotpepper
 
 stages:
   - static-checks
