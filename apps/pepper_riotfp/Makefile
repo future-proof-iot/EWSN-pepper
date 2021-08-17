@@ -32,7 +32,7 @@ USEMODULE += coap_utils
 
 #### RIOT-fp related modules ####
 # Add bpf update related modules
-# USEMODULE += uwb_ed_bpf
+USEMODULE += uwb_ed_bpf
 # Add Edhoc realted Modules
 # USEMODULE += state_manager_security
 

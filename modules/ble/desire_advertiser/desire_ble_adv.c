@@ -139,7 +139,7 @@ static void dbg_print_ebid_mgr(void)
 {
     DEBUG("Current Ebid Information:\n");
     dbg_dump_buffer("\t ebid = ", ebid_get(&ebid_mgr.ebid), EBID_SIZE, '\n');
-    DEBUG("\t cid = %lX, sid=%d\n", ebid_mgr.cid, ebid_mgr.sid);
+    DEBUG("\t cid = %"PRIx32", sid=%d\n", ebid_mgr.cid, ebid_mgr.sid);
     dbg_dump_buffer("\t current_ebid_slice = ", ebid_mgr.current_ebid_slice,
                     EBID_SLICE_SIZE_LONG, '\n');
 
@@ -148,9 +148,9 @@ static void dbg_print_ebid_mgr(void)
                     DESIRE_ADV_PAYLOAD_SIZE, '\n');
 
     DEBUG("Current timings\n");
-    DEBUG("\t ticks: slice=%ld, ebid=%ld", ebid_mgr.ticks.slice,
+    DEBUG("\t ticks: slice=%"PRIu32", ebid=%"PRIu32"", ebid_mgr.ticks.slice,
           ebid_mgr.ticks.ebid);
-    DEBUG("\t limits: slice=%d, ebid=%d\n", ebid_mgr.limits.slice_adv_time_sec,
+    DEBUG("\t limits: slice=%"PRIu16", ebid=%"PRIu16"\n", ebid_mgr.limits.slice_adv_time_sec,
           ebid_mgr.limits.ebid_adv_time_sec);
 
 }

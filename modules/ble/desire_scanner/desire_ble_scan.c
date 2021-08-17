@@ -29,6 +29,7 @@ static struct ble_gap_conn_params _conn_params;
 static uint32_t _conn_timeout;
 #endif
 
+#if IS_USED(MODULE_DESIRE_SCANNER_NETIF)
 enum {
     STATE_IDLE,
     STATE_CONNECTED,
@@ -37,7 +38,6 @@ enum {
 };
 static volatile uint8_t _state = STATE_IDLE;
 
-#if IS_USED(MODULE_DESIRE_SCANNER_NETIF)
 static int _filter_uuid(const bluetil_ad_t *ad)
 {
     bluetil_ad_data_t incomp;
@@ -119,7 +119,7 @@ static void _on_scan_evt(uint8_t type, const ble_addr_t *addr, int8_t rssi,
     bluetil_ad_t ad = BLUETIL_AD_INIT((uint8_t *)adv, adv_len, adv_len);
 
     /* dummy print ts: sender, rssi, adv data */
-    DEBUG("t=%ld: rssi = %d, adv_type = %s, ", now, rssi, dbg_parse_ble_adv_type(
+    DEBUG("t=%"PRIu32": rssi = %d, adv_type = %s, ", now, rssi, dbg_parse_ble_adv_type(
               type));
     if (IS_ACTIVE(ENABLE_DEBUG)) {
         dbg_print_ble_addr(addr);

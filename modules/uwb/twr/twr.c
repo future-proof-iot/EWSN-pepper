@@ -95,8 +95,8 @@ static bool _complete_cb(struct uwb_dev *inst, struct uwb_mac_interface *cbs)
 
     if (_usr_rng_callback == NULL) {
         LOG_DEBUG("[twr]: %" PRIu16 ", no usr callback\n", data.addr);
-        LOG_DEBUG("\t - range: %" PRIu16 ".%" PRIu16 "\n", data.range / 100,
-                  data.range % 100);
+        LOG_DEBUG("\t - range: %" PRIu16 ".%" PRIu16 "\n",
+                  (uint16_t)(data.range / 100U), (uint16_t)(data.range % 100U));
         LOG_DEBUG("\t - time: %" PRIu32 "\n", data.time);
     }
     else {
