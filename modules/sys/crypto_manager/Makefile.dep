@@ -1,5 +1,5 @@
-USEMODULE += crypto_manager_hacl
-# USEMODULE += crypto_manager_c25519
+# USEMODULE += crypto_manager_hacl
+USEMODULE += crypto_manager_c25519
 # USEMODULE += crypto_manager_wolfssl
 
 USEMODULE += hashes
