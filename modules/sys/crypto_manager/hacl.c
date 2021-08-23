@@ -26,7 +26,6 @@
 #include "crypto_manager.h"
 
 #include "kernel_defines.h"
-#include "hashes/sha256.h"
 
 #include "random.h"
 #ifndef KRML_NOUINT128
@@ -82,45 +81,3 @@ int crypto_manager_shared_secret(uint8_t *sk, uint8_t *pk, uint8_t *secret)
 
     return 0;
 }
-
-int crypto_manager_gen_pet(crypto_manager_keys_t *keys, uint8_t *pk,
-                           const uint8_t prefix, uint8_t *pet)
-{
-    assert(keys && pk && prefix && pet);
-    uint8_t secret[PET_SIZE] = {0};
-    /* clear pet */
-    memset(pet, 0, PET_SIZE);
-
-    if (crypto_manager_shared_secret(keys->sk, pk, secret)) {
-        DEBUG("[crypto_manager]: failed secret generation");
-        return -1;
-    }
-
-    /* calculate hash of prefix | secret */
-    sha256_context_t sha256;
-    sha256_init(&sha256);
-    sha256_update(&sha256, &prefix, 1);
-    sha256_update(&sha256, secret, PET_SIZE);
-    sha256_final(&sha256, pet);
-
-    return 0;
-}
-
-int crypto_manager_gen_pets(crypto_manager_keys_t *keys, uint8_t *ebid,
-                            pet_t* pet)
-{
-    assert(keys && ebid && pet);
-
-    int8_t pk_gt_ebid = array_a_greater_than_b(keys->pk, ebid);
-    if (pk_gt_ebid == -1) {
-        return -1;
-    } else if (pk_gt_ebid == 0) {
-        crypto_manager_gen_pet(keys, ebid, 0x02, pet->et);
-        crypto_manager_gen_pet(keys, ebid, 0x01, pet->rt);
-    } else {
-        crypto_manager_gen_pet(keys, ebid, 0x01, pet->et);
-        crypto_manager_gen_pet(keys, ebid, 0x02, pet->rt);
-    }
-    return 0;
-}
-

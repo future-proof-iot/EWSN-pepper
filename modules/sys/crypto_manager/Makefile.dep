@@ -1,23 +1,22 @@
-USEMODULE += crypto_manager_hacl
-# USEMODULE += crypto_manager_c25519
+# USEMODULE += crypto_manager_hacl
+USEMODULE += crypto_manager_c25519
 # USEMODULE += crypto_manager_wolfssl
+
+USEMODULE += hashes
 
 ifneq (,$(filter crypto_manager_wolfssl,$(USEMODULE)))
   USEPKG += wolfssl
   USEMODULE += wolfcrypt
   USEMODULE += wolfcrypt_curve25519
   USEMODULE += wolfcrypt_random
-  USEMODULE += hashes
 endif
 
 ifneq (,$(filter crypto_manager_c25519, $(USEMODULE)))
   USEPKG += c25519
   USEMODULE += random
-  USEMODULE += hashes
 endif
 
 ifneq (,$(filter crypto_manager_hacl, $(USEMODULE)))
   USEPKG += hacl
   USEMODULE += random
-  USEMODULE += hashes
 endif
