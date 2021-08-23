@@ -1,2 +1,4 @@
 USEMODULE_INCLUDES_security_ctx := $(LAST_MAKEFILEDIR)/include
 USEMODULE_INCLUDES += $(USEMODULE_INCLUDES_security_ctx)
+
+PSEUDOMODULES += security_ctx_tinycrypt

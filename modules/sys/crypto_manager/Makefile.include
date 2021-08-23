@@ -3,3 +3,4 @@ USEMODULE_INCLUDES += $(USEMODULE_INCLUDES_crypto_manager)
 
 PSEUDOMODULES += crypto_manager_wolfssl
 PSEUDOMODULES += crypto_manager_c25519
+PSEUDOMODULES += crypto_manager_hacl
