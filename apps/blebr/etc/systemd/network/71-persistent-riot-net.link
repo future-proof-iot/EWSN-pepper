@@ -1,0 +1,5 @@
+[Match]
+Property=ID_MODEL=RIOTblebr
+
+[Link]
+Name=blebr0

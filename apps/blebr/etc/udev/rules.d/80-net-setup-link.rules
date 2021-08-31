@@ -1,0 +1,2 @@
+ENV{ID_MODEL}=="RIOTblebr", NAME="blebr0"
+
