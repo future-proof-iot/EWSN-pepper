@@ -1,0 +1,12 @@
+[Unit]
+Description=Ble Border Router Setup Service
+Wants=network-online.target
+After=network-online.target
+After=time-sync.target
+StopWhenUnneeded=yes
+
+[Service]
+ExecStart=/usr/local/sbin/blebr
+
+[Install]
+WantedBy=sys-subsystem-net-devices-blebr0.device
