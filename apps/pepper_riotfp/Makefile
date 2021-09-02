@@ -54,6 +54,9 @@ USEMODULE += shell_commands
 USEMODULE += ps
 # This will enable demo features on the buttons
 FEATURES_OPTIONAL += periph_gpio_irq
+# Add suit_storage_flashwrite to update firmware as well
+USEMODULE += suit_storage_flashwrite
+USEMODULE += progress_bar
 
 # The event thread will handle:
 # * advertisement
