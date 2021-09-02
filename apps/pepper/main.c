@@ -45,6 +45,9 @@
 #define CONFIG_TWR_MIN_OFFSET                   3
 #endif
 
+#define MAIN_QUEUE_SIZE     (4)
+static msg_t _main_msg_queue[MAIN_QUEUE_SIZE];
+
 static uwb_epoch_data_t uwb_epoch_data;
 static uwb_epoch_data_t uwb_epoch_data_serialize;
 static uwb_ed_list_t uwb_ed_list;
@@ -286,6 +289,9 @@ int main(void)
     current_time_add_post_cb(&_post_hook);
     /* begin and align epoch */
     _aligned_epoch_start();
+    /* the shell contains commands that receive packets via GNRC and thus
+       needs a msg queue */
+    msg_init_queue(_main_msg_queue, MAIN_QUEUE_SIZE);
     /* start shell */
     char line_buf[SHELL_DEFAULT_BUFSIZE];
     shell_run(_commands, line_buf, SHELL_DEFAULT_BUFSIZE);
