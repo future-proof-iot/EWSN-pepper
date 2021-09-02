@@ -109,7 +109,7 @@ static void _adv_cb(uint32_t ts, void *arg)
      */
     uwb_ed_t *next = (uwb_ed_t *)uwb_ed_list.list.next;
     if (!next) {
-        LOG_INFO("[pepper]: skip, no neigh\n");
+        LOG_DEBUG("[pepper]: skip, no neigh\n");
         return;
     }
     do {
