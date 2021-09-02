@@ -34,7 +34,7 @@ USEMODULE += coap_utils
 # Add bpf update related modules
 USEMODULE += uwb_ed_bpf
 # Add Edhoc realted Modules
-# USEMODULE += state_manager_security
+USEMODULE += state_manager_security
 
 #### Application required modules ####
 USEMODULE += event_thread
