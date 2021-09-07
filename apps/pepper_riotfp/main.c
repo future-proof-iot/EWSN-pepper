@@ -60,6 +60,9 @@
 #define CONFIG_PEPPER_SERVER_ADDR               "fd00:dead:beef::1"
 #endif
 
+#define MAIN_QUEUE_SIZE     (4)
+static msg_t _main_msg_queue[MAIN_QUEUE_SIZE];
+
 #if IS_USED(MODULE_DESIRE_SCANNER_NETIF)
 static sock_udp_ep_t remote;
 #endif
@@ -358,6 +361,9 @@ int main(void)
     current_time_add_post_cb(&_post_hook);
     /* begin and align epoch */
     _aligned_epoch_start();
+    /* the shell contains commands that receive packets via GNRC and thus
+       needs a msg queue */
+    msg_init_queue(_main_msg_queue, MAIN_QUEUE_SIZE);
     /* start shell */
     char line_buf[SHELL_DEFAULT_BUFSIZE];
     shell_run(_commands, line_buf, SHELL_DEFAULT_BUFSIZE);
