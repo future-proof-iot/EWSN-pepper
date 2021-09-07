@@ -199,7 +199,7 @@ in another terminal and in this directory (keep the terminal open)
 
 ```
 $ mkdir coaproot
-$ aiocoap-fileserver coaproot
+$ aiocoap-fileserver coaproot --bind [fd00:dead:beef::1]:5684
 ```
 
 Now new firmware can be deployed and pushed to the devices, e.g: change the relevant distance threshold:
