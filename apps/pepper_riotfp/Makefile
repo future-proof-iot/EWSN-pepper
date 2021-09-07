@@ -73,7 +73,7 @@ CFLAGS += -DCONFIG_GCOAP_RESEND_BUFS_MAX=4
 
 # SUIT configuration
 # If following the README this will be the SUIT_COAP server configuration
-SUIT_COAP_SERVER ?= [fd00:dead:beef::1]
+SUIT_COAP_SERVER ?= [fd00:dead:beef::1]:5684
 SUIT_COAP_FSROOT ?= $(CURDIR)/coaproot
 
 # GNRC PKTBUF is allocated in order to handler 4 full-MTU IPV6 packets,
