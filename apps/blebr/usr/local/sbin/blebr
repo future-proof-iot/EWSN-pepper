@@ -1,0 +1,78 @@
+#!/usr/bin/env bash
+
+#
+: ${UHCPD:="$(readlink -f $(dirname $0)"")/uhcpd."$(dpkg --print-architecture)""}
+# Default values
+: ${BORDER_ROUTER_LINKLOCAL="fe80::2"}
+: ${INTERFACE_LINKLOCAL="fe80::1/64"}
+
+# parse arguments
+while getopts "i:p:s" name; do
+  case $name in
+    i)  i="$OPTARG";;
+    p)  p="$OPTARG";;
+    s)  s="$OPTARG";;
+    ?)  printf "Usage: %s [-i interface] [-p ipv6 prefix ] [-s server-address]\n" "$0"
+        exit 2;;
+  esac
+done
+
+# Default Interface
+if [ -z "$i" ]; then
+    readonly INTERFACE=blebr0
+else
+    readonly INTERFACE=$i
+fi
+
+# Default Prefix
+if [ -z "$p" ]; then
+    readonly PREFIX=fd5b:4097:edc1:6a1c::/64
+else
+    readonly PREFIX=$p
+fi
+
+# Default Prefix
+if [ -z "$s" ]; then
+    readonly SERVER_ADDR=fd00:dead:beef::1/128
+else
+    readonly SERVER_ADDR=$p
+fi
+
+start_uhcpd() {
+    ${UHCPD} "${INTERFACE}" "${PREFIX}"
+    UHCPD_PID=$!
+}
+
+setup_interface() {
+    echo "Setup interface..."
+    sysctl -w net.ipv6.conf."${INTERFACE}".forwarding=1
+    sysctl -w net.ipv6.conf."${INTERFACE}".accept_ra=0
+    ip link set "${INTERFACE}" up
+    ip a a "${INTERFACE_LINKLOCAL}" dev "${INTERFACE}"
+    ip a a "${SERVER_ADDR}" dev lo
+    ip route add "${PREFIX}" via "${BORDER_ROUTER_LINKLOCAL}" dev "${INTERFACE}"
+}
+
+cleanup_interface() {
+    echo "Cleanup interface..."
+    ip a d "${INTERFACE_LINKLOCAL}" dev "${INTERFACE}"
+    ip a d "${SERVER_ADDR}" dev lo
+    ip route del "${PREFIX}" via "${BORDER_ROUTER_LINKLOCAL}" dev "${INTERFACE}"
+}
+
+cleanup() {
+    echo "Cleaning up..."
+    cleanup_interface
+    if [ -n "${UHCPD_PID}" ]; then
+        kill ${UHCPD_PID}
+    fi
+    trap "" INT QUIT TERM EXIT
+}
+
+main(){
+    setup_interface
+    start_uhcpd
+}
+
+trap "cleanup" INT QUIT TERM EXIT
+main "$@"
