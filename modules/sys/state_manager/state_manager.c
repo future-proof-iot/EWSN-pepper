@@ -157,11 +157,11 @@ void state_manager_set_esr(bool esr)
     _esr = esr;
     if (_esr) {
         LOG_INFO("[state_manager]: exposed!\n");
-#ifdef LED0_PIN
-        LED0_ON;
+#ifdef LED3_PIN
+        LED3_ON;
     }
     else {
-        LED0_OFF;
+        LED3_OFF;
 #endif
     }
 }
@@ -207,11 +207,14 @@ void state_manager_security_init(event_queue_t *queue)
     security_ctx_init(&_sec_ctx, (uint8_t *)_uid, strlen(_uid),
                       (uint8_t *)pepper_server_id, sizeof(pepper_server_id));
     /* setup initiator context */
-    edhoc_coap_init(&_edhoc_ctx, EDHOC_IS_INITIATOR, (uint8_t*) _uid, strlen(_uid));
-    /* set up periodic callback */
-    event_periodic_init(&_handshake_periodic, ZTIMER_EPOCH, queue,
-                        &_handshake_event.super);
-    event_periodic_start(&_handshake_periodic, CONFIG_STATE_MANAGER_EDHOC_S);
+    if (edhoc_coap_init(&_edhoc_ctx, EDHOC_IS_INITIATOR, (uint8_t *)_uid,
+                        strlen(_uid)) == 0) {
+        /* set up periodic callback */
+        event_periodic_init(&_handshake_periodic, ZTIMER_EPOCH, queue,
+                            &_handshake_event.super);
+        event_periodic_start(&_handshake_periodic, CONFIG_STATE_MANAGER_EDHOC_S);
+    }
+    LOG_ERROR("[state manager]: failed to initialize security\n");
 }
 #endif
 
@@ -297,10 +300,10 @@ int state_manager_coap_send_ertl(uwb_epoch_data_t *data)
                                               &ertl_cose_ptr);
         LOG_DEBUG("[state_manager]: encrypted ertl, len=(%d)\n", cose_len);
         return coap_block_post(_remote, &_block_ctx, ertl_cose_ptr, cose_len,
-                        _ertl_uri, COAP_FORMAT_CBOR, COAP_TYPE_NON);
+                               _ertl_uri, COAP_FORMAT_CBOR, COAP_TYPE_NON);
 #else
         return coap_block_post(_remote, &_block_ctx, ertl_buf, data_len,
-                        _ertl_uri, COAP_FORMAT_CBOR, COAP_TYPE_NON);
+                               _ertl_uri, COAP_FORMAT_CBOR, COAP_TYPE_NON);
 #endif
     }
     return -1;
