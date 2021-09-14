@@ -7,7 +7,7 @@
  */
 
 /**
- * @ingroup     module_coap_initiator
+ * @ingroup     module_edhoc_coap
  * @{
  *
  * @file
@@ -69,7 +69,7 @@ int edhoc_coap_init(edhoc_coap_ctx_t *ctx, edhoc_role_t role, uint8_t* id, size_
     /* recover node assigned credentials*/
     const volatile cred_db_entry_t* entry = edhoc_keys_get(id, id_len);
     if (!entry) {
-        DEBUG_PUTS("[coap_initiator]: could not find credentials");
+        DEBUG_PUTS("[edhoc_coap]: could not find credentials");
         return -1;
     }
     /* reset all structures */
@@ -80,11 +80,11 @@ int edhoc_coap_init(edhoc_coap_ctx_t *ctx, edhoc_role_t role, uint8_t* id, size_
     edhoc_cose_key_init(&ctx->key);
 
     /* load keys from cbor */
-    DEBUG_PUTS("[coap_initiator]: load private authentication key");
+    DEBUG_PUTS("[edhoc_coap]: load private authentication key");
     if (edhoc_cose_key_from_cbor(&ctx->key, entry->auth_key, entry->auth_key_len) != 0) {
         return -1;
     }
-    DEBUG_PUTS("[coap_initiator]: load and set CBOR RPK");
+    DEBUG_PUTS("[edhoc_coap]: load and set CBOR RPK");
     if (cred_rpk_from_cbor(&ctx->rpk, entry->cred, entry->cred_len) != 0) {
         return -1;
     }
@@ -93,12 +93,12 @@ int edhoc_coap_init(edhoc_coap_ctx_t *ctx, edhoc_role_t role, uint8_t* id, size_
     if (cred_id_from_cbor(&ctx->id, entry->id, entry->id_len) != 0) {
         return -1;
     }
-    DEBUG_PUTS("[coap_initiator]: set up EDHOC callbacks and role");
+    DEBUG_PUTS("[edhoc_coap]: set up EDHOC callbacks and role");
     edhoc_conf_setup_ad_callbacks(&ctx->conf, NULL, NULL, NULL);
     if (edhoc_conf_setup_role(&ctx->conf, role) != 0) {
         return -1;
     }
-    DEBUG_PUTS("[coap_initiator]: set up EDHOC credentials");
+    DEBUG_PUTS("[edhoc_coap]: set up EDHOC credentials");
     if (edhoc_conf_setup_credentials(&ctx->conf, &ctx->key, CRED_TYPE_RPK,
                                      &ctx->rpk, &ctx->id, edhoc_keys_get_cred) != 0) {
         return -1;
