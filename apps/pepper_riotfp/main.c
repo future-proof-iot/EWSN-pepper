@@ -1,6 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "board.h"
+#include "periph/gpio.h"
+
 #include "ztimer.h"
 #include "random.h"
 #include "shell.h"
@@ -30,8 +33,6 @@
 #endif
 #include "log.h"
 
-#include "board.h"
-#include "periph/gpio.h"
 #ifndef CONFIG_EPOCH_SILENT_PERIOD_MIN_S
 #define CONFIG_EPOCH_SILENT_PERIOD_MIN_S        1
 #endif
@@ -59,6 +60,8 @@
 #ifndef CONFIG_PEPPER_SERVER_ADDR
 #define CONFIG_PEPPER_SERVER_ADDR               "fd00:dead:beef::1"
 #endif
+
+#define SUIT_MANIFEST_URI                       SUIT_COAP_ROOT "/pepper_riotfp-bpf_signed.latest.bin"
 
 #define MAIN_QUEUE_SIZE     (4)
 static msg_t _main_msg_queue[MAIN_QUEUE_SIZE];
@@ -343,6 +346,9 @@ int main(void)
     uwb_ed_list_init(&uwb_ed_list, &manager, &ebid);
 #if IS_USED(MODULE_UWB_ED_BPF)
     uwb_ed_bpf_init();
+#endif
+#if IS_USED(MODULE_SUIT_PERIODIC_FETCH)
+    suit_coap_set_manifest_resource(SUIT_MANIFEST_URI);
 #endif
     /* init twr */
     twr_event_mem_manager_init(&twr_manager);

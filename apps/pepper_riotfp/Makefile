@@ -56,7 +56,7 @@ USEMODULE += ps
 FEATURES_OPTIONAL += periph_gpio_irq
 # Add suit_storage_flashwrite to update firmware as well
 USEMODULE += suit_storage_flashwrite
-USEMODULE += progress_bar
+USEMODULE += suit_periodic_fetch
 
 # The event thread will handle:
 # * advertisement
@@ -75,6 +75,7 @@ CFLAGS += -DCONFIG_GCOAP_RESEND_BUFS_MAX=4
 # If following the README this will be the SUIT_COAP server configuration
 SUIT_COAP_SERVER ?= [fd00:dead:beef::1]:5684
 SUIT_COAP_FSROOT ?= $(CURDIR)/coaproot
+CFLAGS += -DSUIT_COAP_ROOT=\"$(SUIT_COAP_ROOT)\"
 
 # GNRC PKTBUF is allocated in order to handler 4 full-MTU IPV6 packets,
 # we are not using the full MTU so there should be no need for such a huge
