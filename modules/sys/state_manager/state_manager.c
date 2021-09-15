@@ -210,9 +210,9 @@ void state_manager_security_init(event_queue_t *queue)
     if (edhoc_coap_init(&_edhoc_ctx, EDHOC_IS_INITIATOR, (uint8_t *)_uid,
                         strlen(_uid)) == 0) {
         /* set up periodic callback */
-        event_periodic_init(&_handshake_periodic, ZTIMER_EPOCH, queue,
+        event_periodic_init(&_handshake_periodic, ZTIMER_MSEC, queue,
                             &_handshake_event.super);
-        event_periodic_start(&_handshake_periodic, CONFIG_STATE_MANAGER_EDHOC_S);
+        event_periodic_start(&_handshake_periodic, CONFIG_STATE_MANAGER_EDHOC_S * MS_PER_SEC);
     }
     LOG_ERROR("[state manager]: failed to initialize security\n");
 }
