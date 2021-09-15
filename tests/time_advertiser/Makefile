@@ -16,6 +16,9 @@ CFLAGS += -DNIMBLE_AUTOADV_FLAG_FIELD=0
 # Advertisement packet header
 CFLAGS += -I$(CURDIR)/../../modules/ble/include
 
+# Add a USB product string for udev rules mapping
+CFLAGS += -DCONFIG_USB_PRODUCT_STR=\"RIOTbletimeadv\"
+
 # event module
 USEMODULE += event_timeout_ztimer
 USEMODULE += event_thread
