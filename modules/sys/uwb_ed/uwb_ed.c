@@ -113,7 +113,7 @@ int uwb_ed_add_slice(uwb_ed_t *uwb_ed, uint16_t time, const uint8_t *slice,
         if (ebid_reconstruct(&uwb_ed->ebid) == 0) {
             uwb_ed->seen_first_s = time;
             uwb_ed->seen_last_s = time;
-            LOG_INFO("[discovery]: saw new ebid:\n\t");
+            LOG_INFO("[discovery]: saw new ebid t=(%" PRIu16 "s):\n\t", time);
             for (uint8_t i = 0; i < EBID_SIZE; i++) {
                 if ((i + 1) % 8 == 0 && i != (EBID_SIZE - 1)) {
                     LOG_INFO("0x%02x\n\t", uwb_ed->ebid.parts.ebid.u8[i]);
@@ -189,7 +189,7 @@ bool uwb_ed_finish(uwb_ed_t *uwb_ed)
         }
     }
     else {
-        LOG_DEBUG("[uwb_ed]: not enough exposure %" PRIu32 " %" PRIu32 "\n",
+        LOG_DEBUG("[uwb_ed]: not enough exposure %" PRIu16 " %" PRIu16 "\n",
                   uwb_ed->seen_last_s, uwb_ed->seen_first_s);
     }
     return false;
