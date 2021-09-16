@@ -57,8 +57,8 @@ typedef struct uwb_uwb_ed {
     uint32_t cumulative_d_cm;   /**< cumulative distance in cm */
     uint32_t cid;               /**< the cid */
     uint16_t req_count;         /**< request message count */
-    uint32_t seen_first_s;      /**< time of first message, relative to start of epoch [s] */
-    uint32_t seen_last_s;       /**< time of last message, relative to start of epoch [s] */
+    uint16_t seen_first_s;      /**< time of first message, relative to start of epoch [s] */
+    uint16_t seen_last_s;       /**< time of last message, relative to start of epoch [s] */
 } uwb_ed_t;
 
 /**

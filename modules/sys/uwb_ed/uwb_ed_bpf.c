@@ -33,7 +33,7 @@
 #include "blob/bpf/contact_filter.bin.h"
 
 #ifndef LOG_LEVEL
-#define LOG_LEVEL   LOG_DEBUG
+#define LOG_LEVEL   LOG_INFO
 #endif
 #include "log.h"
 
@@ -58,14 +58,14 @@ static gcoap_listener_t _suit_listener = {
 
 static void _lock_region(void* arg)
 {
-    LOG_DEBUG("[uwb_ed_bpf]: lock region\n");
+    LOG_INFO("[femto-container]: updating, lock region\n");
     mutex_t *lock = (mutex_t*) arg;
     mutex_lock(lock);
 }
 
 static void _unlock_region(void* arg)
 {
-    LOG_DEBUG("[uwb_ed_bpf]: unlock region\n");
+    LOG_INFO("[femto-container]: update finished, unlock region\n");
     mutex_t *lock = (mutex_t*) arg;
     mutex_unlock(lock);
 }
@@ -114,8 +114,14 @@ bool uwb_ed_finish_bpf(uwb_ed_t *uwb_ed)
     };
 
     int64_t result = 0;
+    LOG_INFO("[encounter_record]: log... ");
     bpf_setup(&bpf);
     bpf_execute_ctx(&bpf, &ctx, sizeof(ctx), &result);
     mutex_unlock(&_lock);
-    return result == 1;
+    if (result == 1) {
+        LOG_INFO("YES\n");
+        return true;
+    }
+    LOG_INFO("NO\n");
+    return false;
 }

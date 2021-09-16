@@ -1,6 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "board.h"
+#include "periph/gpio.h"
+
 #include "ztimer.h"
 #include "random.h"
 #include "shell.h"
@@ -30,8 +33,6 @@
 #endif
 #include "log.h"
 
-#include "board.h"
-#include "periph/gpio.h"
 #ifndef CONFIG_EPOCH_SILENT_PERIOD_MIN_S
 #define CONFIG_EPOCH_SILENT_PERIOD_MIN_S        1
 #endif
@@ -60,6 +61,9 @@
 #define CONFIG_PEPPER_SERVER_ADDR               "fd00:dead:beef::1"
 #endif
 
+#define SUIT_MANIFEST_URI                       SUIT_COAP_ROOT \
+    "/pepper_riotfp-bpf_signed.latest.bin"
+
 #define MAIN_QUEUE_SIZE     (4)
 static msg_t _main_msg_queue[MAIN_QUEUE_SIZE];
 
@@ -77,6 +81,14 @@ static event_periodic_t uwb_epoch_end;
 static twr_event_mem_manager_t twr_manager;
 
 #if defined(MODULE_PERIPH_GPIO_IRQ) && defined(BTN0_PIN)
+static void _debounce_cb(void *arg)
+{
+    (void)arg;
+    gpio_irq_enable(BTN0_PIN);
+}
+
+ztimer_t debounce;
+
 static void _update_infected_status(void *arg)
 {
     (void)arg;
@@ -91,8 +103,11 @@ static event_callback_t _infected_event = EVENT_CALLBACK_INIT(
 static void _declare_positive(void *arg)
 {
     (void)arg;
+    gpio_irq_disable(BTN0_PIN);
     state_manager_set_infected_status(!state_manager_get_infected_status());
     event_post(EVENT_PRIO_MEDIUM, &_infected_event.super);
+    debounce.callback = _debounce_cb;
+    ztimer_set(ZTIMER_MSEC, &debounce, 2 * MS_PER_SEC);
 }
 #endif
 
@@ -144,7 +159,7 @@ static void _detection_cb(uint32_t ts, const ble_addr_t *addr, int8_t rssi,
         cid, ts, rssi, sid);
     /* process data */
     uwb_ed_t *uwb_ed = uwb_ed_list_process_slice(&uwb_ed_list, cid,
-                                                 ts / MS_PER_SEC - start_time,
+                                                 (ts / MS_PER_SEC) - start_time,
                                                  adv_payload->data.ebid_slice,
                                                  sid);
     if (uwb_ed->ebid.status.status == EBID_HAS_ALL) {
@@ -157,9 +172,10 @@ static void _detection_cb(uint32_t ts, const ble_addr_t *addr, int8_t rssi,
 
 static void _twr_complete_cb(twr_event_data_t *data)
 {
-    LOG_INFO(
-        "[pepper]: 0x%" PRIx16 " at %" PRIu16 "cm\n", data->addr, data->range);
-    uwb_ed_list_process_rng_data(&uwb_ed_list, data->addr, data->time,
+    LOG_INFO("[discovery]: 0x%" PRIx16 " at %" PRIu16 "cm\n",
+             data->addr, data->range);
+    uwb_ed_list_process_rng_data(&uwb_ed_list, data->addr,
+                                 (data->time / MS_PER_SEC) - start_time,
                                  data->range);
 }
 
@@ -168,13 +184,13 @@ static void _scan_adv_start(void *arg)
 {
     (void)arg;
     /* start advertisement */
-    LOG_INFO("[pepper]: start adv\n");
+    LOG_INFO("[epoch_setup]: start adv\n");
     desire_ble_adv_start(&ebid, CONFIG_SLICE_ROTATION_T_S,
                          CONFIG_EBID_ROTATION_T_S);
     /* set new short addr */
     twr_set_short_addr(desire_ble_adv_get_cid());
     /* start scanning */
-    LOG_INFO("[pepper]: start scanning\n");
+    LOG_INFO("[epoch_setup]: start scanning\n");
     desire_ble_scan_start(CONFIG_EBID_ROTATION_T_S * MS_PER_SEC);
 }
 static event_timeout_t _silent_timeout;
@@ -184,18 +200,23 @@ static event_callback_t _scan_adv_start_ev = EVENT_CALLBACK_INIT(
 static void _boostrap_new_epoch(void)
 {
     start_time = ztimer_now(ZTIMER_MSEC) / MS_PER_SEC;
-    LOG_INFO("[pepper]: new uwb_epoch t=%" PRIu32 "\n", (uint32_t) ztimer_now(ZTIMER_EPOCH));
+    LOG_INFO("[epoch_setup]: new epoch t=(%" PRIu32 ")\n",
+             (uint32_t)ztimer_now(ZTIMER_EPOCH));
     /* initiate epoch and generate new keys */
     uwb_epoch_init(&uwb_epoch_data, ztimer_now(ZTIMER_EPOCH), &keys);
     /* update local ebid */
     ebid_init(&ebid);
-    LOG_INFO("[pepper]: new ebid generation\n");
     ebid_generate(&ebid, &keys);
-    LOG_INFO("[pepper]: local ebid: [");
+    LOG_INFO("[epoch_setup]: new local ebid: \n\t");
     for (uint8_t i = 0; i < EBID_SIZE; i++) {
-        LOG_INFO("%d, ", ebid.parts.ebid.u8[i]);
+        if ((i + 1) % 8 == 0 && i != (EBID_SIZE - 1)) {
+            LOG_INFO("0x%02x\n\t", ebid.parts.ebid.u8[i]);
+        }
+        else {
+            LOG_INFO("0x%02x ", ebid.parts.ebid.u8[i]);
+        }
     }
-    LOG_INFO("]\n");
+    LOG_INFO("\n");
     /* random silent period */
     event_timeout_set(&_silent_timeout,
                       random_uint32_range(CONFIG_EPOCH_SILENT_PERIOD_MIN_S,
@@ -219,8 +240,10 @@ static void _serialize_uwb_epoch_handler(event_t *event)
     }
     else {
 #endif
-    LOG_INFO("[pepper]: not connected, dumping epoch data\n");
-    uwb_epoch_serialize_printf(d_event->data);
+    LOG_DEBUG("[pepper]: not connected, dumping epoch data\n");
+    if (LOG_LEVEL == LOG_DEBUG) {
+        uwb_epoch_serialize_printf(d_event->data);
+    }
 #if IS_USED(MODULE_DESIRE_SCANNER_NETIF)
 }
 #endif
@@ -232,12 +255,12 @@ static uwb_epoch_data_event_t _serialize_uwb_epoch =
 static void _end_of_uwb_epoch_handler(void *arg)
 {
     (void)arg;
-    LOG_INFO("[pepper]: end of uwb_epoch\n");
+    LOG_INFO("[epoch_teardown]: end of uwb_epoch\n");
     /* stop advertising and scanning */
     desire_ble_scan_stop();
     desire_ble_adv_stop();
     /* process uwb_epoch data */
-    LOG_INFO("[pepper]: process all uwb_epoch data\n");
+    LOG_INFO("[epoch_teardown]: process all uwb_epoch data\n");
     uwb_ed_list_finish(&uwb_ed_list);
     uwb_epoch_finish(&uwb_epoch_data, &uwb_ed_list);
     /* post serializing/offloading event */
@@ -259,8 +282,9 @@ static void _end_of_uwb_epoch_handler(void *arg)
 static event_callback_t _end_of_uwb_epoch = EVENT_CALLBACK_INIT(
     _end_of_uwb_epoch_handler, NULL);
 
-static void _aligned_epoch_start(void)
+static void _aligned_epoch_start(void* arg)
 {
+    (void)arg;
     /* setup end of uwb_epoch timeout event */
     uint32_t modulo = ztimer_now(ZTIMER_EPOCH) % CONFIG_EBID_ROTATION_T_S;
     uint32_t diff = modulo ? CONFIG_EBID_ROTATION_T_S - modulo : 0;
@@ -268,7 +292,7 @@ static void _aligned_epoch_start(void)
     /* setup end of uwb_epoch timeout event */
     event_periodic_init(&uwb_epoch_end, ZTIMER_EPOCH, EVENT_PRIO_HIGHEST,
                         &_end_of_uwb_epoch.super);
-    LOG_INFO("[pepper]: delay for %" PRIu32 "s to align uwb_epoch start\n",
+    LOG_INFO("[epoch_setup]: delay for %" PRIu32 "s to align uwb_epoch start\n",
              diff);
     ztimer_sleep(ZTIMER_EPOCH, diff);
     event_periodic_start(&uwb_epoch_end, CONFIG_EBID_ROTATION_T_S);
@@ -280,23 +304,25 @@ static bool _epoch_reset = false;
 static void _pre_adjust_time(int32_t offset, void *arg)
 {
     (void)arg;
-    _epoch_reset = offset > 0 ? offset > (int32_t) CONFIG_EPOCH_MAX_TIME_OFFSET :
-                   -offset > (int32_t) CONFIG_EPOCH_MAX_TIME_OFFSET;
+    _epoch_reset = offset > 0 ? offset > (int32_t)CONFIG_EPOCH_MAX_TIME_OFFSET :
+                   -offset > (int32_t)CONFIG_EPOCH_MAX_TIME_OFFSET;
     if (_epoch_reset) {
-        LOG_INFO("[pepper]: time was set back too much, bootstrap from 0\n");
+        LOG_INFO("[epoch_setup]: abort epoch, restart to synchronize\n");
         event_timeout_clear(&_silent_timeout);
         event_periodic_stop(&uwb_epoch_end);
         desire_ble_adv_stop();
         desire_ble_scan_stop();
     }
 }
+static event_callback_t _align_epoch_event = EVENT_CALLBACK_INIT(
+    _aligned_epoch_start, NULL);
 static current_time_hook_t _pre_hook;
 static void _post_adjust_time(int32_t offset, void *arg)
 {
     (void)offset;
     bool *epoch_restart = (bool *)arg;
     if (*epoch_restart) {
-        _aligned_epoch_start();
+        event_post(EVENT_PRIO_HIGHEST, &_align_epoch_event.super);
         *epoch_restart = false;
     }
 }
@@ -344,6 +370,9 @@ int main(void)
 #if IS_USED(MODULE_UWB_ED_BPF)
     uwb_ed_bpf_init();
 #endif
+#if IS_USED(MODULE_SUIT_PERIODIC_FETCH)
+    suit_coap_set_manifest_resource(SUIT_MANIFEST_URI);
+#endif
     /* init twr */
     twr_event_mem_manager_init(&twr_manager);
     twr_managed_set_manager(&twr_manager);
@@ -360,7 +389,7 @@ int main(void)
     current_time_add_pre_cb(&_pre_hook);
     current_time_add_post_cb(&_post_hook);
     /* begin and align epoch */
-    _aligned_epoch_start();
+    event_post(EVENT_PRIO_HIGHEST, &_align_epoch_event.super);
     /* the shell contains commands that receive packets via GNRC and thus
        needs a msg queue */
     msg_init_queue(_main_msg_queue, MAIN_QUEUE_SIZE);

@@ -7,7 +7,7 @@
  */
 
 /**
- * @ingroup     module_coap_initiator
+ * @ingroup     module_edhoc_coap
  * @{
  *
  * @file
@@ -24,20 +24,22 @@
 #include "edhoc/keys.h"
 #include "random.h"
 
-#define ENABLE_DEBUG 0
-#include "debug.h"
+#ifndef LOG_LEVEL
+#define LOG_LEVEL   LOG_INFO
+#endif
+#include "log.h"
 
 static void print_bstr(const uint8_t *bstr, size_t bstr_len)
 {
     for (size_t i = 0; i < bstr_len; i++) {
         if ((i + 1) % 8 == 0) {
-            DEBUG("0x%02x \n", bstr[i]);
+            LOG_DEBUG("0x%02x \n", bstr[i]);
         }
         else {
-            DEBUG("0x%02x ", bstr[i]);
+            LOG_DEBUG("0x%02x ", bstr[i]);
         }
     }
-    DEBUG("\n");
+    LOG_DEBUG("\n");
 }
 
 static ssize_t _build_coap_pkt(coap_pkt_t *pkt,
@@ -69,7 +71,7 @@ int edhoc_coap_init(edhoc_coap_ctx_t *ctx, edhoc_role_t role, uint8_t* id, size_
     /* recover node assigned credentials*/
     const volatile cred_db_entry_t* entry = edhoc_keys_get(id, id_len);
     if (!entry) {
-        DEBUG_PUTS("[coap_initiator]: could not find credentials");
+        LOG_DEBUG("[edhoc_coap]: could not find credentials\n");
         return -1;
     }
     /* reset all structures */
@@ -80,25 +82,25 @@ int edhoc_coap_init(edhoc_coap_ctx_t *ctx, edhoc_role_t role, uint8_t* id, size_
     edhoc_cose_key_init(&ctx->key);
 
     /* load keys from cbor */
-    DEBUG_PUTS("[coap_initiator]: load private authentication key");
+    LOG_DEBUG("[edhoc_coap]: load private authentication key\n");
     if (edhoc_cose_key_from_cbor(&ctx->key, entry->auth_key, entry->auth_key_len) != 0) {
         return -1;
     }
-    DEBUG_PUTS("[coap_initiator]: load and set CBOR RPK");
+    LOG_DEBUG("[edhoc_coap]: load and set CBOR RPK\n");
     if (cred_rpk_from_cbor(&ctx->rpk, entry->cred, entry->cred_len) != 0) {
         return -1;
     }
     /* TODO: the credentials should match the id */
-    DEBUG_PUTS("[coap_initonder]: load credential identifier information");
+    LOG_DEBUG("[coap_initonder]: load credential identifier information\n");
     if (cred_id_from_cbor(&ctx->id, entry->id, entry->id_len) != 0) {
         return -1;
     }
-    DEBUG_PUTS("[coap_initiator]: set up EDHOC callbacks and role");
+    LOG_DEBUG("[edhoc_coap]: set up EDHOC callbacks and role\n");
     edhoc_conf_setup_ad_callbacks(&ctx->conf, NULL, NULL, NULL);
     if (edhoc_conf_setup_role(&ctx->conf, role) != 0) {
         return -1;
     }
-    DEBUG_PUTS("[coap_initiator]: set up EDHOC credentials");
+    LOG_DEBUG("[edhoc_coap]: set up EDHOC credentials\n");
     if (edhoc_conf_setup_credentials(&ctx->conf, &ctx->key, CRED_TYPE_RPK,
                                      &ctx->rpk, &ctx->id, edhoc_keys_get_cred) != 0) {
         return -1;
@@ -124,40 +126,40 @@ int edhoc_coap_handshake(edhoc_ctx_t *ctx, sock_udp_ep_t *remote, uint8_t method
     ctx->state = EDHOC_WAITING;
 
     if ((msg_len = edhoc_create_msg1(ctx, corr, method, suite, msg, sizeof(msg))) > 0) {
-        printf("[initiator]: sending msg1 (%d bytes):\n", (int)msg_len);
+        LOG_INFO("[enrollment]: sending EDHOC msg1 (%d bytes):\n", (int)msg_len);
         print_bstr(msg, msg_len);
         _build_coap_pkt(&pkt, buf, sizeof(buf), msg, msg_len);
         len = nanocoap_request(&pkt, NULL, remote, CONFIG_COAP_EDHOC_BUF_SIZE);
     }
     else {
-        puts("[initiator]: failed to create msg1");
+        LOG_INFO("[enrollment]: failed to create msg1\n");
         return -1;
     }
     if (len < 0) {
-        puts("[initiator]: failed to send msg1");
+        LOG_INFO("[enrollment]: failed to send msg1\n");
         return -1;
     }
 
-    printf("[initiator]: received a message (%d bytes):\n", pkt.payload_len);
+    LOG_INFO("[enrollment]: received EDHOC msg2 (%d bytes):\n", pkt.payload_len);
     print_bstr(pkt.payload, pkt.payload_len);
 
     if ((msg_len = edhoc_create_msg3(ctx, pkt.payload, pkt.payload_len, msg, sizeof(msg))) > 0) {
-        printf("[initiator]: sending msg3 (%d bytes):\n", (int)msg_len);
+        LOG_INFO("[enrollment]: sending EDHOC msg3 (%d bytes):\n", (int)msg_len);
         print_bstr(msg, msg_len);
         _build_coap_pkt(&pkt, buf, sizeof(buf), msg, msg_len);
         nanocoap_request(&pkt, NULL, remote, CONFIG_COAP_EDHOC_BUF_SIZE);
     }
     else {
-        puts("[initiator]: failed to create msg3");
+        LOG_ERROR("[enrollment]: failed to create msg3");
         return -1;
     }
 
     if (edhoc_init_finalize(ctx)) {
-        puts("[initiator]: handshake failed");
+        LOG_ERROR("[enrollment]: key exchange failed");
         return -1;
     }
 
-    puts("[initiator]: handshake successfully completed");
+    LOG_INFO("[enrollment]: key exchange successfully completed\n");
     ctx->state = EDHOC_FINALIZED;
 
     return 0;
