@@ -107,7 +107,7 @@ static void _detection_cb(uint32_t ts, const ble_addr_t *addr, int8_t rssi,
         cid, ts, rssi, sid);
     /* process data */
     uwb_ed_t *uwb_ed = uwb_ed_list_process_slice(&uwb_ed_list, cid,
-                                                 ts / MS_PER_SEC - start_time,
+                                                 (ts / MS_PER_SEC) - start_time,
                                                  adv_payload->data.ebid_slice,
                                                  sid);
     if (uwb_ed->ebid.status.status == EBID_HAS_ALL) {
@@ -122,8 +122,9 @@ static void _twr_complete_cb(twr_event_data_t *data)
 {
     LOG_INFO(
         "[pepper]: 0x%" PRIx16 " at %" PRIu16 "cm\n", data->addr, data->range);
-    uwb_ed_list_process_rng_data(&uwb_ed_list, data->addr, data->time,
-                                 data->range);
+    uwb_ed_list_process_rng_data(&uwb_ed_list, data->addr,
+                                (data->time / MS_PER_SEC) - start_time,
+                                data->range);
 }
 
 /* Event to allow delaying adv/scan activity start */
