@@ -31,8 +31,10 @@
 #include "edhoc/coap.h"
 #endif
 
-#define ENABLE_DEBUG    0
-#include "debug.h"
+#ifndef LOG_LEVEL
+#define LOG_LEVEL   LOG_INFO
+#endif
+#include "log.h"
 
 void security_ctx_init(security_ctx_t *ctx, uint8_t *send_id,
                        size_t send_id_len, uint8_t *recv_id,
@@ -146,17 +148,17 @@ int security_ctx_decode(security_ctx_t *ctx, uint8_t *in, size_t in_len,
 #if IS_USED(MODULE_EDHOC_COAP)
 static void print_bstr(const uint8_t *bstr, size_t bstr_len)
 {
-    for (size_t i = 0; i < bstr_len; i++) {
-        if ((i + 1) % 8 == 0) {
-            DEBUG("0x%02x \n", bstr[i]);
+    LOG_INFO("\t");
+    for (uint8_t i = 0; i < bstr_len; i++) {
+        if ((i + 1) % 8 == 0 && i != (bstr_len - 1)) {
+            LOG_INFO("0x%02x \n\t", bstr[i]);
         }
         else {
-            DEBUG("0x%02x ", bstr[i]);
+            LOG_INFO("0x%02x ", bstr[i]);
         }
     }
-    DEBUG("\n");
+    LOG_INFO("\n");
 }
-
 
 int security_ctx_edhoc_handshake(security_ctx_t *ctx, edhoc_ctx_t *e_ctx,
                                  sock_udp_ep_t *remote)
@@ -166,11 +168,11 @@ int security_ctx_edhoc_handshake(security_ctx_t *ctx, edhoc_ctx_t *e_ctx,
     uint32_t rand = random_uint32();
 
     memcpy(&token, &rand, sizeof(token));
-    DEBUG_PUTS("[security_ctx]: start edhoc handshake");
+    LOG_INFO("[enrollment]: initialize security context...\n");
     int ret = edhoc_coap_handshake(e_ctx, remote, EDHOC_AUTH_SIGN_SIGN,
                                    EDHOC_CIPHER_SUITE_0);
     if (ret == 0) {
-        DEBUG_PUTS("[security_ctx]: derive security ctx");
+        LOG_DEBUG("[security_ctx]: derive security ctx\n");
         uint8_t secret[16];
         uint8_t salt[8];
         edhoc_exporter(e_ctx,
@@ -188,18 +190,19 @@ int security_ctx_edhoc_handshake(security_ctx_t *ctx, edhoc_ctx_t *e_ctx,
                                    secret,
                                    sizeof(secret));
 
-        DEBUG_PUTS("OSCORE secret:");
+        LOG_INFO("[enrollment]: EDHOC exporter secret:\n");
         print_bstr(secret, 16);
-        DEBUG_PUTS("OSCORE salt:");
+        LOG_INFO("[enrollment]: EDHOC exporter salt:\n");
         print_bstr(salt, 8);
 
         if (ret == 0) {
+            LOG_INFO("[enrollment]: security context initialized\n");
             return 0;
         }
-        DEBUG_PUTS("[security_ctx]: error generating context");
+        LOG_DEBUG("[security_ctx]: error generating context\n");
         return -1;
     }
-    DEBUG_PUTS("[security_ctx]: failed handshake");
+    LOG_DEBUG("[security_ctx]: failed handshake\n");
     return -1;
 }
 #endif

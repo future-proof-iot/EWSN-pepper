@@ -56,6 +56,7 @@ USEMODULE += ps
 FEATURES_OPTIONAL += periph_gpio_irq
 # Add suit_storage_flashwrite to update firmware as well
 USEMODULE += suit_storage_flashwrite
+USEMODULE += progress_bar
 USEMODULE += suit_periodic_fetch
 
 # The event thread will handle:
@@ -86,7 +87,7 @@ endif
 
 # Change default timings for faster demo behaviout
 CFLAGS+=-DCONFIG_SLICE_ROTATION_T_S=1
-CFLAGS+=-DCONFIG_EBID_ROTATION_T_S=30
-CFLAGS+=-DMIN_EXPOSURE_TIME_S=10
+CFLAGS+=-DCONFIG_EBID_ROTATION_T_S=60
+CFLAGS+=-DMIN_EXPOSURE_TIME_S=30
 
 include $(RIOTBASE)/Makefile.include

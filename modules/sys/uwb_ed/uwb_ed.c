@@ -113,11 +113,16 @@ int uwb_ed_add_slice(uwb_ed_t *uwb_ed, uint16_t time, const uint8_t *slice,
         if (ebid_reconstruct(&uwb_ed->ebid) == 0) {
             uwb_ed->seen_first_s = time;
             uwb_ed->seen_last_s = time;
-            LOG_INFO("[uwb_ed]: saw ebid: [");
+            LOG_INFO("[discovery]: saw new ebid:\n\t");
             for (uint8_t i = 0; i < EBID_SIZE; i++) {
-                LOG_INFO("%d, ", uwb_ed->ebid.parts.ebid.u8[i]);
+                if ((i + 1) % 8 == 0 && i != (EBID_SIZE - 1)) {
+                    LOG_INFO("0x%02x\n\t", uwb_ed->ebid.parts.ebid.u8[i]);
+                }
+                else {
+                    LOG_INFO("0x%02x ", uwb_ed->ebid.parts.ebid.u8[i]);
+                }
             }
-            LOG_INFO("]\n");
+            LOG_INFO("\n");
             return 0;
         }
         return -1;

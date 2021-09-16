@@ -46,7 +46,7 @@
 #endif
 
 #ifndef LOG_LEVEL
-#define LOG_LEVEL   LOG_DEBUG
+#define LOG_LEVEL   LOG_INFO
 #endif
 #include "log.h"
 
@@ -125,7 +125,7 @@ void state_manager_set_infected_status(bool status)
 {
     _infected = status;
     if (_infected) {
-        LOG_INFO("[state_manager]: COVID positive!\n");
+        LOG_INFO("[infected_declaration]: COVID positive!\n");
 #ifdef LED1_PIN
         LED1_ON;
     }
@@ -153,10 +153,10 @@ size_t state_manager_infected_serialize_cbor(uint8_t *buf, size_t len)
 
 void state_manager_set_esr(bool esr)
 {
-    LOG_DEBUG("[state_manager]: esr=(%d)\n", esr);
+    LOG_INFO("[exposure_status]: esr=(%d)\n", esr);
     _esr = esr;
     if (_esr) {
-        LOG_INFO("[state_manager]: exposed!\n");
+        LOG_INFO("[exposure_status]: COVID contact!\n");
 #ifdef LED3_PIN
         LED3_ON;
     }
@@ -214,7 +214,9 @@ void state_manager_security_init(event_queue_t *queue)
                             &_handshake_event.super);
         event_periodic_start(&_handshake_periodic, CONFIG_STATE_MANAGER_EDHOC_S * MS_PER_SEC);
     }
-    LOG_ERROR("[state manager]: failed to initialize security\n");
+    else {
+        LOG_ERROR("[state manager]: failed to initialize security\n");
+    }
 }
 #endif
 
@@ -229,17 +231,17 @@ void _esr_callback(int res, void *data, size_t data_len, void *arg)
     if (_sec_ctx.valid) {
         uint8_t out[128];
         size_t out_len = 0;
-        LOG_DEBUG("[state_manager]: attempt to decode...");
+        LOG_INFO("[exposure_status]: decrypt esr... ");
         int ret = security_ctx_decode(
             &_sec_ctx, data, data_len, dbuf, sizeof(dbuf), out, &out_len);
         if (ret == 0) {
-            LOG_DEBUG("success\n");
+            LOG_INFO("success\n");
             state_manager_esr_load_cbor(out, out_len);
             return;
         }
         /* if failed to decode assume ctx is no longer valid */
         _sec_ctx.valid = false;
-        LOG_DEBUG("failed\n");
+        LOG_INFO("failed\n");
         return;
     }
 #else
@@ -268,7 +270,7 @@ int state_manager_coap_get_esr(void)
 
     char uri[sizeof("/") + sizeof("/esr") + sizeof("DW") + STATE_MANAGER_TOKEN_ID_LEN * 2];
     sprintf(uri, "/%s/esr", _uid);
-    LOG_DEBUG("[state_manager]: fetch esr\n");
+    LOG_INFO("[exposure_status]: fetch esr\n");
     return coap_get(_remote, &_get_ctx, uri, COAP_FORMAT_CBOR, COAP_TYPE_NON);
 }
 
@@ -289,7 +291,7 @@ int state_manager_coap_send_ertl(uwb_epoch_data_t *data)
     }
 
     size_t data_len = uwb_epoch_serialize_cbor(data, ertl_buf, sizeof(ertl_buf));
-    LOG_DEBUG("[state_manager]: serialized ertl, len=(%d)\n", data_len);
+    LOG_INFO("[encounter_record]: serialized ertl, len=(%d)\n", data_len);
 
     if (data_len > 0) {
 #if IS_USED(MODULE_STATE_MANAGER_SECURITY)
@@ -298,10 +300,12 @@ int state_manager_coap_send_ertl(uwb_epoch_data_t *data)
                                               ertl_buf, data_len,
                                               ertl_cose_buf, sizeof(ertl_cose_buf),
                                               &ertl_cose_ptr);
-        LOG_DEBUG("[state_manager]: encrypted ertl, len=(%d)\n", cose_len);
+        LOG_INFO("[encounter_record]: encrypted ertl, len=(%d)\n", cose_len);
+        LOG_INFO("[pet_offloading]: send encrypted ertl\n");
         return coap_block_post(_remote, &_block_ctx, ertl_cose_ptr, cose_len,
                                _ertl_uri, COAP_FORMAT_CBOR, COAP_TYPE_NON);
 #else
+        LOG_INFO("[pet_offloading]: send ertl\n");
         return coap_block_post(_remote, &_block_ctx, ertl_buf, data_len,
                                _ertl_uri, COAP_FORMAT_CBOR, COAP_TYPE_NON);
 #endif
@@ -323,15 +327,16 @@ int state_manager_coap_send_infected(void)
 
     sprintf(uri, "/%s/infected", _uid);
     size_t len = state_manager_infected_serialize_cbor(buf, sizeof(buf));
-    LOG_DEBUG("[state_manager]: send infected=%d, len=(%d)\n",
-              state_manager_get_infected_status(), len);
+    LOG_INFO("[infected_declaration]: serialize infected status, len=(%d)\n", len);
 #if IS_USED(MODULE_STATE_MANAGER_SECURITY)
     uint8_t *out = NULL;
     size_t out_len = security_ctx_encode(&_sec_ctx,
                                          buf, len,
                                          ibuf, sizeof(ibuf),
                                          &out);
-    LOG_DEBUG("[security_manager]: encoded infected len=(%d)\n", out_len);
+    LOG_INFO("[infected_declaration]: encrypted infected status, len=(%d)\n", out_len);
+    LOG_INFO("[infected_declaration]: send encrypted infected=%d\n",
+             state_manager_get_infected_status());
     return coap_post(_remote, NULL, out, out_len, uri, COAP_FORMAT_CBOR, COAP_TYPE_CON);
 #else
     return coap_post(_remote, NULL, buf, len, uri, COAP_FORMAT_CBOR, COAP_TYPE_CON);

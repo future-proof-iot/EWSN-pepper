@@ -231,7 +231,7 @@ static void _twr_rng_request(void *arg)
         uwb_rng_request(_rng, event->addr, CONFIG_TWR_EVENT_ALGO_DEFAULT);
     }
     else {
-        LOG_ERROR("[twr]: rng request aborted, busy\n");
+        LOG_DEBUG("[twr]: rng request aborted, busy\n");
     }
 }
 
