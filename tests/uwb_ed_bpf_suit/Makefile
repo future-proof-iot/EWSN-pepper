@@ -24,7 +24,7 @@ EXTERNAL_MODULE_DIRS += $(CURDIR)/../../modules/sys
 USEMODULE += auto_init_gnrc_netif
 USEMODULE += gnrc_ipv6_router_default
 USEMODULE += gnrc_icmpv6_echo
-USEMODULE += gnrc_netdev_default
+USEMODULE += netdev_default
 
 ifneq (native,$(BOARD))
   USEMODULE += stdio_ethos
