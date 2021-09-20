@@ -6,7 +6,7 @@ BOARD ?= nrf52840dongle
 RIOTBASE ?= $(CURDIR)/../../RIOT
 
 # Include packages that pull up and auto-init the link layer.
-USEMODULE += gnrc_netdev_default
+USEMODULE += netdev_default
 USEMODULE += auto_init_gnrc_netif
 USEMODULE += gnrc_sixlowpan_border_router_default
 USEMODULE += gnrc_icmpv6_echo

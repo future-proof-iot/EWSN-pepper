@@ -43,7 +43,7 @@ USEMODULE += event_periodic
 USEMODULE += event_callback
 USEMODULE += ztimer_epoch
 # Add Ipv6
-USEMODULE += gnrc_netdev_default
+USEMODULE += netdev_default
 USEMODULE += auto_init_gnrc_netif
 USEMODULE += gnrc_ipv6_default
 USEMODULE += gnrc_icmpv6_echo
