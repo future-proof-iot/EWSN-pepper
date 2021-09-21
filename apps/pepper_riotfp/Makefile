@@ -11,6 +11,9 @@ ifneq (,$(filter llvm,$(TOOLCHAIN)))
   CFLAGS += -Wno-microsoft-anon-tag
 endif
 
+# fix hacl warning
+CFLAGS += -Wno-array-parameter
+
 # This has to be the absolute path to the RIOT base directory:
 RIOTBASE ?= $(CURDIR)/../../RIOT
 # Path to external modules search directory
