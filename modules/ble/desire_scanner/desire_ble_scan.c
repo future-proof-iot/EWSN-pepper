@@ -292,7 +292,7 @@ void desire_ble_scan_start(int32_t scan_duration_ms)
     _scan_end_ms = ztimer_now(ZTIMER_MSEC) + scan_duration_ms;
 #endif
     DEBUG("[desire_scanner]: start ret =%d\n", ret);
-    assert(ret == NIMBLE_SCANNER_OK);
+    assert(ret == 0);
     (void)ret;
 }
 
@@ -348,7 +348,7 @@ void desire_ble_scan_update(const desire_ble_scanner_params_t *params)
 
     int ret = nimble_scanner_init(&scan_params, _on_scan_evt);
     DEBUG("[desire_scanner]: init ret =%d\n", ret);
-    assert(ret == NIMBLE_SCANNER_OK);
+    assert(ret == 0);
     (void)ret;
 
 #if IS_USED(MODULE_DESIRE_SCANNER_NETIF)
