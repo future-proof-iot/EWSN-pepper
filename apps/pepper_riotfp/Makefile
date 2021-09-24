@@ -45,6 +45,7 @@ USEMODULE += event_timeout_ztimer
 USEMODULE += event_periodic
 USEMODULE += event_callback
 USEMODULE += ztimer_epoch
+USEMODULE += ztimer_sec
 # Add Ipv6
 USEMODULE += netdev_default
 USEMODULE += auto_init_gnrc_netif
