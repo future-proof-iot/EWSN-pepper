@@ -32,6 +32,7 @@ USEMODULE += event_timeout_ztimer
 USEMODULE += event_periodic
 USEMODULE += event_callback
 USEMODULE += ztimer_epoch
+USEMODULE += ztimer_sec
 # Include shell and, process information fonctionality
 USEMODULE += shell
 USEMODULE += shell_commands

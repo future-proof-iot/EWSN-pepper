@@ -76,6 +76,7 @@ static uwb_ed_list_t uwb_ed_list;
 static uwb_ed_memory_manager_t manager;
 static crypto_manager_keys_t keys;
 static ebid_t ebid;
+/* start_time take from ZTIMER_SEC so no overflow */
 static uint32_t start_time;
 static event_periodic_t uwb_epoch_end;
 static twr_event_mem_manager_t twr_manager;
@@ -134,7 +135,7 @@ static void _adv_cb(uint32_t ts, void *arg)
     do {
         next = (uwb_ed_t *)next->list_node.next;
         if (next->ebid.status.status == EBID_HAS_ALL) {
-            if (next->seen_last_s + start_time + 5 > ztimer_now(ZTIMER_EPOCH)) {
+            if (next->seen_last_s + start_time + 5 > ztimer_now(ZTIMER_SEC)) {
                 /* TODO: it should be the other way around as its commented out
                     but this seems to lead to worse synchronization... */
                 // twr_schedule_request_managed((uint16_t) next->cid, _get_txrx_offset(&next->ebid));
@@ -160,7 +161,7 @@ static void _detection_cb(uint32_t ts, const ble_addr_t *addr, int8_t rssi,
         cid, ts, rssi, sid);
     /* process data */
     uwb_ed_t *uwb_ed = uwb_ed_list_process_slice(&uwb_ed_list, cid,
-                                                 ztimer_now(ZTIMER_EPOCH) - start_time,
+                                                 ztimer_now(ZTIMER_SEC) - start_time,
                                                  adv_payload->data.ebid_slice,
                                                  sid);
     if (uwb_ed->ebid.status.status == EBID_HAS_ALL) {
@@ -176,7 +177,7 @@ static void _twr_complete_cb(twr_event_data_t *data)
     LOG_INFO("[discovery]: 0x%" PRIx16 " at %" PRIu16 "cm\n",
              data->addr, data->range);
     uwb_ed_list_process_rng_data(&uwb_ed_list, data->addr,
-                                 ztimer_now(ZTIMER_EPOCH) - start_time,
+                                 ztimer_now(ZTIMER_SEC) - start_time,
                                  data->range);
 }
 
@@ -200,7 +201,7 @@ static event_callback_t _scan_adv_start_ev = EVENT_CALLBACK_INIT(
 
 static void _boostrap_new_epoch(void)
 {
-    start_time = ztimer_now(ZTIMER_MSEC) / MS_PER_SEC;
+    start_time = ztimer_now(ZTIMER_SEC);
     LOG_INFO("[epoch_setup]: new epoch t=(%" PRIu32 ")\n",
              (uint32_t)ztimer_now(ZTIMER_EPOCH));
     /* initiate epoch and generate new keys */
