@@ -142,9 +142,7 @@ int ed_add_slice(ed_t *ed, uint16_t time, const uint8_t *slice, uint8_t part,
 
 void ed_process_data(ed_t *ed, uint16_t time, float rssi)
 {
-    if (time > ed->end_s) {
-        ed->end_s = time;
-    }
+    ed->end_s = time;
     if (IS_ACTIVE(CONFIG_ED_OBFUSCATE_RSSI)) {
         /* obfuscate rssi value */
         rssi = rssi - ed->obf - CONFIG_RX_COMPENSATION_GAIN;

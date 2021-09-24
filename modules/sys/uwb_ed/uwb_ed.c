@@ -93,7 +93,7 @@ uwb_ed_t *uwb_ed_list_get_by_cid(uwb_ed_list_t *list, const uint32_t cid)
     return NULL;
 }
 
-uint32_t uwb_ed_exposure_time(uwb_ed_t *uwb_ed)
+uint16_t uwb_ed_exposure_time(uwb_ed_t *uwb_ed)
 {
     return uwb_ed->seen_last_s - uwb_ed->seen_first_s;
 }
@@ -134,9 +134,7 @@ int uwb_ed_add_slice(uwb_ed_t *uwb_ed, uint16_t time, const uint8_t *slice,
 
 void uwb_ed_process_data(uwb_ed_t *uwb_ed, uint16_t time, uint16_t d_cm)
 {
-    if (time > uwb_ed->seen_last_s) {
-        uwb_ed->seen_last_s = time;
-    }
+    uwb_ed->seen_last_s = time;
     uwb_ed->req_count++;
     uwb_ed->cumulative_d_cm += d_cm;
 }

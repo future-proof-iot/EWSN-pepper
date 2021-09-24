@@ -103,8 +103,12 @@ bool uwb_ed_finish_bpf(uwb_ed_t *uwb_ed)
         uwb_ed->cumulative_d_cm = uwb_ed->cumulative_d_cm /
                                   uwb_ed->req_count;
     }
-    uint32_t time = uwb_ed_exposure_time(uwb_ed);
+
+    uint16_t time = uwb_ed_exposure_time(uwb_ed);
     bpf_uwb_ed_ctx_t ctx = { .time = time, .distance = uwb_ed->cumulative_d_cm };
+
+    LOG_DEBUG("[uwb_ed_bpf]: time=(%" PRIu16 "), d=(%" PRIu32 "), req=(%" PRIu16 ")\n",
+            time, uwb_ed->cumulative_d_cm, uwb_ed->req_count);
 
     bpf_t bpf = {
         .application = suit_storage_region_location(region),
