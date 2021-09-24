@@ -167,7 +167,7 @@ uwb_ed_t *uwb_ed_list_get_by_short_addr(uwb_ed_list_t *list,
  *
  * @return          the exposure time in seconds
  */
-uint32_t uwb_ed_exposure_time(uwb_ed_t *uwb_ed);
+uint16_t uwb_ed_exposure_time(uwb_ed_t *uwb_ed);
 
 /**
  * @brief   Add ebid slice from advertisement data and attemp to reconstruct

@@ -93,7 +93,7 @@ uwb_ed_t *uwb_ed_list_get_by_cid(uwb_ed_list_t *list, const uint32_t cid)
     return NULL;
 }
 
-uint32_t uwb_ed_exposure_time(uwb_ed_t *uwb_ed)
+uint16_t uwb_ed_exposure_time(uwb_ed_t *uwb_ed)
 {
     return uwb_ed->seen_last_s - uwb_ed->seen_first_s;
 }
@@ -134,9 +134,7 @@ int uwb_ed_add_slice(uwb_ed_t *uwb_ed, uint16_t time, const uint8_t *slice,
 
 void uwb_ed_process_data(uwb_ed_t *uwb_ed, uint16_t time, uint16_t d_cm)
 {
-    if (time > uwb_ed->seen_last_s) {
-        uwb_ed->seen_last_s = time;
-    }
+    uwb_ed->seen_last_s = time;
     uwb_ed->req_count++;
     uwb_ed->cumulative_d_cm += d_cm;
 }
@@ -200,6 +198,7 @@ bool uwb_ed_finish(uwb_ed_t *uwb_ed)
 static void _clist_remove_with_before(clist_node_t *list, clist_node_t *node,
                                       clist_node_t *before)
 {
+    unsigned state = irq_disable();
     /* we are removing the last element in the list */
     if (before == node) {
         list->next = NULL;
@@ -209,23 +208,22 @@ static void _clist_remove_with_before(clist_node_t *list, clist_node_t *node,
     if (node == list->next) {
         list->next = before;
     }
+    irq_restore(state);
 }
+
 
 void uwb_ed_list_finish(uwb_ed_list_t *list)
 {
     clist_node_t *node = list->list.next;
-    clist_node_t *before = NULL;
 
     if (node) {
         do {
-            /* make sure the first node gets handled if the node just before
-               last got removed*/
-            if (!node) {
-                node = before;
-            }
-            before = node;
+            clist_node_t* before = node;
             node = node->next;
-            bool discard;
+            /* check if we are handling the last node (start of list)*/
+            bool last_node = node == list->list.next;
+            /* check if node should be kept */
+            bool discard = false;
             if (IS_USED(MODULE_UWB_ED_BPF)) {
                 discard = !uwb_ed_finish_bpf((uwb_ed_t *)node);
             }
@@ -234,15 +232,18 @@ void uwb_ed_list_finish(uwb_ed_list_t *list)
             }
             if (discard) {
                 LOG_DEBUG("[uwb_ed]: discarding node\n");
-                /* if unable to reconstruct uwb_ed, or if exposure time is not enough then
-                   discard encounter */
-                unsigned state = irq_disable();
-                _clist_remove_with_before(&list->list, node, before);
-                irq_restore(state);
+               /* remove the current node from list, and pass previous
+                   node to easily update list */
+               _clist_remove_with_before(&list->list, node, before);
+                /* free up the resource */
                 uwb_ed_memory_manager_free(list->manager, (uwb_ed_t *)node);
-                node = NULL;
+                /* reset node to previous iteration */
+                node = before;
             }
-        } while (list->list.next && node != list->list.next);
+            if (last_node) {
+                return;
+            }
+        } while (list->list.next);
     }
 }
 

@@ -142,9 +142,7 @@ int ed_add_slice(ed_t *ed, uint16_t time, const uint8_t *slice, uint8_t part,
 
 void ed_process_data(ed_t *ed, uint16_t time, float rssi)
 {
-    if (time > ed->end_s) {
-        ed->end_s = time;
-    }
+    ed->end_s = time;
     if (IS_ACTIVE(CONFIG_ED_OBFUSCATE_RSSI)) {
         /* obfuscate rssi value */
         rssi = rssi - ed->obf - CONFIG_RX_COMPENSATION_GAIN;
@@ -190,6 +188,7 @@ int ed_finish(ed_t *ed)
 static void _clist_remove_with_before(clist_node_t *list, clist_node_t *node,
                                       clist_node_t *before)
 {
+    unsigned state = irq_disable();
     /* we are removing the last element in the list */
     if (before == node) {
         list->next = NULL;
@@ -199,32 +198,32 @@ static void _clist_remove_with_before(clist_node_t *list, clist_node_t *node,
     if (node == list->next) {
         list->next = before;
     }
+    irq_restore(state);
 }
 
 void ed_list_finish(ed_list_t *list)
 {
     clist_node_t *node = list->list.next;
-    clist_node_t *before = NULL;
 
     if (node) {
         do {
-            /* make sure the first node gets handled if the node just before
-               last got removed*/
-            if (!node) {
+            clist_node_t* before = node;
+            node = node->next;
+            /* check if we are handling the last node (start of list)*/
+            bool last_node = node == list->list.next;
+            if (ed_finish((ed_t *)node)) {
+                /* remove the current node from list, and pass previous
+                   node to easily update list */
+                _clist_remove_with_before(&list->list, node, before);
+                /* free up the resource */
+                ed_memory_manager_free(list->manager, (ed_t *)node);
+                /* reset node to previous iteration */
                 node = before;
             }
-            before = node;
-            node = node->next;
-            if (ed_finish((ed_t *)node)) {
-                /* if unable to reconstruct ed, or if exposure time is not enough then
-                   discard encounter */
-                unsigned state = irq_disable();
-                _clist_remove_with_before(&list->list, node, before);
-                irq_restore(state);
-                ed_memory_manager_free(list->manager, (ed_t *)node);
-                node = NULL;
+            if (last_node) {
+                return;
             }
-        } while (list->list.next && node != list->list.next);
+        } while (list->list.next);
     }
 }
 
