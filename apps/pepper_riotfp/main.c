@@ -330,16 +330,23 @@ static void _post_adjust_time(int32_t offset, void *arg)
 }
 static current_time_hook_t _post_hook;
 
-static int _cmd_id(int argc, char **argv)
+static int _cmd_status(int argc, char **argv)
 {
     (void)argc;
     (void)argv;
-    printf("dwm1001 id: %s\n", state_manager_get_id());
+    puts("status:");
+    printf("  id: %s\n", state_manager_get_id());
+    puts("  twr:");
+    printf("    mem: %d/%d (free/total)\n",
+        memarray_available(&twr_manager.mem), CONFIG_TWR_EVENT_BUF_SIZE);
+    puts("  uwb_ed:");
+    printf("    mem: %d/%d (free/total)\n",
+        memarray_available(&manager.mem), CONFIG_UWB_ED_BUF_SIZE);
     return 0;
 }
 
 static const shell_command_t _commands[] = {
-    { "id", "Print device id", _cmd_id },
+    { "status", "Print Status Information", _cmd_status },
     { NULL, NULL, NULL }
 };
 
