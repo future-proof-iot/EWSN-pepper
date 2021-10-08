@@ -16,6 +16,8 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--node-uid", type=str, nargs='+',
                     help="UIDs of enrolled nodes, must match stored CRED_ID")
 
+parser.add_argument("--port", type=int, default=5683, help="The CoAP PORT")
+parser.add_argument("--host", type=str, default='localhost', help="The CoAP host interface")
 
 NODES = Nodes([Node(TEST_NODE_UID_0)])
 
@@ -54,7 +56,7 @@ class EncodeEchoResource(resource.Resource):
                                    payload="ERROR: no ctx".encode('utf-8'))
 
 
-def main(uid_list):
+def main(uid_list, host:str=None, port:int=None):
     # create node list with default test node
     if uid_list:
         for uid in uid_list:
@@ -75,7 +77,8 @@ def main(uid_list):
                           DecodeEchoResource(node))
         root.add_resource([node.uid, 'encode'],
                           EncodeEchoResource(node))
-    asyncio.Task(aiocoap.Context.create_server_context(root))
+    
+    asyncio.Task(aiocoap.Context.create_server_context(root, bind=(host, port)))
 
     print("CoAP Responder Server Started")
     asyncio.get_event_loop().run_forever()
@@ -83,4 +86,7 @@ def main(uid_list):
 
 if __name__ == "__main__":
     args = parser.parse_args()
-    main(args.node_uid)
+
+
+
+    main(args.node_uid, host=args.host, port=args.port)
