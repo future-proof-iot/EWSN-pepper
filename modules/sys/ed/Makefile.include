@@ -1,2 +1,16 @@
-USEMODULE_INCLUDES_ed := $(LAST_MAKEFILEDIR)/include
+ED_DIR := $(LAST_MAKEFILEDIR)
+USEMODULE_INCLUDES_ed = $(ED_DIR)/include
 USEMODULE_INCLUDES += $(USEMODULE_INCLUDES_ed)
+
+PSEUDOMODULES += ed_uwb
+PSEUDOMODULES += ed_ble_common
+PSEUDOMODULES += ed_ble_win
+PSEUDOMODULES += ed_uwb_bpf
+PSEUDOMODULES += ed_uwb_bpf_suit
+
+# include common pepper files
+USEMODULE_INCLUDES += $(USEMODULE_INCLUDES_ed)/../../pepper/include
+
+ifneq (,$(filter ed_uwb_bpf,$(USEMODULE)))
+  include $(ED_DIR)/ed_uwb_bpf.mk
+endif

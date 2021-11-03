@@ -1,4 +1,19 @@
 USEMODULE += ebid
-USEMODULE += rdl_window
-
 USEMODULE += memarray
+
+ifneq (,$(filter ed_uwb_bpf,$(USEMODULE)))
+  USEMODULE += bpf
+  ifneq (,$(filter ed_uwb_bpf_suit,$(USEMODULE)))
+    USEMODULE += suit
+    USEMODULE += suit_storage_ram
+    USEMODULE += suit_transport_coap
+    USEMODULE += gcoap
+  endif
+endif
+
+ifneq (,$(filter ed_ble%,$(USEMODULE)))
+  USEMODULE += ed_ble_common
+endif
+ifneq (,$(filter ed_ble_win,$(USEMODULE)))
+  USEMODULE += rdl_window
+endif

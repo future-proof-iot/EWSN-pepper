@@ -28,6 +28,7 @@
 
 #include <inttypes.h>
 
+#include "pepper.h"
 #include "timex.h"
 
 #ifdef __cplusplus
@@ -41,18 +42,17 @@ extern "C" {
 #define WINDOWS_PER_EPOCH         15
 #endif
 /**
- * @brief   Duration of a Window in seconds
- */
-#ifndef WINDOW_LENGTH_S
-#define WINDOW_LENGTH_S           (120LU)
-#endif
-/**
  * @brief   Step between windows in seconds
  */
 #ifndef WINDOW_STEP_S
-#define WINDOW_STEP_S             (60LU)
+#define WINDOW_STEP_S             (CONFIG_EPOCH_DURATION_SEC / WINDOWS_PER_EPOCH)
 #endif
-
+/**
+ * @brief   Duration of a Window in seconds
+ */
+#ifndef WINDOW_LENGTH_S
+#define WINDOW_LENGTH_S           (2 * WINDOW_STEP_S)
+#endif
 /**
  * @brief   Values above this values will be clipped before being averaged
  */

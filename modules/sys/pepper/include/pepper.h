@@ -39,8 +39,16 @@ extern "C" {
  * @brief   The default EBID slice rotation period in seconds
  *
  */
+#ifndef CONFIG_EPOCH_DURATION_SEC
+#define CONFIG_EPOCH_DURATION_SEC        (15LU * SEC_PER_MIN)
+#endif
+
+/**
+ * @brief   The default EBID slice rotation period in seconds
+ *
+ */
 #ifndef CONFIG_EBID_ROTATION_T_S
-#define CONFIG_EBID_ROTATION_T_S        (15LU * SEC_PER_MIN)
+#define CONFIG_EBID_ROTATION_T_S        CONFIG_EPOCH_DURATION_SEC
 #endif
 
 #ifdef __cplusplus

@@ -23,6 +23,8 @@
 
 #include "irq.h"
 #include "ed.h"
+#include "ed_shared.h"
+
 #ifndef LOG_LEVEL
 #define LOG_LEVEL   LOG_INFO
 #endif
@@ -33,6 +35,7 @@ void ed_add(ed_list_t *list, ed_t *ed)
     assert(list && ed);
 
     unsigned state = irq_disable();
+
     if (!ed->list_node.next) {
         clist_rpush(&list->list, &ed->list_node);
     }
@@ -44,6 +47,7 @@ void ed_remove(ed_list_t *list, ed_t *ed)
     assert(list && ed);
 
     unsigned state = irq_disable();
+
     clist_remove(&list->list, &ed->list_node);
     ed->list_node.next = NULL;
     irq_restore(state);
@@ -59,6 +63,26 @@ ed_t *ed_list_get_nth(ed_list_t *list, int pos)
     }
     irq_restore(state);
     return tmp;
+}
+
+ed_t *ed_list_get_by_short_addr(ed_list_t *list, const uint16_t addr)
+{
+    ed_t *tmp = (ed_t *)list->list.next;
+    unsigned state = irq_disable();
+
+    if (!tmp) {
+        irq_restore(state);
+        return NULL;
+    }
+    do {
+        tmp = (ed_t *)tmp->list_node.next;
+        if ((uint16_t)tmp->cid == addr) {
+            irq_restore(state);
+            return tmp;
+        }
+    } while (tmp != (ed_t *)list->list.next);
+    irq_restore(state);
+    return NULL;
 }
 
 ed_t *ed_list_get_by_cid(ed_list_t *list, const uint32_t cid)
@@ -81,38 +105,7 @@ ed_t *ed_list_get_by_cid(ed_list_t *list, const uint32_t cid)
     return NULL;
 }
 
-uint16_t ed_exposure_time(ed_t *ed)
-{
-    return ed->end_s - ed->start_s;
-}
-
-void ed_set_obf_value(ed_t *ed, ebid_t *ebid)
-{
-    bool local_gt_remote = false;
-
-    /* compare local ebid and the remote one to see which one
-       is greater */
-    for (uint8_t i = 0; i < EBID_SIZE; i++) {
-        if (ebid->parts.ebid.u8[i] > ed->ebid.parts.ebid.u8[i]) {
-            local_gt_remote = true;
-            break;
-        }
-        else if (ebid->parts.ebid.u8[i] < ed->ebid.parts.ebid.u8[i]) {
-            break;
-        }
-    }
-    /* calculate obf depending on which ebid is greater */
-    if (local_gt_remote) {
-        ed->obf = (ebid->parts.ebid.u8[0] << 8) | ebid->parts.ebid.u8[1];
-    }
-    else {
-        ed->obf = (ed->ebid.parts.ebid.u8[0] << 8) | ed->ebid.parts.ebid.u8[1];
-    }
-    ed->obf %= CONFIG_ED_OBFUSCATE_MAX;
-}
-
-int ed_add_slice(ed_t *ed, uint16_t time, const uint8_t *slice, uint8_t part,
-                 ebid_t *ebid_local)
+int ed_add_slice(ed_t *ed, uint16_t time, const uint8_t *slice, uint8_t part)
 {
     if (ed->ebid.status.status != EBID_HAS_ALL) {
         if (part == EBID_SLICE_3) {
@@ -124,63 +117,75 @@ int ed_add_slice(ed_t *ed, uint16_t time, const uint8_t *slice, uint8_t part,
         }
         ebid_set_slice(&ed->ebid, slice, part);
         if (ebid_reconstruct(&ed->ebid) == 0) {
-            ed_set_obf_value(ed, ebid_local);
-            ed->start_s = time;
-            LOG_INFO("[ed]: saw ebid: [");
+            #if IS_USED(MODULE_ED_BLE)
+            ed->ble.seen_first_s = time;
+            ed->ble.seen_last_s = time;
+            #endif
+            #if IS_USED(MODULE_ED_BLE_WIN)
+            ed->ble_win.seen_first_s = time;
+            ed->ble_win.seen_last_s = time;
+            #endif
+            #if IS_USED(MODULE_ED_UWB)
+            ed->uwb.seen_first_s = time;
+            ed->uwb.seen_last_s = time;
+            #endif
+            LOG_INFO("[discovery]: saw new ebid t=(%" PRIu16 "s):\n\t", time);
             for (uint8_t i = 0; i < EBID_SIZE; i++) {
-                LOG_INFO("%d, ", ed->ebid.parts.ebid.u8[i]);
+                if ((i + 1) % 8 == 0 && i != (EBID_SIZE - 1)) {
+                    LOG_INFO("0x%02x\n\t", ed->ebid.parts.ebid.u8[i]);
+                }
+                else {
+                    LOG_INFO("0x%02x ", ed->ebid.parts.ebid.u8[i]);
+                }
             }
-            LOG_INFO("]\n");
+            LOG_INFO("\n");
             return 0;
         }
         return -1;
     }
     else {
-        return 0;
+        return 1;
     }
 }
 
-void ed_process_data(ed_t *ed, uint16_t time, float rssi)
-{
-    ed->end_s = time;
-    if (IS_ACTIVE(CONFIG_ED_OBFUSCATE_RSSI)) {
-        /* obfuscate rssi value */
-        rssi = rssi - ed->obf - CONFIG_RX_COMPENSATION_GAIN;
-    }
-    rdl_windows_update(&ed->wins, rssi, time);
-}
-
-int ed_list_process_data(ed_list_t *list, const uint32_t cid, uint16_t time,
-                         const uint8_t *slice, uint8_t part, float rssi)
+ed_t *ed_list_process_slice(ed_list_t *list, const uint32_t cid, uint16_t time,
+                            const uint8_t *slice, uint8_t part)
 {
     ed_t *ed = ed_list_get_by_cid(list, cid);
 
     if (!ed) {
-        LOG_DEBUG("[ed]: ble_addr not found in list\n");
+        LOG_DEBUG("[ed]: cid not found in list\n");
         ed = ed_memory_manager_calloc(list->manager);
-        ed_init(ed, cid);
         if (!ed) {
-            LOG_ERROR("[ed]: no memory to allocate new ed struct\n");
-            return -1;
+            LOG_DEBUG("[ed]: no memory to allocate new ed struct\n");
+            return NULL;
         }
+        ed_init(ed, cid);
         ed_add(list, ed);
     }
-    /* only add data once ebid was reconstructed */
-    if (ed_add_slice(ed, time, slice, part, list->ebid) == 0) {
-        ed_process_data(ed, time, rssi);
-    }
-    return 0;
-}
-int ed_finish(ed_t *ed)
-{
-    /* if exposure time was enough then the ebid must have been
-       reconstructed */
-    if (ed_exposure_time(ed) >= MIN_EXPOSURE_TIME_S) {
-        rdl_windows_finalize(&ed->wins);
-        return 0;
+    if (ed_add_slice(ed, time, slice, part) == 0) {
+#if IS_USED(MODULE_ED_BLE_WIN) || IS_USED(MODULE_ED_BLE)
+        ed_ble_set_obf_value(ed, list->ebid);
+#endif
     }
 
-    return -1;
+    return ed;
+}
+
+bool ed_finish(ed_t *ed)
+{
+    bool valid = false;
+    (void)ed;
+#if IS_USED(MODULE_ED_BLE)
+    valid |= ed_ble_finish(ed);
+#endif
+#if IS_USED(MODULE_ED_BLE_WIN)
+    valid |= ed_ble_win_finish(ed);
+#endif
+#if IS_USED(MODULE_ED_UWB)
+    valid |= ed_uwb_finish(ed);
+#endif
+    return valid;
 }
 
 /* since we will always know the before node this will update the clist more
@@ -189,6 +194,7 @@ static void _clist_remove_with_before(clist_node_t *list, clist_node_t *node,
                                       clist_node_t *before)
 {
     unsigned state = irq_disable();
+
     /* we are removing the last element in the list */
     if (before == node) {
         list->next = NULL;
@@ -207,13 +213,15 @@ void ed_list_finish(ed_list_t *list)
 
     if (node) {
         do {
-            clist_node_t* before = node;
+            clist_node_t *before = node;
             node = node->next;
             /* check if we are handling the last node (start of list)*/
             bool last_node = node == list->list.next;
-            if (ed_finish((ed_t *)node)) {
+            /* check if node should be kept */
+            if (!ed_finish((ed_t *)node)) {
+                LOG_DEBUG("[ed]: discarding node\n");
                 /* remove the current node from list, and pass previous
-                   node to easily update list */
+                    node to easily update list */
                 _clist_remove_with_before(&list->list, node, before);
                 /* free up the resource */
                 ed_memory_manager_free(list->manager, (ed_t *)node);
@@ -230,8 +238,7 @@ void ed_list_finish(ed_list_t *list)
 void ed_memory_manager_init(ed_memory_manager_t *manager)
 {
     memset(manager, '\0', sizeof(ed_memory_manager_t));
-    memarray_init(&manager->mem, manager->buf, sizeof(ed_t),
-                  CONFIG_ED_BUF_SIZE);
+    memarray_init(&manager->mem, manager->buf, sizeof(ed_t), CONFIG_ED_BUF_SIZE);
 }
 
 void ed_memory_manager_free(ed_memory_manager_t *manager, ed_t *ed)
