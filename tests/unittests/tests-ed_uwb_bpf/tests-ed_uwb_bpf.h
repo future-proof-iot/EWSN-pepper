@@ -11,11 +11,11 @@
  * @{
  *
  * @file
- * @brief       Unittests for the uwb_ed
+ * @brief       Unittests for the ed_uwb_bpf
  *
  */
-#ifndef TESTS_UWB_ED_H
-#define TESTS_UWB_ED_H
+#ifndef TESTS_ED_H
+#define TESTS_ED_H
 
 #include "embUnit/embUnit.h"
 
@@ -26,12 +26,12 @@ extern "C" {
 /**
  *  @brief   The entry point of this test suite.
  */
-void tests_uwb_ed(void);
+void tests_ed_uwb_bpf(void);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* TESTS_UWB_ED_H */
+#endif /* TESTS_ED_H */
 /** @} */
 
