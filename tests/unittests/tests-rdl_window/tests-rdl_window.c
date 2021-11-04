@@ -36,7 +36,7 @@ static float expected_avg[WINDOWS_PER_EPOCH] = {
 
 static float _2_dec_round(float value)
 {
-    return round(100 * value) / 100;
+    return round(100 * value);
 }
 
 static void setUp(void)
