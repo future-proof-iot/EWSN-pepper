@@ -1,2 +1,6 @@
 USEMODULE_INCLUDES_rtl_window := $(LAST_MAKEFILEDIR)/include
 USEMODULE_INCLUDES += $(USEMODULE_INCLUDES_rtl_window)
+
+# include common pepper files
+# USEMODULE_INCLUDES += $(USEMODULE_INCLUDES_rtl_window)/../../pepper/include
+
