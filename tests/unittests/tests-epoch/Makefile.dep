@@ -1,1 +1,4 @@
 USEMODULE += epoch
+USEMODULE += ed
+USEMODULE += ed_uwb
+USEMODULE += ed_ble_win

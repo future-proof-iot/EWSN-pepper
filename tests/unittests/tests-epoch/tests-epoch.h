@@ -11,7 +11,7 @@
  * @{
  *
  * @file
- * @brief       Unittests for the epoch
+ * @brief       Unittests for poch
  *
  */
 #ifndef TESTS_EPOCH_H
