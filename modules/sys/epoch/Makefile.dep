@@ -1,10 +1,10 @@
 USEMODULE += ebid
-USEMODULE += rdl_window
 USEMODULE += ed
 USEMODULE += crypto_manager
 
-USEMODULE += fmt
-USEMODULE += base64
+USEMODULE += memarray
 
 OUTPUT_FORMAT ?= json
 USEMODULE += test_utils_result_output_${OUTPUT_FORMAT}
+USEMODULE += fmt
+USEPKG += nanocbor
