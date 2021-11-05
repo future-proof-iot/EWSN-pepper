@@ -116,6 +116,13 @@ static void test_epoch_finish(void)
         ed->uwb.cumulative_d_cm = (MAX_DISTANCE_CM - 1) * MIN_REQUEST_COUNT;
         ed->uwb.req_count = MIN_REQUEST_COUNT;
 #endif
+#if IS_USED(MODULE_ED_BLE)
+        /* mock UWB data that will pass contact filter */
+        ed->ble.seen_first_s = 0;
+        ed->ble.seen_last_s = MIN_EXPOSURE_TIME_S + i;
+        ed->ble.cumulative_rssi = -80;
+        ed->ble.scan_count = 1;
+#endif
 #if IS_USED(MODULE_ED_BLE_WIN)
         /* mock windowed BLE data that will pass contact filter */
         ed->ble_win.seen_first_s = 0;
@@ -138,6 +145,10 @@ static void test_epoch_finish(void)
 #endif
 #if IS_USED(MODULE_ED_BLE_WIN)
         TEST_ASSERT(epoch.contacts[i].ble_win.exposure_s >=
+                    (MIN_EXPOSURE_TIME_S + TEST_CONTACTS - CONFIG_EPOCH_MAX_ENCOUNTERS));
+#endif
+#if IS_USED(MODULE_ED_BLE)
+        TEST_ASSERT(epoch.contacts[i].ble.exposure_s >=
                     (MIN_EXPOSURE_TIME_S + TEST_CONTACTS - CONFIG_EPOCH_MAX_ENCOUNTERS));
 #endif
     }

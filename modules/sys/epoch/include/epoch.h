@@ -74,6 +74,17 @@ typedef struct contact_ble_win_data {
 } contact_ble_win_data_t;
 #endif
 
+#if IS_USED(MODULE_ED_BLE)
+/**
+ * @brief   Contact data
+ */
+typedef struct contact_ble_data {
+    uint16_t scan_count;                    /**< request count */
+    uint16_t exposure_s;                    /**< exposure time */
+    uint8_t avg_rssi;                       /**< distance */
+} contact_ble_data_t;
+#endif
+
 /**
  * @brief   Contact data
  */
@@ -84,6 +95,9 @@ typedef struct contact_data {
 #endif
 #if IS_USED(MODULE_ED_BLE_WIN)
     contact_ble_win_data_t ble_win;         /**< Windowed BLE contact data */
+#endif
+#if IS_USED(MODULE_ED_BLE)
+    contact_ble_data_t ble;                 /**< BLE contact data */
 #endif
 } contact_data_t;
 

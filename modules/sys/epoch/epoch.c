@@ -40,10 +40,11 @@ typedef struct top_ed_list {
     uint8_t count;
 } top_ed_list_t;
 
-static uint16_t ed_max_exposure_time(ed_t* ed)
+static uint16_t ed_max_exposure_time(ed_t *ed)
 {
     uint16_t exposure = 0;
     uint16_t tmp_exposure = 0;
+
 #if IS_USED(MODULE_ED_BLE)
     tmp_exposure = ed->ble.seen_last_s - ed->ble.seen_first_s;
     exposure = tmp_exposure > exposure ? tmp_exposure : exposure;
@@ -118,13 +119,22 @@ void epoch_finish(epoch_data_t *epoch, ed_list_t *list)
     for (uint8_t i = 0; i < CONFIG_EPOCH_MAX_ENCOUNTERS; i++) {
         if (top.top[i].duration != 0) {
 #if IS_USED(MODULE_ED_UWB)
-            epoch->contacts[i].uwb.exposure_s = top.top[i].ed->uwb.seen_last_s - top.top[i].ed->uwb.seen_first_s;
+            epoch->contacts[i].uwb.exposure_s = top.top[i].ed->uwb.seen_last_s -
+                                                top.top[i].ed->uwb.seen_first_s;
             epoch->contacts[i].uwb.avg_d_cm = top.top[i].ed->uwb.cumulative_d_cm;
             epoch->contacts[i].uwb.req_count = top.top[i].ed->uwb.req_count;
 #endif
+#if IS_USED(MODULE_ED_BLE)
+            epoch->contacts[i].ble.exposure_s = top.top[i].ed->ble.seen_last_s -
+                                                top.top[i].ed->ble.seen_first_s;
+            epoch->contacts[i].ble.avg_rssi = top.top[i].ed->ble.cumulative_rssi;
+            epoch->contacts[i].ble.scan_count = top.top[i].ed->ble.scan_count;
+#endif
 #if IS_USED(MODULE_ED_BLE_WIN)
-            epoch->contacts[i].ble_win.exposure_s = top.top[i].ed->ble_win.seen_last_s - top.top[i].ed->ble_win.seen_first_s;
-            memcpy(epoch->contacts[i].ble_win.wins, &top.top[i].ed->ble_win.wins, sizeof(rdl_windows_t));
+            epoch->contacts[i].ble_win.exposure_s = top.top[i].ed->ble_win.seen_last_s -
+                                                    top.top[i].ed->ble_win.seen_first_s;
+            memcpy(epoch->contacts[i].ble_win.wins, &top.top[i].ed->ble_win.wins,
+                   sizeof(rdl_windows_t));
 #endif
             crypto_manager_gen_pets(epoch->keys, top.top[i].ed->ebid.parts.ebid.u8,
                                     &epoch->contacts[i].pet);
@@ -139,14 +149,15 @@ void epoch_finish(epoch_data_t *epoch, ed_list_t *list)
 static bool _epoch_valid_contact(contact_data_t *data)
 {
     bool valid = false;
+
 #if IS_USED(MODULE_ED_BLE)
-    valid = valid || (data->ble.exposure_s != 0);
+    valid |= (data->ble.exposure_s != 0);
 #endif
 #if IS_USED(MODULE_ED_BLE_WIN)
-    valid = valid || (data->ble_win.exposure_s != 0);
+    valid |= (data->ble_win.exposure_s != 0);
 #endif
 #if IS_USED(MODULE_ED_UWB)
-    valid = valid || (data->uwb.exposure_s != 0);
+    valid |= (data->uwb.exposure_s != 0);
 #endif
     return valid;
 }
@@ -211,6 +222,17 @@ void contact_data_serialize_all_printf(epoch_data_t *epoch)
             turo_u32(&ctx, epoch->contacts[i].uwb.avg_d_cm);
             turo_dict_close(&ctx);
 #endif
+#if IS_USED(MODULE_ED_BLE)
+            turo_dict_key(&ctx, "ble");
+            turo_dict_open(&ctx);
+            turo_dict_key(&ctx, "exposure");
+            turo_u32(&ctx, epoch->contacts[i].ble.exposure_s);
+            turo_dict_key(&ctx, "scan_count");
+            turo_u32(&ctx, epoch->contacts[i].ble.scan_count);
+            turo_dict_key(&ctx, "avg_rssi");
+            turo_u32(&ctx, epoch->contacts[i].ble.avg_rssi);
+            turo_dict_close(&ctx);
+#endif
 #if IS_USED(MODULE_ED_BLE_WIN)
             turo_dict_key(&ctx, "ble_win");
             turo_dict_open(&ctx);
@@ -240,7 +262,7 @@ void contact_data_serialize_all_printf(epoch_data_t *epoch)
 }
 
 size_t contact_data_serialize_all_cbor(epoch_data_t *epoch, uint8_t *buf,
-                            size_t len)
+                                       size_t len)
 {
     nanocbor_encoder_t enc;
 
