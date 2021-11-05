@@ -4,6 +4,7 @@ USEMODULE_INCLUDES += $(USEMODULE_INCLUDES_ed)
 
 PSEUDOMODULES += ed_uwb
 PSEUDOMODULES += ed_ble_common
+PSEUDOMODULES += ed_ble
 PSEUDOMODULES += ed_ble_win
 PSEUDOMODULES += ed_uwb_bpf
 PSEUDOMODULES += ed_uwb_bpf_suit

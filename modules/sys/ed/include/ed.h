@@ -98,7 +98,7 @@ typedef struct ed_uwb {
  * @brief   BLE encounter data, structure to track encounters per epoch
  */
 typedef struct ed_ble {
-    float cumulative_rssi;      /**< cumulative distance in cm */
+    float cumulative_rssi;      /**< cumulative distance rssi  */
     uint16_t scan_count;        /**< scan count */
     uint16_t seen_first_s;      /**< time of first message, relative to start of epoch [s] */
     uint16_t seen_last_s;       /**< time of last message, relative to start of epoch [s] */
@@ -422,7 +422,7 @@ bool ed_uwb_finish(ed_t *ed);
 /**
  * @brief   Process an encounter data
  *
- * This will calculate the average RSSI if exposure time was enoudh.
+ * This will calculate the average RSSI if exposure time was enough.
  *
  * @param[in]      list     the encounter data list
  *
@@ -430,6 +430,20 @@ bool ed_uwb_finish(ed_t *ed);
  */
 bool ed_ble_win_finish(ed_t *ed);
 #endif
+
+#if IS_USED(MODULE_ED_BLE)
+/**
+ * @brief   Process an encounter data
+ *
+ * This will calculate the average RSSI if exposure time was enough.
+ *
+ * @param[in]      list     the encounter data list
+ *
+ * @return         true if valid encounter, false otherwise (can be discarded)
+ */
+bool ed_ble_finish(ed_t *ed);
+#endif
+
 
 /**
  * @brief   Init the memory manager
