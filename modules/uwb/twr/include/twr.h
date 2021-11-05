@@ -39,10 +39,14 @@ extern "C" {
 #define CONFIG_TWR_PAN_ID     (0xCAFE)
 #endif
 /**
- * @brief   The time window for witch to switch on rng listening
+ * @brief   The time window for which to switch on rng listening, max 65
+ *
+ * @note    From experimental measurement the time between advertisement
+ *          it ~600us, which means the start of the listening window can
+ *          be off to upto 1.2ms without considering OS delays.
  */
-#ifndef CONFIG_TWR_LISTEN_WINDOW_MS
-#define CONFIG_TWR_LISTEN_WINDOW_MS     (6)
+#ifndef CONFIG_TWR_LISTEN_WINDOW_US
+#define CONFIG_TWR_LISTEN_WINDOW_US     (1500U)
 #endif
 /**
  * @brief   TWR events to allocate, used to schedule rng_request/listen
@@ -116,6 +120,9 @@ void twr_set_short_addr(uint16_t address);
  */
 void twr_set_pan_id(uint16_t pan_id);
 
+void twr_set_listen_window(uint16_t time);
+uint16_t twr_get_listen_window(void);
+
 /**
  * @brief   Schedule a uwb_rng_request at an offset
  *
@@ -185,6 +192,22 @@ twr_event_t *twr_event_mem_manager_calloc(twr_event_mem_manager_t *manager);
  * @param[in]       manager     the memory manager
  */
 void twr_managed_set_manager(twr_event_mem_manager_t *manager);
+/**
+ * @brief   Set the memory manager for manged requests/listen events
+ *
+ * @returns         a pointer to the memory manager
+ */
+twr_event_mem_manager_t *twr_managed_get_manager(void);
+
+/**
+ * @brief   Enable TWR activity, enabled by default on init
+ */
+void twr_enable(void);
+
+/**
+ * @brief   Disable TWR activity, incoming event are ignored
+ */
+void twr_disable(void);
 
 #ifdef __cplusplus
 }
