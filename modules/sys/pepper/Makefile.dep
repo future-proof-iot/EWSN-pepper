@@ -1,0 +1,18 @@
+ifneq (,$(filter pepper_controller,$(USEMODULE)))
+  USEMODULE += epoch
+  USEMODULE += ebid
+  USEMODULE += crypto_manager
+  USEMODULE += twr
+  USEMODULE += ed
+  USEMODULE += fmt
+  USEMODULE += event
+  USEMODULE += event_thread
+  USEMODULE += event_callback
+  USEMODULE += event_periodic
+  USEMODULE += event_timeout
+  USEMODULE += desire_scanner
+  USEMODULE += desire_advertiser
+  USEMODULE += ztimer_epoch
+  USEMODULE += ztimer_msec
+  USEMODULE += ztimer_sec
+endif

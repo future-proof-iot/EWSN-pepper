@@ -1,2 +1,5 @@
 USEMODULE_INCLUDES_pepper := $(LAST_MAKEFILEDIR)/include
 USEMODULE_INCLUDES += $(USEMODULE_INCLUDES_pepper)
+
+PSEUDOMODULES += pepper_controller
+PSEUDOMODULES += pepper_shell

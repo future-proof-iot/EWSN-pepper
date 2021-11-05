@@ -21,36 +21,60 @@
 #ifndef PEPPER_H
 #define PEPPER_H
 
+#include "ztimer/config.h"
 #include "timex.h"
+#include "config.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/**
- * @brief   The default EBID slice rotation period in secondS
- *
- */
-#ifndef CONFIG_ADV_PER_SLICE
-#define CONFIG_ADV_PER_SLICE            (20LU)
+#ifndef CONFIG_TWR_MIN_OFFSET_MS
+#define CONFIG_TWR_MIN_OFFSET_MS        (100)
 #endif
 
-/**
- * @brief   The default EBID slice rotation period in seconds
- *
- */
-#ifndef CONFIG_EPOCH_DURATION_SEC
-#define CONFIG_EPOCH_DURATION_SEC        (15LU * SEC_PER_MIN)
+#ifndef CONFIG_TWR_MIN_OFFSET_TICKS
+#define CONFIG_TWR_MIN_OFFSET_TICKS     ((CONFIG_TWR_MIN_OFFSET_MS) * (CONFIG_ZTIMER_MSEC_BASE_FREQ / MS_PER_SEC))
 #endif
 
-/**
- * @brief   The default EBID slice rotation period in seconds
- *
- */
-#ifndef CONFIG_EBID_ROTATION_T_S
-#define CONFIG_EBID_ROTATION_T_S        CONFIG_EPOCH_DURATION_SEC
+#ifndef CONFIG_TWR_RX_OFFSET_TICKS
+#define CONFIG_TWR_RX_OFFSET_TICKS      (-20)
 #endif
 
+#ifndef CONFIG_TWR_TX_OFFSET_TICKS
+#define CONFIG_TWR_TX_OFFSET_TICKS      (0)
+#endif
+
+#ifndef CONFIG_MIA_TIME_S
+#define CONFIG_MIA_TIME_S               (5)
+#endif
+
+#ifndef CONFIG_PEPPER_BASE_NAME_BUFFER
+#define CONFIG_PEPPER_BASE_NAME_BUFFER  (32)
+#endif
+
+typedef struct twr_params {
+    int16_t rx_offset_ticks;
+    int16_t tx_offset_ticks;
+} twr_params_t;
+
+typedef struct adv_params {
+    uint32_t itvl_ms;
+    int32_t max_events;
+    int32_t max_events_slice;
+} adv_params_t;
+
+void pepper_init(void);
+void pepper_start(uint32_t epoch_duration_s, uint32_t advs_per_slice,
+                  uint32_t adv_itvl_ms, bool align);
+void pepper_stop(void);
+int pepper_pause(void);
+
+void pepper_twr_set_rx_offset(int16_t ticks);
+void pepper_twr_set_tx_offset(int16_t ticks);
+int16_t pepper_twr_get_rx_offset(void);
+int16_t pepper_twr_get_tx_offset(void);
+int pepper_set_serializer_base_name(char* base_name);
 #ifdef __cplusplus
 }
 #endif
