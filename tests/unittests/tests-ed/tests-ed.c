@@ -27,6 +27,7 @@ static float data_rssi[TEST_VALUES_NUMOF] = {
     -80, -70, -50, -10, -20, -30, -40, -75, -25, -35,
 };
 
+#if (MODULE_ED_BLE_WIN)
 static int expected_samples[WINDOWS_PER_EPOCH] = {
     4, 3, 0, 0, 4, 4, 0, 0, 0, 1, 2, 1, 0, 0, 0
 };
@@ -37,6 +38,11 @@ static float expected_avg[WINDOWS_PER_EPOCH] = {
     000.00000, -25.00000, -27.59637, -35.00000,
     000.00000, 000.00000, 000.00000
 };
+#endif
+
+#if IS_USED(MODULE_ED_BLE)
+static float expected_avg_all = -19.40858;
+#endif
 #endif
 
 static const uint8_t ebid_slice[][EBID_SLICE_SIZE_LONG] = {
@@ -346,10 +352,42 @@ static void test_ed_ble_win_finish(void)
 }
 #endif
 
-static void test_ed_finish(void)
+#if IS_USED(MODULE_ED_BLE)
+static void test_ed_ble_process_data(void)
 {
     ed_t ed;
 
+    ed_init(&ed, 0x01);
+    /* set start time since this is usually set in ed_list_process_data */
+    ed.ble.seen_first_s = data_ts[0];
+    /* don't offuscate data, easier to test */
+    ed.obf = 0;
+    for (uint8_t i = 0; i < TEST_VALUES_NUMOF; i++) {
+        ed_ble_process_data(&ed, data_ts[i], data_rssi[i]);
+    }
+    TEST_ASSERT(ed_ble_finish(&ed) == true);
+    TEST_ASSERT(_2_dec_round(ed.ble.cumulative_rssi) ==
+                _2_dec_round(expected_avg_all));
+    uint16_t expected_exposure_time = data_ts[TEST_VALUES_NUMOF - 1] - data_ts[0];
+    TEST_ASSERT((ed.ble.seen_last_s - ed.ble.seen_first_s) == expected_exposure_time);
+}
+
+static void test_ed_ble_finish(void)
+{
+    ed_t ed;
+    ed_init(&ed, 0x01);
+    ed.ble.seen_first_s = 0;
+    ed.ble.seen_last_s = MIN_EXPOSURE_TIME_S - 1;
+    TEST_ASSERT(ed_ble_finish(&ed) == false);
+    ed.ble.seen_last_s = MIN_EXPOSURE_TIME_S;
+    TEST_ASSERT(ed_ble_finish(&ed) == true);
+}
+#endif
+
+
+static void test_ed_finish(void)
+{
+    ed_t ed;
     ed_init(&ed, 0x01);
     TEST_ASSERT(ed_finish(&ed) == false);
     if (IS_USED(MODULE_ED_UWB)) {
@@ -417,6 +455,10 @@ Test *tests_ed_all(void)
 #if IS_USED(MODULE_ED_BLE_WIN)
         new_TestFixture(test_ed_ble_win_process_data),
         new_TestFixture(test_ed_ble_win_finish),
+#endif
+#if IS_USED(MODULE_ED_BLE)
+        new_TestFixture(test_ed_ble_process_data),
+        new_TestFixture(test_ed_ble_finish),
 #endif
 #if IS_USED(MODULE_ED_UWB)
         new_TestFixture(test_ed_uwb_process_data),

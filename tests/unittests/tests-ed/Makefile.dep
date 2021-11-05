@@ -1,3 +1,4 @@
 USEMODULE += ed
 USEMODULE += ed_uwb
+USEMODULE += ed_ble
 USEMODULE += ed_ble_win
