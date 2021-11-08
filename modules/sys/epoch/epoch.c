@@ -230,7 +230,7 @@ void contact_data_serialize_all_printf(epoch_data_t *epoch)
             turo_dict_key(&ctx, "scan_count");
             turo_u32(&ctx, epoch->contacts[i].ble.scan_count);
             turo_dict_key(&ctx, "avg_rssi");
-            turo_u32(&ctx, epoch->contacts[i].ble.avg_rssi);
+            turo_float(&ctx, epoch->contacts[i].ble.avg_rssi);
             turo_dict_close(&ctx);
 #endif
 #if IS_USED(MODULE_ED_BLE_WIN)

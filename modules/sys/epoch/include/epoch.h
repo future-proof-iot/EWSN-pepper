@@ -81,7 +81,7 @@ typedef struct contact_ble_win_data {
 typedef struct contact_ble_data {
     uint16_t scan_count;                    /**< request count */
     uint16_t exposure_s;                    /**< exposure time */
-    uint8_t avg_rssi;                       /**< distance */
+    float avg_rssi;                        /**< distance */
 } contact_ble_data_t;
 #endif
 
