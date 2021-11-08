@@ -172,18 +172,18 @@ ed_t *ed_list_process_slice(ed_list_t *list, const uint32_t cid, uint16_t time,
     return ed;
 }
 
-bool ed_finish(ed_t *ed)
+bool ed_finish(ed_t *ed, uint32_t min_exposure_s)
 {
     bool valid = false;
     (void)ed;
 #if IS_USED(MODULE_ED_BLE)
-    valid |= ed_ble_finish(ed);
+    valid |= ed_ble_finish(ed, min_exposure_s);
 #endif
 #if IS_USED(MODULE_ED_BLE_WIN)
-    valid |= ed_ble_win_finish(ed);
+    valid |= ed_ble_win_finish(ed, min_exposure_s);
 #endif
 #if IS_USED(MODULE_ED_UWB)
-    valid |= ed_uwb_finish(ed);
+    valid |= ed_uwb_finish(ed, min_exposure_s);
 #endif
     return valid;
 }
@@ -218,7 +218,7 @@ void ed_list_finish(ed_list_t *list)
             /* check if we are handling the last node (start of list)*/
             bool last_node = node == list->list.next;
             /* check if node should be kept */
-            if (!ed_finish((ed_t *)node)) {
+            if (!ed_finish((ed_t *)node, list->min_exposure_s)) {
                 LOG_DEBUG("[ed]: discarding node\n");
                 /* remove the current node from list, and pass previous
                     node to easily update list */

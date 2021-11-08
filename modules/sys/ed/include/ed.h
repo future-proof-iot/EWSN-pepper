@@ -157,6 +157,7 @@ typedef struct ed_list {
     clist_node_t list;                  /**< list head */
     ed_memory_manager_t *manager;       /**< pointer to the encounter data memory manager */
     ebid_t *ebid;                       /**< pointer to the current epoch local ebid */
+    uint32_t min_exposure_s;            /**< minimum exposure time in s */
 } ed_list_t;
 
 /**
@@ -175,6 +176,18 @@ static inline void ed_list_init(ed_list_t *ed_list,
     ed_list->list.next = NULL;
     ed_list->manager = manager;
     ed_list->ebid = ebid;
+    ed_list->min_exposure_s = MIN_EXPOSURE_TIME_S;
+}
+
+/**
+ * @brief   Initialize an Encounter Data List
+ *
+ * @param[inout]    ed_list         the encounter data list to initialize
+ * @param[in]       min_expsure_s   the minimum exposure time for a valid encounter
+ */
+static inline void ed_list_set_min_exposure(ed_list_t *ed_list, uint32_t min_exposure_s)
+{
+    ed_list->min_exposure_s = min_exposure_s;
 }
 
 /**
@@ -399,10 +412,11 @@ void ed_list_finish(ed_list_t *list);
  * @brief   Finish processing of an encounter data
  *
  * @param[in]      list     the encounter data list
+ * @param[in]      min_expsure_s   the minimum exposure time for a valid encounter
  *
  * @return         true if valid encounter, false otherwise (can be discarded)
  */
-bool ed_finish(ed_t *ed);
+bool ed_finish(ed_t *ed, uint32_t min_exposure_s);
 
 #if IS_USED(MODULE_ED_UWB)
 /**
@@ -412,10 +426,11 @@ bool ed_finish(ed_t *ed);
  * the EBID can be reconstructed and if the encounter time was enough.
  *
  * @param[in]      list     the encounter data list
+ * @param[in]      min_expsure_s   the minimum exposure time for a valid encounter
  *
  * @return         true if valid encounter, false otherwise (can be discarded)
  */
-bool ed_uwb_finish(ed_t *ed);
+bool ed_uwb_finish(ed_t *ed, uint32_t min_exposure_s);
 #endif
 
 #if IS_USED(MODULE_ED_BLE_WIN)
@@ -425,10 +440,11 @@ bool ed_uwb_finish(ed_t *ed);
  * This will calculate the average RSSI if exposure time was enough.
  *
  * @param[in]      list     the encounter data list
+ * @param[in]      min_expsure_s   the minimum exposure time for a valid encounter
  *
  * @return         true if valid encounter, false otherwise (can be discarded)
  */
-bool ed_ble_win_finish(ed_t *ed);
+bool ed_ble_win_finish(ed_t *ed, uint32_t min_exposure_s);
 #endif
 
 #if IS_USED(MODULE_ED_BLE)
@@ -438,12 +454,12 @@ bool ed_ble_win_finish(ed_t *ed);
  * This will calculate the average RSSI if exposure time was enough.
  *
  * @param[in]      list     the encounter data list
+ * @param[in]      min_expsure_s   the minimum exposure time for a valid encounter
  *
  * @return         true if valid encounter, false otherwise (can be discarded)
  */
-bool ed_ble_finish(ed_t *ed);
+bool ed_ble_finish(ed_t *ed, uint32_t min_exposure_s);
 #endif
-
 
 /**
  * @brief   Init the memory manager

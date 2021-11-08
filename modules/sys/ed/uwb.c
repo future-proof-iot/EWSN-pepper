@@ -46,7 +46,7 @@ ed_t *ed_list_process_rng_data(ed_list_t *list, const uint16_t addr, uint16_t ti
     return ed;
 }
 
-bool ed_uwb_finish(ed_t *ed)
+bool ed_uwb_finish(ed_t *ed, uint32_t min_exposure_s)
 {
     uint16_t exposure = ed->uwb.seen_last_s - ed->uwb.seen_first_s;
 
@@ -55,7 +55,7 @@ bool ed_uwb_finish(ed_t *ed)
                   ed->uwb.cumulative_d_cm, ed->uwb.req_count);
         ed->uwb.cumulative_d_cm = ed->uwb.cumulative_d_cm / ed->uwb.req_count;
         if (ed->uwb.cumulative_d_cm <= MAX_DISTANCE_CM) {
-            if (exposure >= MIN_EXPOSURE_TIME_S) {
+            if (exposure >= min_exposure_s) {
                 if (ed->uwb.req_count >= MIN_REQUEST_COUNT) {
                     ed->uwb.valid = true;
                     return true;

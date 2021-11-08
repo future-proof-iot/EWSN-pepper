@@ -255,15 +255,15 @@ static void test_ed_uwb_finish(void)
     ed_init(&ed, 0x01);
     ed.uwb.seen_first_s = 0;
     ed.uwb.seen_last_s = MIN_EXPOSURE_TIME_S - 1;
-    TEST_ASSERT(ed_uwb_finish(&ed) == false);
+    TEST_ASSERT(ed_uwb_finish(&ed, MIN_EXPOSURE_TIME_S) == false);
     ed.uwb.seen_last_s = MIN_EXPOSURE_TIME_S;
     ed.uwb.req_count = MIN_REQUEST_COUNT - 1;
-    TEST_ASSERT(ed_uwb_finish(&ed) == false);
+    TEST_ASSERT(ed_uwb_finish(&ed, MIN_EXPOSURE_TIME_S) == false);
     ed.uwb.req_count = 4;
     ed.uwb.cumulative_d_cm = (MAX_DISTANCE_CM + 1) * 4;
-    TEST_ASSERT(ed_uwb_finish(&ed) == false);
+    TEST_ASSERT(ed_uwb_finish(&ed, MIN_EXPOSURE_TIME_S) == false);
     ed.uwb.cumulative_d_cm = (MAX_DISTANCE_CM - 1) * 4;
-    TEST_ASSERT(ed_uwb_finish(&ed) == true);
+    TEST_ASSERT(ed_uwb_finish(&ed, MIN_EXPOSURE_TIME_S) == true);
     TEST_ASSERT(ed.uwb.valid == true);
 }
 
@@ -328,7 +328,7 @@ static void test_ed_ble_win_process_data(void)
     for (uint8_t i = 0; i < TEST_VALUES_NUMOF; i++) {
         ed_ble_win_process_data(&ed, data_ts[i], data_rssi[i]);
     }
-    TEST_ASSERT(ed_ble_win_finish(&ed) == true);
+    TEST_ASSERT(ed_ble_win_finish(&ed, MIN_EXPOSURE_TIME_S) == true);
     for (uint8_t i = 0; i < WINDOWS_PER_EPOCH; i++) {
         TEST_ASSERT(ed.ble_win.wins.wins[i].samples == expected_samples[i]);
         TEST_ASSERT(_2_dec_round(ed.ble_win.wins.wins[i].avg) ==
@@ -346,9 +346,9 @@ static void test_ed_ble_win_finish(void)
     ed_init(&ed, 0x01);
     ed.ble_win.seen_first_s = 0;
     ed.ble_win.seen_last_s = MIN_EXPOSURE_TIME_S - 1;
-    TEST_ASSERT(ed_ble_win_finish(&ed) == false);
+    TEST_ASSERT(ed_ble_win_finish(&ed, MIN_EXPOSURE_TIME_S) == false);
     ed.ble_win.seen_last_s = MIN_EXPOSURE_TIME_S;
-    TEST_ASSERT(ed_ble_win_finish(&ed) == true);
+    TEST_ASSERT(ed_ble_win_finish(&ed, MIN_EXPOSURE_TIME_S) == true);
 }
 #endif
 
@@ -365,7 +365,7 @@ static void test_ed_ble_process_data(void)
     for (uint8_t i = 0; i < TEST_VALUES_NUMOF; i++) {
         ed_ble_process_data(&ed, data_ts[i], data_rssi[i]);
     }
-    TEST_ASSERT(ed_ble_finish(&ed) == true);
+    TEST_ASSERT(ed_ble_finish(&ed, MIN_EXPOSURE_TIME_S) == true);
     TEST_ASSERT(_2_dec_round(ed.ble.cumulative_rssi) ==
                 _2_dec_round(expected_avg_all));
     uint16_t expected_exposure_time = data_ts[TEST_VALUES_NUMOF - 1] - data_ts[0];
@@ -378,9 +378,9 @@ static void test_ed_ble_finish(void)
     ed_init(&ed, 0x01);
     ed.ble.seen_first_s = 0;
     ed.ble.seen_last_s = MIN_EXPOSURE_TIME_S - 1;
-    TEST_ASSERT(ed_ble_finish(&ed) == false);
+    TEST_ASSERT(ed_ble_finish(&ed, MIN_EXPOSURE_TIME_S) == false);
     ed.ble.seen_last_s = MIN_EXPOSURE_TIME_S;
-    TEST_ASSERT(ed_ble_finish(&ed) == true);
+    TEST_ASSERT(ed_ble_finish(&ed, MIN_EXPOSURE_TIME_S) == true);
 }
 #endif
 
@@ -389,23 +389,24 @@ static void test_ed_finish(void)
 {
     ed_t ed;
     ed_init(&ed, 0x01);
-    TEST_ASSERT(ed_finish(&ed) == false);
+    TEST_ASSERT(ed_finish(&ed, MIN_EXPOSURE_TIME_S) == false);
     if (IS_USED(MODULE_ED_UWB)) {
         ed_init(&ed, 0x01);
         _ed_uwb_valid_init(&ed);
-        TEST_ASSERT(ed_finish(&ed) == true);
+        TEST_ASSERT(ed_finish(&ed, MIN_EXPOSURE_TIME_S) == true);
     }
     if (IS_USED(MODULE_ED_BLE_WIN)) {
         ed_init(&ed, 0x01);
         _ed_ble_win_valid_init(&ed);
-        TEST_ASSERT(ed_finish(&ed) == true);
+        TEST_ASSERT(ed_finish(&ed, MIN_EXPOSURE_TIME_S) == true);
+        TEST_ASSERT(ed_finish(&ed, MIN_EXPOSURE_TIME_S) == true);
     }
     if (IS_USED(MODULE_ED_BLE_WIN) && IS_USED(MODULE_ED_BLE_WIN)) {
         ed_init(&ed, 0x01);
         _ed_uwb_valid_init(&ed);
-        TEST_ASSERT(ed_finish(&ed) == true);
+        TEST_ASSERT(ed_finish(&ed, MIN_EXPOSURE_TIME_S) == true);
         _ed_ble_win_valid_init(&ed);
-        TEST_ASSERT(ed_finish(&ed) == true);
+        TEST_ASSERT(ed_finish(&ed, MIN_EXPOSURE_TIME_S) == true);
     }
 }
 

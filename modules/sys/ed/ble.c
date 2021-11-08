@@ -45,7 +45,7 @@ void ed_ble_process_data(ed_t *ed, uint16_t time, int8_t rssi)
     ed->ble.scan_count++;
 }
 
-bool ed_ble_finish(ed_t *ed)
+bool ed_ble_finish(ed_t *ed, uint32_t min_exposure_s)
 {
     /* if exposure time was enough then the ebid must have been reconstructed */
     uint16_t exposure = ed->ble.seen_last_s - ed->ble.seen_first_s;
@@ -55,7 +55,7 @@ bool ed_ble_finish(ed_t *ed)
     float n_avg = ed->ble.cumulative_rssi / ed->ble.scan_count;
     /* set the cummulative_rssi to the rssi average */
     ed->ble.cumulative_rssi = 10 * log10f(n_avg);
-    if (exposure >= MIN_EXPOSURE_TIME_S) {
+    if (exposure >= min_exposure_s) {
         ed->ble.valid = true;
         return true;
     }
