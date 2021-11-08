@@ -109,18 +109,16 @@ static void _handle_time_service_data(bluetil_ad_t *ad)
 }
 #endif
 
-static void _on_scan_evt(uint8_t type, const ble_addr_t *addr, int8_t rssi,
+static void _on_scan_evt(uint8_t type, const ble_addr_t *addr,
+                         const nimble_scanner_info_t *info,
                          const uint8_t *adv, size_t adv_len)
 {
     assert(addr);
     assert(adv_len <= BLE_ADV_PDU_LEN);
 
-    uint32_t now = ztimer_now(ZTIMER_MSEC);
     bluetil_ad_t ad = BLUETIL_AD_INIT((uint8_t *)adv, adv_len, adv_len);
+    uint32_t ts = ztimer_now(ZTIMER_MSEC);
 
-    /* dummy print ts: sender, rssi, adv data */
-    DEBUG("t=%"PRIu32": rssi = %d, adv_type = %s, ", now, rssi, dbg_parse_ble_adv_type(
-              type));
     if (IS_ACTIVE(ENABLE_DEBUG)) {
         dbg_print_ble_addr(addr);
         dbg_dump_buffer("\t adv_pkt = ", adv, adv_len, '\n');
@@ -147,7 +145,7 @@ static void _on_scan_evt(uint8_t type, const ble_addr_t *addr, int8_t rssi,
                     if ((desire_adv_payload->data.service_uuid_16 ==
                          DESIRE_SERVICE_UUID16) &&
                         (_detection_cb != NULL)) {
-                        _detection_cb(now, addr, rssi, desire_adv_payload);
+                        _detection_cb(ts, addr, info->rssi, desire_adv_payload);
                     }
                 }
                 else {
@@ -314,14 +312,11 @@ static int _conn_update(nimble_netif_conn_t *conn, int handle, void *arg)
 void desire_ble_scan_update(const desire_ble_scanner_params_t *params)
 {
     /* calculate the used scan parameters */
-    struct ble_gap_disc_params scan_params;
+    nimble_scanner_cfg_t scan_params;
 
-    scan_params.itvl = BLE_GAP_SCAN_ITVL_MS(params->scan_itvl);
-    scan_params.window = BLE_GAP_SCAN_WIN_MS(params->scan_win);
-    scan_params.filter_policy = 0;
-    scan_params.limited = 0;
-    scan_params.passive = 0;
-    scan_params.filter_duplicates = 0;
+    scan_params.itvl_ms = BLE_GAP_SCAN_ITVL_MS(params->scan_itvl);
+    scan_params.win_ms = BLE_GAP_SCAN_WIN_MS(params->scan_win);
+    scan_params.flags = NIMBLE_SCANNER_PHY_1M;
 
 #if IS_USED(MODULE_DESIRE_SCANNER_NETIF)
     /* populate the connection parameters */
