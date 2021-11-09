@@ -15,3 +15,6 @@ USEMODULE_INCLUDES += $(USEMODULE_INCLUDES_ed)/../../pepper/include
 ifneq (,$(filter ed_uwb_bpf,$(USEMODULE)))
   include $(ED_DIR)/ed_uwb_bpf.mk
 endif
+
+OUTPUT_FORMAT ?= json
+USEMODULE += test_utils_result_output_${OUTPUT_FORMAT}

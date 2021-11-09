@@ -19,6 +19,8 @@
  */
 #include "ed.h"
 #include "ed_shared.h"
+#include "fmt.h"
+#include "test_utils/result_output.h"
 
 #ifndef LOG_LEVEL
 #define LOG_LEVEL   LOG_WARNING
@@ -74,4 +76,25 @@ bool ed_uwb_finish(ed_t *ed, uint32_t min_exposure_s)
     LOG_DEBUG("[ed] uwb: not close enough: %" PRIu32 "cm\n",
               ed->uwb.cumulative_d_cm);
     return false;
+}
+
+void ed_serialize_uwb_json(uint16_t d_cm, uint32_t cid, uint32_t time, const char* base_name)
+{
+    turo_t ctx;
+    turo_init(&ctx);
+    turo_dict_open(&ctx);
+    if (base_name) {
+        turo_dict_key(&ctx, "bn");
+        turo_string(&ctx, base_name);
+    }
+    turo_dict_key(&ctx, "t");
+    turo_u32(&ctx, time);
+    turo_dict_key(&ctx, "n");
+    turo_u32(&ctx, cid);
+    turo_dict_key(&ctx, "v");
+    turo_u32(&ctx, (uint32_t)d_cm);
+    turo_dict_key(&ctx, "u");
+    turo_string(&ctx, "cm");
+    turo_dict_close(&ctx);
+    print_str("\n");
 }

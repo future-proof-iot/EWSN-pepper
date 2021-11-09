@@ -19,6 +19,8 @@
  */
 #include "ed.h"
 #include "ed_shared.h"
+#include "fmt.h"
+#include "test_utils/result_output.h"
 
 #ifndef LOG_LEVEL
 #define LOG_LEVEL   LOG_INFO
@@ -71,4 +73,25 @@ ed_t *ed_list_process_scan_data(ed_list_t *list, const uint32_t cid, uint16_t ti
         }
     }
     return ed;
+}
+
+void ed_serialize_ble_json(int8_t rssi, uint32_t cid, uint32_t time, const char* base_name)
+{
+    turo_t ctx;
+    turo_init(&ctx);
+    turo_dict_open(&ctx);
+    if (base_name) {
+        turo_dict_key(&ctx, "bn");
+        turo_string(&ctx, base_name);
+    }
+    turo_dict_key(&ctx, "t");
+    turo_u32(&ctx, time);
+    turo_dict_key(&ctx, "n");
+    turo_u32(&ctx, cid);
+    turo_dict_key(&ctx, "v");
+    turo_s32(&ctx, (int32_t)rssi);
+    turo_dict_key(&ctx, "u");
+    turo_string(&ctx, "dBm");
+    turo_dict_close(&ctx);
+    print_str("\n");
 }

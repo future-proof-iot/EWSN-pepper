@@ -374,6 +374,8 @@ ed_t *ed_list_process_slice(ed_list_t *list, const uint32_t cid, uint16_t time,
  */
 ed_t *ed_list_process_rng_data(ed_list_t *list, const uint16_t addr, uint16_t time,
                                uint16_t d_cm);
+
+void ed_serialize_uwb_json(uint16_t d_cm, uint32_t cid, uint32_t time, const char* base_name);
 #endif
 
 #if IS_USED(MODULE_ED_BLE) || IS_USED(MODULE_ED_BLE_WIN)
@@ -395,6 +397,8 @@ ed_t *ed_list_process_rng_data(ed_list_t *list, const uint16_t addr, uint16_t ti
  */
 ed_t* ed_list_process_scan_data(ed_list_t *list, const uint32_t cid, uint16_t time,
                                int8_t rssi);
+
+void ed_serialize_ble_json(int8_t rssi, uint32_t cid, uint32_t time, const char* base_name);
 #endif
 
 /**
