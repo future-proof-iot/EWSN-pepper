@@ -189,15 +189,17 @@ static void turo_array_hex(turo_t *ctx, uint8_t *vals, size_t size)
     print_str("\"");
 }
 
-void contact_data_serialize_all_printf(epoch_data_t *epoch)
+void contact_data_serialize_all_printf(epoch_data_t *epoch, const char* prefix)
 {
     turo_t ctx;
 
     /* disable irq to avoid scrambled logs */
     unsigned int state = irq_disable();
-
     turo_init(&ctx);
     turo_dict_open(&ctx);
+    if (prefix) {
+        turo_dict_string(&ctx, "tag", prefix);
+    }
     turo_dict_key(&ctx, "epoch");
     turo_u32(&ctx, epoch->timestamp);
     turo_dict_key(&ctx, "pets");

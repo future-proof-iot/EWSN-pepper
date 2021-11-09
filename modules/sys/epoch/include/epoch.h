@@ -194,7 +194,7 @@ int contact_data_load_all_cbor(uint8_t *buf, size_t len, epoch_data_t *epoch);
  *
  * @param[in]       epoch       the epoch data to serialize
  */
-void contact_data_serialize_all_printf(epoch_data_t *epoch);
+void contact_data_serialize_all_printf(epoch_data_t *epoch, const char* prefix);
 
 /**
  * @brief   Init the memory manager
