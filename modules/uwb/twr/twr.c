@@ -116,10 +116,10 @@ static bool _complete_cb(struct uwb_dev *inst, struct uwb_mac_interface *cbs)
 }
 
 /**
- * @brief API for receive timeout callback.
+ * @brief api for receive timeout callback.
  *
- * @param[in] inst  Pointer to struct uwb_dev.
- * @param[in] cbs   Pointer to struct uwb_mac_interface.
+ * @param[in] inst  pointer to struct uwb_dev.
+ * @param[in] cbs   pointer to struct uwb_mac_interface.
  *
  * @return true on success
  */
@@ -135,7 +135,7 @@ static bool _rx_timeout_cb(struct uwb_dev *inst, struct uwb_mac_interface *cbs)
 static struct uwb_mac_interface _uwb_mac_cbs = (struct uwb_mac_interface){
     .id = UWBEXT_APP0,
     .complete_cb = _complete_cb,
-    .rx_timeout_cb = _rx_timeout_cb
+    .rx_timeout_cb = _rx_timeout_cb,
 };
 
 void twr_init(event_queue_t *queue)
@@ -256,7 +256,7 @@ static void _twr_rng_request(void *arg)
             uwb_rng_request(_rng, event->addr, CONFIG_TWR_EVENT_ALGO_DEFAULT);
         }
         else {
-            LOG_DEBUG("[twr]: rng request aborted, busy\n");
+            LOG_ERROR("[twr]: rng request aborted, busy\n");
         }
     }
     else {

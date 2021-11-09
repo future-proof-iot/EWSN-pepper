@@ -31,7 +31,6 @@
 extern "C" {
 #endif
 
-
 /**
  * @brief   The time window for witch to switch on rng listening
  */
@@ -39,14 +38,14 @@ extern "C" {
 #define CONFIG_TWR_PAN_ID     (0xCAFE)
 #endif
 /**
- * @brief   The time window for which to switch on rng listening, max 65
+ * @brief   The time window for which to switch on rng listening, max UINT16MAX
  *
  * @note    From experimental measurement the time between advertisement
  *          it ~600us, which means the start of the listening window can
  *          be off to upto 1.2ms without considering OS delays.
  */
 #ifndef CONFIG_TWR_LISTEN_WINDOW_US
-#define CONFIG_TWR_LISTEN_WINDOW_US     (1500U)
+#define CONFIG_TWR_LISTEN_WINDOW_US     (2000U)
 #endif
 /**
  * @brief   TWR events to allocate, used to schedule rng_request/listen
@@ -58,7 +57,7 @@ extern "C" {
  * @brief   TWR rng_request default algorithm
  */
 #ifndef CONFIG_TWR_EVENT_ALGO_DEFAULT
-#define CONFIG_TWR_EVENT_ALGO_DEFAULT   (UWB_DATA_CODE_SS_TWR)
+#define CONFIG_TWR_EVENT_ALGO_DEFAULT   (UWB_DATA_CODE_SS_TWR_ONE)
 #endif
 
 /**
@@ -78,6 +77,20 @@ typedef struct twr_req_event {
     event_callback_t event;     /**< the event callback */
     uint16_t addr;              /**< the address of destination */
 } twr_event_t;
+
+// typedef struct twr_trx_dbg_data {
+//     uint32_t scheduled;
+//     uint32_t aborted;
+//     uint32_t completed;
+//     uint32_t timeout;
+// } twr_trx_dbg_data_t;
+
+
+// typedef struct twr_dbg_data {
+//     twr_trx_dbg_data_t rx;
+//     twr_trx_dbg_data_t tx;
+//     uint16_t addr;
+// }twr_dbg_data;
 
 /**
  * @brief   Callback for ranging event notification
@@ -120,7 +133,18 @@ void twr_set_short_addr(uint16_t address);
  */
 void twr_set_pan_id(uint16_t pan_id);
 
+/**
+ * @brief   Set the listen window
+ *
+ * @param[in]   time       listen window in us
+ */
 void twr_set_listen_window(uint16_t time);
+
+/**
+ * @brief   Return the listen window in us
+ *
+ * @return  listen window in us
+ */
 uint16_t twr_get_listen_window(void);
 
 /**

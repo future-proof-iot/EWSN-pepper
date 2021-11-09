@@ -6,4 +6,4 @@ USEMODULE += memarray
 USEPKG += uwb-core
 USEPKG += uwb-dw1000
 # Include SS TWR
-USEMODULE += uwb-core_twr_ss
+USEMODULE += uwb-core_twr_ss_one
