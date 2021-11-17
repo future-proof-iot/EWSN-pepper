@@ -128,6 +128,7 @@ void epoch_finish(epoch_data_t *epoch, ed_list_t *list)
             epoch->contacts[i].ble.exposure_s = top.top[i].ed->ble.seen_last_s -
                                                 top.top[i].ed->ble.seen_first_s;
             epoch->contacts[i].ble.avg_rssi = top.top[i].ed->ble.cumulative_rssi;
+            epoch->contacts[i].ble.avg_d_cm = top.top[i].ed->ble.cumulative_d_cm;
             epoch->contacts[i].ble.scan_count = top.top[i].ed->ble.scan_count;
 #endif
 #if IS_USED(MODULE_ED_BLE_WIN)
@@ -334,7 +335,7 @@ int contact_data_load_all_cbor(uint8_t *buf, size_t len, epoch_data_t *epoch)
         if (tag == ED_UWB_CBOR_TAG) {
             nanocbor_get_uint16(&arr3, &epoch->contacts[i].uwb.exposure_s);
             nanocbor_get_uint16(&arr3, &epoch->contacts[i].uwb.req_count);
-            nanocbor_get_uint8(&arr3, &epoch->contacts[i].uwb.avg_d_cm);
+            nanocbor_get_uint16(&arr3, &epoch->contacts[i].uwb.avg_d_cm);
             nanocbor_leave_container(&arr2, &arr3);
         }
 #endif

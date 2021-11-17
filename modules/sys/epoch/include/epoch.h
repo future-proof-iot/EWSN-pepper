@@ -60,7 +60,7 @@ extern "C" {
 typedef struct contact_uwb_data {
     uint16_t req_count;                     /**< request count */
     uint16_t exposure_s;                    /**< exposure time */
-    uint8_t avg_d_cm;                       /**< distance */
+    uint16_t avg_d_cm;                       /**< distance */
 } contact_uwb_data_t;
 #endif
 
@@ -81,7 +81,8 @@ typedef struct contact_ble_win_data {
 typedef struct contact_ble_data {
     uint16_t scan_count;                    /**< request count */
     uint16_t exposure_s;                    /**< exposure time */
-    float avg_rssi;                        /**< distance */
+    uint16_t avg_d_cm;                      /**< distance */
+    float avg_rssi;                         /**< distance */
 } contact_ble_data_t;
 #endif
 
@@ -170,7 +171,7 @@ int contact_data_load_cbor(uint8_t *buf, size_t len, epoch_data_t *data, uint8_t
 /**
  * @brief   Serialize (CBOR) epoch data
  *
- * @param[in]       epoch       the epoch data to serialize
+ * @param[in]       epoch           the epoch data to serialize
  * @param[in]       buf             pointer to allocated encoding buffer
  * @param[in]       len             length of encoding buffer
  *

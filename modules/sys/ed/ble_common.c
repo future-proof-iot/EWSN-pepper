@@ -17,6 +17,7 @@
  *
  * @}
  */
+#include "math.h"
 #include "ed.h"
 #include "ed_shared.h"
 #include "fmt.h"
@@ -26,6 +27,11 @@
 #define LOG_LEVEL   LOG_INFO
 #endif
 #include "log.h"
+
+uint16_t ed_ble_rssi_to_cm(float rssi)
+{
+    return (uint16_t) (0.943487 * pow(0.916837, rssi));
+}
 
 void ed_ble_set_obf_value(ed_t *ed, ebid_t *ebid)
 {

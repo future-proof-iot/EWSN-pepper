@@ -72,15 +72,17 @@ bool ed_uwb_finish(ed_t *ed, uint32_t min_exposure_s)
                           exposure);
             }
         }
+        LOG_DEBUG("[ed] uwb: not close enough: %" PRIu32 "cm\n",
+                  ed->uwb.cumulative_d_cm);
+
     }
-    LOG_DEBUG("[ed] uwb: not close enough: %" PRIu32 "cm\n",
-              ed->uwb.cumulative_d_cm);
     return false;
 }
 
-void ed_serialize_uwb_json(uint16_t d_cm, uint32_t cid, uint32_t time, const char* base_name)
+void ed_serialize_uwb_json(uint16_t d_cm, uint32_t cid, uint32_t time, const char *base_name)
 {
     turo_t ctx;
+
     turo_init(&ctx);
     turo_dict_open(&ctx);
     if (base_name) {

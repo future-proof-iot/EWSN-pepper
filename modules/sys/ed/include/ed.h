@@ -80,6 +80,12 @@ extern "C" {
 #define CONFIG_ED_BLE_RX_COMPENSATION_GAIN      (0U)
 #endif
 
+/**
+ * @brief   Values above this values will be clipped before being averaged
+ */
+#define RSSI_CLIPPING_THRESH    (0)
+
+
 #if IS_USED(MODULE_ED_UWB)
 /**
  * @brief   UWB encounter data, structure to track encounters per epoch
@@ -99,6 +105,7 @@ typedef struct ed_uwb {
  */
 typedef struct ed_ble {
     float cumulative_rssi;      /**< cumulative distance rssi  */
+    uint32_t cumulative_d_cm;   /**< cumulative distance in cm */
     uint16_t scan_count;        /**< scan count */
     uint16_t seen_first_s;      /**< time of first message, relative to start of epoch [s] */
     uint16_t seen_last_s;       /**< time of last message, relative to start of epoch [s] */
@@ -399,6 +406,8 @@ ed_t* ed_list_process_scan_data(ed_list_t *list, const uint32_t cid, uint16_t ti
                                int8_t rssi);
 
 void ed_serialize_ble_json(int8_t rssi, uint32_t cid, uint32_t time, const char* base_name);
+
+uint16_t ed_ble_rssi_to_cm(float rssi);
 #endif
 
 /**

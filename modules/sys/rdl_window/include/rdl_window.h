@@ -54,11 +54,6 @@ extern "C" {
 #define WINDOW_LENGTH_S           (2 * WINDOW_STEP_S)
 #endif
 /**
- * @brief   Values above this values will be clipped before being averaged
- */
-#define RSSI_CLIPPING_THRESH    (0)
-
-/**
  * @brief   Window data
  */
 typedef struct rdl_window {
