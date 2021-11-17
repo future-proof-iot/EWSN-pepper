@@ -222,6 +222,19 @@ void epoch_data_memory_manager_free(epoch_data_memory_manager_t *manager,
  */
 epoch_data_t *epoch_data_memory_manager_calloc(epoch_data_memory_manager_t *manager);
 
+/**
+ * @brief   Populates the contact_data_t structure with random values
+ *
+ * @param[in]       data       the contact data
+ */
+void random_contact(contact_data_t *data);
+
+/**
+ * @brief   Populates the epoch_data_t structure with random values
+ *
+ * @param[in]       epoch       the epoch data
+ */
+void random_epoch(epoch_data_t *data);
 
 #ifdef __cplusplus
 }

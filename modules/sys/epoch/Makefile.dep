@@ -8,3 +8,8 @@ OUTPUT_FORMAT ?= json
 USEMODULE += test_utils_result_output_${OUTPUT_FORMAT}
 USEMODULE += fmt
 USEPKG += nanocbor
+
+ifneq (,$(filter epoch_random,$(USEMODULE)))
+  USEMODULE += ztimer_epoch
+  USEMODULE += random
+endif
