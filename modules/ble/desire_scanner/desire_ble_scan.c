@@ -12,15 +12,16 @@
 #include "nimble_netif_conn.h"
 #endif
 
+#if IS_USED(MODULE_DESIRE_SCANNER_TIME_UPDATE)
+#include "current_time.h"
+#endif
+
 #include "ble_pkt_dbg.h"
 
 #define ENABLE_DEBUG    0
 #include "debug.h"
 
 static detection_cb_t _detection_cb = NULL;
-#if IS_USED(MODULE_DESIRE_SCANNER_TIME_UPDATE)
-static time_update_cb_t _time_update_cb = NULL;
-#endif
 #if IS_USED(MODULE_DESIRE_SCANNER_NETIF)
 static bool _scan_restart = false;
 static uint32_t _scan_end_ms = 0;
@@ -88,20 +89,11 @@ static void _handle_time_service_data(bluetil_ad_t *ad)
                                   .len=DESIRE_ADV_PAYLOAD_SIZE}; */
 
     if (BLUETIL_AD_OK ==
-        bluetil_ad_find(ad, BLE_GAP_AD_SERVICE_DATA_UUID16, &field)) {
-        current_time_ble_adv_payload_t *cts_adv_payload =
-            (current_time_ble_adv_payload_t *)field.data;
+        bluetil_ad_find(ad, BLE_GAP_AD_SERVICE_DATA, &field)) {
+        current_time_t* time = (current_time_t*) field.data;
         DEBUG_PUTS("[desire_scanner]: current time adv packet found");
-        if ((cts_adv_payload->data.service_uuid_16 ==
-             CURRENT_TIME_SERVICE_UUID16) && (_time_update_cb != NULL)) {
-            DEBUG_PUTS("\t Calling user callback");
-            _time_update_cb(cts_adv_payload);
-        }
-        else {
-            DEBUG("\t Failure service uuid = %04X and callback = %d\n",
-                  cts_adv_payload->data.service_uuid_16,
-                  _time_update_cb != NULL);
-        }
+        DEBUG_PUTS("\t Calling user callback");
+        current_time_update(time->epoch);
     }
     else {
         DEBUG_PUTS("[desire_scanner]: malformed current time adv packet");
@@ -260,9 +252,6 @@ static void _on_netif_evt(int handle, nimble_netif_event_t event,
 void desire_ble_scan_init(const desire_ble_scanner_params_t *params,
                           detection_cb_t cb)
 {
-#if IS_USED(MODULE_DESIRE_SCANNER_TIME_UPDATE)
-    _time_update_cb = NULL;
-#endif
 #if IS_USED(MODULE_DESIRE_SCANNER_NETIF)
     _netif_cb = NULL;
     /* register our event callback */
@@ -359,13 +348,6 @@ void desire_ble_set_detection_cb(detection_cb_t cb)
     assert(cb);
     _detection_cb = cb;
 }
-
-#if IS_USED(MODULE_DESIRE_SCANNER_TIME_UPDATE)
-void desire_ble_set_time_update_cb(time_update_cb_t cb)
-{
-    _time_update_cb = cb;
-}
-#endif
 
 #if IS_USED(MODULE_DESIRE_SCANNER_NETIF)
 void desire_ble_set_netif_cb(nimble_netif_eventcb_t cb)

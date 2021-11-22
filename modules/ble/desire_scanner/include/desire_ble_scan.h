@@ -28,7 +28,6 @@
 
 #include "host/ble_hs.h"
 #include "desire_ble_pkt.h"
-#include "time_ble_pkt.h"
 #if IS_USED(MODULE_DESIRE_SCANNER_NETIF)
 #include "nimble_netif.h"
 #endif
@@ -105,13 +104,6 @@ void desire_ble_scan_update(const desire_ble_scanner_params_t *params);
  *
  */
 void desire_ble_scan_stop(void);
-
-/**
- * @brief   Sets a callback or each discovered advertising Current Time Service packet
- *
- * @param[in] callback   user callback with decode time structure
- */
-void desire_ble_set_time_update_cb(time_update_cb_t cb);
 
 /**
  * @brief   Sets the callback called on each scanned desire advertisement packet
