@@ -4,17 +4,10 @@
 #include "embUnit.h"
 #include "ztimer.h"
 #include "current_time.h"
-#include "time_ble_pkt.h"
 
 static current_time_hook_t _post_hook;
 static current_time_hook_t _pre_hook;
-static time_update_cb_t _time_update_cb = NULL;
 static volatile uint8_t calls = 0;
-
-void desire_ble_set_time_update_cb(time_update_cb_t cb)
-{
-    _time_update_cb = cb;
-}
 
 static void _should_be_called(int32_t offset, void *arg)
 {
@@ -46,43 +39,34 @@ static void tearDown(void)
 
 static void tests_current_time_early(void)
 {
-    current_time_ble_adv_payload_t payload;
-
     current_time_hook_init(&_pre_hook, _should_be_called, NULL);
     current_time_hook_init(&_post_hook, _should_be_called, NULL);
     current_time_add_pre_cb(&_pre_hook);
     current_time_add_pre_cb(&_post_hook);
     TEST_ASSERT_EQUAL_INT(0, calls);
-    current_time_ble_adv_init(&payload, ztimer_now(ZTIMER_EPOCH) - 2 * CONFIG_CURRENT_TIME_RANGE_S);
-    _time_update_cb(&payload);
+    current_time_update(ztimer_now(ZTIMER_EPOCH) - 2 * CONFIG_CURRENT_TIME_RANGE_S);
     TEST_ASSERT_EQUAL_INT(2, calls);
 }
 
 static void tests_current_time_late(void)
 {
-    current_time_ble_adv_payload_t payload;
-
     current_time_hook_init(&_pre_hook, _should_be_called, NULL);
     current_time_hook_init(&_post_hook, _should_be_called, NULL);
     current_time_add_pre_cb(&_pre_hook);
     current_time_add_pre_cb(&_post_hook);
     TEST_ASSERT_EQUAL_INT(0, calls);
-    current_time_ble_adv_init(&payload, ztimer_now(ZTIMER_EPOCH) + 2 * CONFIG_CURRENT_TIME_RANGE_S);
-    _time_update_cb(&payload);
+    current_time_update(ztimer_now(ZTIMER_EPOCH) + 2 * CONFIG_CURRENT_TIME_RANGE_S);
     TEST_ASSERT_EQUAL_INT(2, calls);
 }
 
 static void tests_current_time_in_range(void)
 {
-    current_time_ble_adv_payload_t payload;
-
     current_time_hook_init(&_pre_hook, _should_not_be_called, NULL);
     current_time_hook_init(&_post_hook, _should_not_be_called, NULL);
     current_time_add_pre_cb(&_pre_hook);
     current_time_add_pre_cb(&_post_hook);
     TEST_ASSERT_EQUAL_INT(0, calls);
-    current_time_ble_adv_init(&payload, ztimer_now(ZTIMER_EPOCH) + CONFIG_CURRENT_TIME_RANGE_S / 2);
-    _time_update_cb(&payload);
+    current_time_update(ztimer_now(ZTIMER_EPOCH) + CONFIG_CURRENT_TIME_RANGE_S / 2);
     TEST_ASSERT_EQUAL_INT(0, calls);
 }
 

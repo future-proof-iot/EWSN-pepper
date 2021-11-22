@@ -29,6 +29,8 @@
 extern "C" {
 #endif
 
+#define CURRENT_TIME_SERVICE_UUID16         0x3333
+
 /**
  * @brief   Acceptable offset between current and received time in seconds
  *
@@ -37,6 +39,8 @@ extern "C" {
 #define CONFIG_CURRENT_TIME_RANGE_S         (5U)
 #endif
 
+/* TODO: this could probably be an event */
+
 /**
  * @brief   Time service callback type
  *
@@ -44,6 +48,11 @@ extern "C" {
  * @param[in]   arg     optional user arg
  */
 typedef void (*current_time_cb_t)(int32_t, void *);
+
+typedef union __attribute__((packed)) current_time {
+    uint32_t epoch;
+    uint8_t bytes[4];
+} current_time_t;
 
 /**
  * @brief    Time service adjusted time hooks
@@ -101,15 +110,25 @@ static inline void current_time_hook_init(current_time_hook_t *hook,
     hook->arg = arg;
 }
 
-#if IS_USED(MODULE_CURRENT_TIME_MOCK_ADV)
-#include "time_ble_pkt.h"
 /**
- * @brief   Sets a callback or each discovered advertising Current Time Service packet
+ * @brief   Current Time Hook Static Initialized
  *
- * @param[in] callback   user callback with decode time structure
+ * @param[in]       _cb      the callback
+ * @param[in]       _arg     the optional callback argument
  */
-void desire_ble_set_time_update_cb(time_update_cb_t cb);
-#endif
+#define CURRENT_TIME_HOOK_INIT(_cb, _arg) \
+    { \
+        .list_node.next = NULL, \
+        .cb = _cb, \
+        .arg = (void *)_arg \
+    }
+
+/**
+ * @brief   Update current time
+ *
+ * @param[in]       time   epoch in seconds since RIOT_EPOCH
+ */
+void current_time_update(uint32_t time);
 
 #ifdef __cplusplus
 }

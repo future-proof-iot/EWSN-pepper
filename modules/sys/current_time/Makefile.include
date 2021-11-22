@@ -1,6 +1,2 @@
 USEMODULE_INCLUDES_current_time := $(LAST_MAKEFILEDIR)/include
 USEMODULE_INCLUDES += $(USEMODULE_INCLUDES_current_time)
-
-USEMODULE_INCLUDES += $(USEMODULE_INCLUDES_current_time)/../../include
-
-PSEUDOMODULES += current_time_mock_adv

@@ -23,15 +23,13 @@
 
 #include "irq.h"
 #include "clist.h"
-#include "log.h"
-#include "periph/rtc.h"
 #include "ztimer.h"
-
-#if IS_USED(MODULE_DESIRE_SCANNER)
-#include "desire_ble_scan.h"
-#endif
-#include "time_ble_pkt.h"
 #include "current_time.h"
+
+#ifndef LOG_LEVEL
+#define LOG_LEVEL   LOG_INFO
+#endif
+#include "log.h"
 
 static current_time_hook_t _pre;
 static current_time_hook_t _post;
@@ -50,25 +48,21 @@ static int _hook_cb(clist_node_t *node, void *arg)
     return 0;
 }
 
-static void _time_update_cb(const current_time_ble_adv_payload_t *time)
+void current_time_update(uint32_t epoch)
 {
-    /* parse advertisement payload to epoch timestamp*/
-    struct tm t;
+    uint32_t sys_epoch = ztimer_now(ZTIMER_EPOCH);
 
-    current_time_ble_adv_parse(time, &t);
-    uint32_t new_now = rtc_mktime(&t);
-
-    uint32_t now = ztimer_now(ZTIMER_EPOCH);
     LOG_DEBUG("[current_time]: epoch\n");
-    LOG_DEBUG("\tcurrent:     %" PRIu32 "\n", now);
-    LOG_DEBUG("\treceived:    %" PRIu32 "\n", new_now);
-    int32_t diff = new_now - now;
+    LOG_DEBUG("\tcurrent:     %" PRIu32 "\n", sys_epoch);
+    LOG_DEBUG("\treceived:    %" PRIu32 "\n", epoch);
+    int32_t diff = epoch - sys_epoch;
+
     /* adjust time only if out of CONFIG_CURRENT_TIME_RANGE_S */
     if (!_time_is_in_range(diff, CONFIG_CURRENT_TIME_RANGE_S)) {
         clist_foreach(&_pre.list_node, _hook_cb, &diff);
-        LOG_DEBUG("\tnew-current: %" PRIu32 "\n",
-                  (uint32_t)ztimer_now(ZTIMER_EPOCH));
-        ztimer_adjust_time(ZTIMER_EPOCH, diff);
+        uint32_t elapsed = ztimer_now(ZTIMER_EPOCH) - sys_epoch;
+        ztimer_adjust_time(ZTIMER_EPOCH, diff + elapsed);
+        LOG_DEBUG("\tnew-current: %" PRIu32 "\n", ztimer_now(ZTIMER_EPOCH));
         clist_foreach(&_post.list_node, _hook_cb, &diff);
     }
 }
@@ -115,6 +109,4 @@ void current_time_init(void)
 {
     memset(&_pre, '\0', sizeof(current_time_hook_t));
     memset(&_post, '\0', sizeof(current_time_hook_t));
-    /* set the update callback */
-    desire_ble_set_time_update_cb(_time_update_cb);
 }
