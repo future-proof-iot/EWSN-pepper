@@ -136,6 +136,7 @@ static int _pepper_handler(int argc, char **argv)
                     advs_per_slice = (uint32_t)atoi(argv[i]);
                     continue;
                 }
+            /* intentionally falls through */
             case 'a':
                 align = false;
                 continue;
@@ -155,10 +156,16 @@ static int _pepper_handler(int argc, char **argv)
         return 0;
     }
 
+    if (!strcmp(argv[1], "time")) {
+        printf("[current_time]: epoch\n");
+        printf("\tcurrent:     %" PRIu32 "\n", ztimer_now(ZTIMER_EPOCH));
+        return 0;
+    }
+
     if (!strcmp(argv[1], "stop")) {
         pepper_stop();
         puts("[pepper] shell: stop proximity tracing");
-        return -1;
+        return 0;
     }
 
     if (!strcmp(argv[1], "status")) {

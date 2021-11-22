@@ -53,6 +53,10 @@ extern "C" {
 #define CONFIG_PEPPER_BASE_NAME_BUFFER  (32)
 #endif
 
+#ifndef CONFIG_PEPPER_LOGFILE
+#define CONFIG_PEPPER_LOGFILE           "/sys/log/pepper.h"
+#endif
+
 typedef struct twr_params {
     int16_t rx_offset_ticks;
     int16_t tx_offset_ticks;
@@ -68,13 +72,15 @@ void pepper_init(void);
 void pepper_start(uint32_t epoch_duration_s, uint32_t advs_per_slice,
                   uint32_t adv_itvl_ms, bool align);
 void pepper_stop(void);
-int pepper_pause(void);
+uint32_t pepper_pause(void);
 
 void pepper_twr_set_rx_offset(int16_t ticks);
 void pepper_twr_set_tx_offset(int16_t ticks);
 int16_t pepper_twr_get_rx_offset(void);
 int16_t pepper_twr_get_tx_offset(void);
 int pepper_set_serializer_base_name(char* base_name);
+char* pepper_get_base_name(void);
+void pepper_current_time_init(void);
 #ifdef __cplusplus
 }
 #endif

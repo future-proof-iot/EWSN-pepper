@@ -40,10 +40,16 @@
 #include "desire_ble_scan.h"
 #include "desire_ble_scan_params.h"
 
+#include "current_time.h"
+
 #ifndef LOG_LEVEL
 #define LOG_LEVEL   LOG_INFO
 #endif
 #include "log.h"
+
+#ifndef CONFIG_EPOCH_MAX_TIME_OFFSET
+#define CONFIG_EPOCH_MAX_TIME_OFFSET            (CONFIG_EPOCH_DURATION_SEC / 10)
+#endif
 
 typedef struct controller {
     ebid_t ebid;                        /**> */
@@ -93,13 +99,13 @@ static void _twr_cb(twr_event_data_t *data)
     /* TODO: add an API for this */
     uint32_t timestamp = ztimer_now(ZTIMER_SEC) - _controller.start_time;
 
-    ed_t* ed = ed_list_process_rng_data(&_controller.ed_list, data->addr, timestamp, data->range);
+    ed_t *ed = ed_list_process_rng_data(&_controller.ed_list, data->addr, timestamp, data->range);
 
     if (LOG_LEVEL == LOG_INFO) {
         /* TODO: move to stop watch api */
         ed_serialize_uwb_json(data->range, ed->cid, ztimer_now(ZTIMER_EPOCH), _base_name);
     }
-    if(LOG_LEVEL == LOG_DEBUG) {
+    if (LOG_LEVEL == LOG_DEBUG) {
         print_str("[ble/uwb] twr: addr=(0x");
         print_byte_hex(data->addr >> 8);
         print_byte_hex(data->addr);
@@ -206,6 +212,7 @@ static void _epoch_align(uint32_t epoch_duration_s)
     /* setup end of uwb_epoch timeout event */
     uint32_t modulo = ztimer_now(ZTIMER_EPOCH) % epoch_duration_s;
     uint32_t diff = modulo ? epoch_duration_s - modulo : 0;
+
     LOG_INFO("[pepper]: delay for %" PRIu32 "s to align uwb_epoch start\n",
              diff);
     ztimer_sleep(ZTIMER_EPOCH, diff);
@@ -225,6 +232,7 @@ static void _epoch_start(void *arg)
     twr_enable();
     /* start scanning */
     uint32_t scan_duration_ms = _adv_params.itvl_ms * _adv_params.max_events;
+
     LOG_INFO("[pepper]: start scanning for %" PRIu32 "ms\n", scan_duration_ms);
     desire_ble_scan_start(scan_duration_ms);
 }
@@ -233,12 +241,21 @@ typedef struct {
     event_t super;
     epoch_data_t *data;
 } epoch_data_event_t;
+#if IS_ACTIVE(MODULE_STORAGE)
+static uint8_t buffer[2048];
+#endif
 static void _serialize_epoch_handler(event_t *event)
 {
     epoch_data_event_t *d_event = (epoch_data_event_t *)event;
 
     LOG_INFO("[pepper]: dumping epoch data\n");
+#if IS_ACTIVE(MODULE_STORAGE)
+    size_t len = contact_data_serialize_all_json(d_event->data,
+                                                 buffer, sizeof(buffer), _base_name);
+    storage_log(CONFIG_PEPPER_LOGFILE, buffer, len - 1 );
+#else
     contact_data_serialize_all_printf(d_event->data, _base_name);
+#endif
 }
 static epoch_data_event_t _serialize_epoch =
 { .super.handler = _serialize_epoch_handler };
@@ -309,6 +326,19 @@ void pepper_start(uint32_t epoch_duration_s, uint32_t advs_per_slice,
     _epoch_start(NULL);
 }
 
+void pepper_resume(uint32_t duration_s, bool align)
+{
+    /* align epoch start */
+    if (align) {
+        _epoch_align(duration_s);
+    }
+    /* schedule end of epoch event */
+    event_periodic_start(&_end_epoch, duration_s);
+    /* bootstrap first epoch */
+    _epoch_setup(NULL);
+    _epoch_start(NULL);
+}
+
 void pepper_stop(void)
 {
     event_periodic_stop(&_end_epoch);
@@ -317,11 +347,12 @@ void pepper_stop(void)
     twr_disable();
 }
 
-int pepper_pause(void)
+uint32_t pepper_pause(void)
 {
-    int ret = 0;
-    if (ztimer_is_set(ZTIMER_EPOCH, &_end_epoch.timer)) {
-        ret = 1;
+    uint32_t ret = 0;
+
+    if (ztimer_is_set(ZTIMER_EPOCH, &_end_epoch.timer.timer)) {
+        ret = _end_epoch.timer.interval;
     }
     pepper_stop();
     return ret;
@@ -349,7 +380,7 @@ int16_t pepper_twr_get_tx_offset(void)
     return _twr_params.tx_offset_ticks;
 }
 
-int pepper_set_serializer_base_name(char* base_name)
+int pepper_set_serializer_base_name(char *base_name)
 {
     if (strlen(base_name) > CONFIG_PEPPER_BASE_NAME_BUFFER) {
         return -1;
@@ -357,4 +388,41 @@ int pepper_set_serializer_base_name(char* base_name)
     memcpy(_base_name, base_name, strlen(base_name));
     _base_name[strlen(base_name)] = '\0';
     return 0;
+}
+
+char *pepper_get_base_name(void)
+{
+    return _base_name;
+}
+
+static uint32_t epoch_duration_s = 0;
+static void _pre_cb(int32_t offset, void *arg)
+{
+    (void)arg;
+    LED3_OFF;
+    if (offset > 0 ? offset > (int32_t)CONFIG_EPOCH_MAX_TIME_OFFSET :
+        -offset > (int32_t)CONFIG_EPOCH_MAX_TIME_OFFSET) {
+        epoch_duration_s = pepper_pause();
+        LOG_INFO("[pepper]: time diff is too high, bootstrap from 0\n");
+    }
+}
+static current_time_hook_t _pre_hook = CURRENT_TIME_HOOK_INIT(_pre_cb, &epoch_duration_s);
+
+static void _post_cb(int32_t offset, void *arg)
+{
+    (void)offset;
+    (void)arg;
+    if (epoch_duration_s) {
+        pepper_resume(epoch_duration_s, true);
+        epoch_duration_s = 0;
+    }
+    LED3_ON;
+}
+static current_time_hook_t _post_hook = CURRENT_TIME_HOOK_INIT(_post_cb, &epoch_duration_s);
+
+void pepper_current_time_init(void)
+{
+    current_time_init();
+    current_time_add_pre_cb(&_pre_hook);
+    current_time_add_post_cb(&_post_hook);
 }

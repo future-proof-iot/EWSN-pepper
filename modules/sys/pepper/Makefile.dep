@@ -11,8 +11,10 @@ ifneq (,$(filter pepper_controller,$(USEMODULE)))
   USEMODULE += event_periodic
   USEMODULE += event_timeout
   USEMODULE += desire_scanner
+  USEMODULE += desire_scanner_time_update
   USEMODULE += desire_advertiser
   USEMODULE += ztimer_epoch
   USEMODULE += ztimer_msec
   USEMODULE += ztimer_sec
+  USEMODULE += current_time
 endif
