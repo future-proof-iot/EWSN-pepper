@@ -25,6 +25,7 @@
 #include "fmt.h"
 #include "test_utils/result_output.h"
 #include "nanocbor/nanocbor.h"
+#include "json_encoder.h"
 
 #include "epoch.h"
 #include "ed.h"
@@ -175,7 +176,7 @@ uint8_t epoch_contacts(epoch_data_t *epoch)
     return contacts;
 }
 
-static void turo_array_hex(turo_t *ctx, uint8_t *vals, size_t size)
+static void turo_hexarray(turo_t *ctx, uint8_t *vals, size_t size)
 {
     if (ctx->state == 1) {
         print_str(",");
@@ -190,16 +191,94 @@ static void turo_array_hex(turo_t *ctx, uint8_t *vals, size_t size)
     print_str("\"");
 }
 
-void contact_data_serialize_all_printf(epoch_data_t *epoch, const char* prefix)
+size_t contact_data_serialize_all_json(epoch_data_t *epoch, uint8_t *buf,
+                                       size_t len, const char *prefix)
+{
+    json_encoder_t ctx;
+
+    json_encoder_init(&ctx, (char*)buf, len);
+    json_dict_open(&ctx);
+    if (prefix) {
+        json_dict_key(&ctx, "tag");
+        json_string(&ctx, prefix);
+    }
+    json_dict_key(&ctx, "epoch");
+    json_u32(&ctx, epoch->timestamp);
+    json_dict_key(&ctx, "pets");
+    json_array_open(&ctx);
+    for (uint8_t i = 0; i < CONFIG_EPOCH_MAX_ENCOUNTERS; i++) {
+        if (_epoch_valid_contact(&epoch->contacts[i])) {
+            json_dict_open(&ctx);
+            json_dict_key(&ctx, "pet");
+            json_dict_open(&ctx);
+            json_dict_key(&ctx, "etl");
+            json_hexarray(&ctx, epoch->contacts[i].pet.et, PET_SIZE);
+            json_dict_key(&ctx, "rtl");
+            json_hexarray(&ctx, epoch->contacts[i].pet.rt, PET_SIZE);
+#if IS_USED(MODULE_ED_UWB)
+            json_dict_key(&ctx, "uwb");
+            json_dict_open(&ctx);
+            json_dict_key(&ctx, "exposure");
+            json_u32(&ctx, epoch->contacts[i].uwb.exposure_s);
+            json_dict_key(&ctx, "req_count");
+            json_u32(&ctx, epoch->contacts[i].uwb.req_count);
+            json_dict_key(&ctx, "avg_d_cm");
+            json_u32(&ctx, epoch->contacts[i].uwb.avg_d_cm);
+            json_dict_close(&ctx);
+#endif
+#if IS_USED(MODULE_ED_BLE)
+            json_dict_key(&ctx, "ble");
+            json_dict_open(&ctx);
+            json_dict_key(&ctx, "exposure");
+            json_u32(&ctx, epoch->contacts[i].ble.exposure_s);
+            json_dict_key(&ctx, "scan_count");
+            json_u32(&ctx, epoch->contacts[i].ble.scan_count);
+            json_dict_key(&ctx, "avg_rssi");
+            json_float(&ctx, epoch->contacts[i].ble.avg_rssi);
+            json_dict_key(&ctx, "avg_d_cm");
+            json_u32(&ctx, epoch->contacts[i].ble.avg_d_cm);
+            json_dict_close(&ctx);
+#endif
+#if IS_USED(MODULE_ED_BLE_WIN)
+            json_dict_key(&ctx, "ble_win");
+            json_dict_open(&ctx);
+            json_dict_key(&ctx, "exposure");
+            json_u32(&ctx, epoch->contacts[i].ble_win.exposure_s);
+            json_dict_key(&ctx, "wins");
+            json_array_open(&ctx);
+            for (uint8_t j = 0; j < WINDOWS_PER_EPOCH; j++) {
+                json_dict_open(&ctx);
+                json_dict_key(&ctx, "samples");
+                json_u32(&ctx, epoch->contacts[i].ble_win.wins[j].samples);
+                json_dict_key(&ctx, "rssi");
+                json_float(&ctx, epoch->contacts[i].ble_win.wins[j].avg);
+                json_dict_close(&ctx);
+            }
+            json_array_close(&ctx);
+            json_dict_close(&ctx);
+#endif
+            json_dict_close(&ctx);
+            json_dict_close(&ctx);
+        }
+    }
+    json_array_close(&ctx);
+    json_dict_close(&ctx);
+    return json_encoder_end(&ctx);
+}
+
+
+void contact_data_serialize_all_printf(epoch_data_t *epoch, const char *prefix)
 {
     turo_t ctx;
 
     /* disable irq to avoid scrambled logs */
     unsigned int state = irq_disable();
+
     turo_init(&ctx);
     turo_dict_open(&ctx);
     if (prefix) {
-        turo_dict_string(&ctx, "tag", prefix);
+        turo_dict_key(&ctx, "tag");
+        turo_string(&ctx, prefix);
     }
     turo_dict_key(&ctx, "epoch");
     turo_u32(&ctx, epoch->timestamp);
@@ -211,9 +290,9 @@ void contact_data_serialize_all_printf(epoch_data_t *epoch, const char* prefix)
             turo_dict_key(&ctx, "pet");
             turo_dict_open(&ctx);
             turo_dict_key(&ctx, "etl");
-            turo_array_hex(&ctx, epoch->contacts[i].pet.et, PET_SIZE);
+            turo_hexarray(&ctx, epoch->contacts[i].pet.et, PET_SIZE);
             turo_dict_key(&ctx, "rtl");
-            turo_array_hex(&ctx, epoch->contacts[i].pet.rt, PET_SIZE);
+            turo_hexarray(&ctx, epoch->contacts[i].pet.rt, PET_SIZE);
 #if IS_USED(MODULE_ED_UWB)
             turo_dict_key(&ctx, "uwb");
             turo_dict_open(&ctx);
@@ -234,6 +313,8 @@ void contact_data_serialize_all_printf(epoch_data_t *epoch, const char* prefix)
             turo_u32(&ctx, epoch->contacts[i].ble.scan_count);
             turo_dict_key(&ctx, "avg_rssi");
             turo_float(&ctx, epoch->contacts[i].ble.avg_rssi);
+            turo_dict_key(&ctx, "avg_d_cm");
+            turo_u32(&ctx, epoch->contacts[i].ble.avg_d_cm);
             turo_dict_close(&ctx);
 #endif
 #if IS_USED(MODULE_ED_BLE_WIN)

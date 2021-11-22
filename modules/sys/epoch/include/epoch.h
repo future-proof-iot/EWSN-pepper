@@ -179,6 +179,19 @@ int contact_data_load_cbor(uint8_t *buf, size_t len, epoch_data_t *data, uint8_t
  */
 size_t contact_data_serialize_all_cbor(epoch_data_t *epoch, uint8_t *buf, size_t len);
 
+
+/**
+ * @brief   Serialize (JSON) epoch data
+ *
+ * @param[in]       epoch           the epoch data to serialize
+ * @param[in]       buf             pointer to allocated encoding buffer
+ * @param[in]       len             length of encoding buffer
+ *
+ * @return  Encoded length
+ */
+size_t contact_data_serialize_all_json(epoch_data_t *epoch, uint8_t *buf,
+                                       size_t len, const char *prefix);
+
 /**
  * @brief   Loads serialized epoch data (no keys)
  *
