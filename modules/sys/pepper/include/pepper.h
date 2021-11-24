@@ -38,7 +38,7 @@ extern "C" {
 #endif
 
 #ifndef CONFIG_TWR_RX_OFFSET_TICKS
-#define CONFIG_TWR_RX_OFFSET_TICKS      (-20)
+#define CONFIG_TWR_RX_OFFSET_TICKS      (0)
 #endif
 
 #ifndef CONFIG_TWR_TX_OFFSET_TICKS
@@ -81,6 +81,7 @@ int16_t pepper_twr_get_tx_offset(void);
 int pepper_set_serializer_base_name(char* base_name);
 char* pepper_get_base_name(void);
 void pepper_current_time_init(void);
+bool pepper_is_running(void);
 #ifdef __cplusplus
 }
 #endif

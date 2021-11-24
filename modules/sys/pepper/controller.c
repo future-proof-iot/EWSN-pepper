@@ -60,8 +60,9 @@ typedef struct controller {
     uint32_t start_time;                /**> */
     epoch_data_t data;                  /**> */
     epoch_data_t data_serialize;        /**> */
+    mutex_t lock;
 } controller_t;
-static controller_t _controller;
+static controller_t _controller = { .lock = MUTEX_INIT };
 
 static adv_params_t _adv_params;
 static twr_params_t _twr_params = {
@@ -101,6 +102,8 @@ static void _twr_cb(twr_event_data_t *data)
 
     ed_t *ed = ed_list_process_rng_data(&_controller.ed_list, data->addr, timestamp, data->range);
 
+    (void)ed;
+
     if (LOG_LEVEL == LOG_INFO) {
         /* TODO: move to stop watch api */
         ed_serialize_uwb_json(data->range, ed->cid, ztimer_now(ZTIMER_EPOCH), _base_name);
@@ -132,6 +135,11 @@ static void _scan_cb(uint32_t ticks, const ble_addr_t *addr, int8_t rssi,
     decode_sid_cid(adv_payload->data.sid_cid, &part, &cid);
     ed_t *ed = ed_list_process_slice(&_controller.ed_list, cid, timestamp,
                                      adv_payload->data.ebid_slice, part);
+
+    if (ed == NULL) {
+        LOG_ERROR("return NULL");
+        return;
+    }
 
     if (ed->ebid.status.status == EBID_HAS_ALL) {
 #if IS_USED(MODULE_ED_BLE) || IS_USED(MODULE_ED_BLE_WIN)
@@ -171,14 +179,14 @@ static void _adv_cb(uint32_t advs, void *arg)
         next = (ed_t *)next->list_node.next;
         if (next->ebid.status.status == EBID_HAS_ALL) {
             /* check if the neighbor was also seen over BLE in the last CONFIG_MIA_TIME_S */
-            if (next->uwb.seen_last_s > timestamp - CONFIG_MIA_TIME_S) {
+            if (next->ble.seen_last_s > timestamp - CONFIG_MIA_TIME_S) {
                 /* schedule the request at offset corrected by the delay */
                 uint16_t delay = ztimer_now(ZTIMER_MSEC_BASE) - now_ticks;
                 twr_schedule_request_managed((uint16_t)next->cid,
                                              _get_twr_tx_offset(&next->ebid) - delay);
             }
             else {
-                LOG_DEBUG("[ble/uwb]: skip encounter, missing over BLE\n");
+                LOG_INFO("[ble/uwb]: skip encounter, missing over BLE\n");
             }
         }
     } while (next != (ed_t *)_controller.ed_list.list.next);
@@ -304,6 +312,9 @@ void pepper_init(void)
 void pepper_start(uint32_t epoch_duration_s, uint32_t advs_per_slice,
                   uint32_t adv_itvl_ms, bool align)
 {
+    if (!mutex_trylock(&_controller.lock)) {
+        return;
+    }
     /* stop previous advertisements */
     pepper_stop();
     /* setup end of uwb_epoch timeout event */
@@ -319,11 +330,18 @@ void pepper_start(uint32_t epoch_duration_s, uint32_t advs_per_slice,
     if (align) {
         _epoch_align(epoch_duration_s);
     }
+    /* stop previous advertisements */
+    mutex_unlock(&_controller.lock);
     /* schedule end of epoch event */
     event_periodic_start(&_end_epoch, epoch_duration_s);
     /* bootstrap first epoch */
     _epoch_setup(NULL);
     _epoch_start(NULL);
+}
+
+bool pepper_is_running(void)
+{
+    return ztimer_is_set(ZTIMER_EPOCH, &_end_epoch.timer.timer);
 }
 
 void pepper_resume(uint32_t duration_s, bool align)
@@ -351,7 +369,7 @@ uint32_t pepper_pause(void)
 {
     uint32_t ret = 0;
 
-    if (ztimer_is_set(ZTIMER_EPOCH, &_end_epoch.timer.timer)) {
+    if (pepper_is_running()) {
         ret = _end_epoch.timer.interval;
     }
     pepper_stop();
@@ -399,7 +417,7 @@ static uint32_t epoch_duration_s = 0;
 static void _pre_cb(int32_t offset, void *arg)
 {
     (void)arg;
-    LED3_OFF;
+    mutex_lock(&_controller.lock);
     if (offset > 0 ? offset > (int32_t)CONFIG_EPOCH_MAX_TIME_OFFSET :
         -offset > (int32_t)CONFIG_EPOCH_MAX_TIME_OFFSET) {
         epoch_duration_s = pepper_pause();
@@ -416,7 +434,7 @@ static void _post_cb(int32_t offset, void *arg)
         pepper_resume(epoch_duration_s, true);
         epoch_duration_s = 0;
     }
-    LED3_ON;
+    mutex_unlock(&_controller.lock);
 }
 static current_time_hook_t _post_hook = CURRENT_TIME_HOOK_INIT(_post_cb, &epoch_duration_s);
 
