@@ -49,8 +49,8 @@ extern "C" {
 /**
  * @brief   The Advertiser Instance
  */
-#ifndef CONFIG_BLE_ADV_INSTANCE
-#define CONFIG_BLE_ADV_INSTANCE         (0)
+#ifndef CONFIG_DESIRE_ADV_INST
+#define CONFIG_DESIRE_ADV_INST         (0)
 #endif
 
 /**

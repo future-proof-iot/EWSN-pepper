@@ -119,7 +119,7 @@ static void _set_ble_adv_address(void)
 
     rc = ble_hs_id_gen_rnd(1, &addr);
     assert(rc == 0);
-    rc = ble_gap_ext_adv_set_addr(CONFIG_BLE_ADV_INSTANCE, &addr);
+    rc = ble_gap_ext_adv_set_addr(CONFIG_DESIRE_ADV_INST, &addr);
     assert(rc == 0);
     (void)rc;
 }
@@ -137,13 +137,13 @@ static void _configure_ext_adv(void)
        it was handled before */
     _ext_advp.tx_power = CONFIG_BLE_ADV_TX_POWER;
     /* sid is different from slice id using in desire_ble_pkt */
-    _ext_advp.sid = CONFIG_BLE_ADV_INSTANCE;
+    _ext_advp.sid = CONFIG_DESIRE_ADV_INST;
     /* use legacy PDUs */
     _ext_advp.legacy_pdu = 1;
     /* advertise using random addr */
     _ext_advp.own_addr_type = BLE_OWN_ADDR_RANDOM;
 
-    rc = ble_gap_ext_adv_configure(CONFIG_BLE_ADV_INSTANCE, &_ext_advp,
+    rc = ble_gap_ext_adv_configure(CONFIG_DESIRE_ADV_INST, &_ext_advp,
                                    NULL, _gap_event_cb, &_adv_mgr);
     assert(rc == 0);
     /* set address */
@@ -180,8 +180,8 @@ static void _advertise_once(desire_ble_adv_payload_t *adv_payload)
 
     (void)rc;
 
-    if (ble_gap_ext_adv_active(CONFIG_BLE_ADV_INSTANCE)) {
-        rc = ble_gap_ext_adv_stop(CONFIG_BLE_ADV_INSTANCE);
+    if (ble_gap_ext_adv_active(CONFIG_DESIRE_ADV_INST)) {
+        rc = ble_gap_ext_adv_stop(CONFIG_DESIRE_ADV_INST);
         assert(rc == BLE_HS_EALREADY || rc == 0);
     }
 
@@ -198,12 +198,12 @@ static void _advertise_once(desire_ble_adv_payload_t *adv_payload)
     rc = os_mbuf_append(data, _ad.buf, _ad.pos);
     assert(rc == 0);
     /* set adv data */
-    rc = ble_gap_ext_adv_set_data(CONFIG_BLE_ADV_INSTANCE, data);
+    rc = ble_gap_ext_adv_set_data(CONFIG_DESIRE_ADV_INST, data);
     assert(rc == 0);
 
     /* set a single advertisement event */
     LOG_DEBUG("[adv]: ext_adv start");
-    rc = ble_gap_ext_adv_start(CONFIG_BLE_ADV_INSTANCE, ADV_DURATION_MS / 10, 1);
+    rc = ble_gap_ext_adv_start(CONFIG_DESIRE_ADV_INST, ADV_DURATION_MS / 10, 1);
     assert(rc == 0);
 }
 
@@ -311,8 +311,8 @@ void desire_ble_adv_init_threaded(void)
 void desire_ble_adv_stop(void)
 {
     LOG_DEBUG("[adv]: stop adv\n");
-    if (ble_gap_ext_adv_active(CONFIG_BLE_ADV_INSTANCE)) {
-        int rc = ble_gap_ext_adv_stop(CONFIG_BLE_ADV_INSTANCE);
+    if (ble_gap_ext_adv_active(CONFIG_DESIRE_ADV_INST)) {
+        int rc = ble_gap_ext_adv_stop(CONFIG_DESIRE_ADV_INST);
         (void)rc;
         assert(rc == BLE_HS_EALREADY || rc == 0);
     }
