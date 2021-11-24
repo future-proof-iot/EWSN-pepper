@@ -26,7 +26,7 @@
 #include "ed_shared.h"
 
 #ifndef LOG_LEVEL
-#define LOG_LEVEL   LOG_INFO
+#define LOG_LEVEL   LOG_WARNING
 #endif
 #include "log.h"
 
@@ -157,7 +157,7 @@ ed_t *ed_list_process_slice(ed_list_t *list, const uint32_t cid, uint16_t time,
         LOG_DEBUG("[ed]: cid not found in list\n");
         ed = ed_memory_manager_calloc(list->manager);
         if (!ed) {
-            LOG_DEBUG("[ed]: no memory to allocate new ed struct\n");
+            LOG_WARNING("[ed]: no memory to allocate new ed struct\n");
             return NULL;
         }
         ed_init(ed, cid);
@@ -176,14 +176,25 @@ bool ed_finish(ed_t *ed, uint32_t min_exposure_s)
 {
     bool valid = false;
     (void)ed;
+#if IS_USED(MODULE_ED_BLE_COMMON)
+    bool valid_ble = false;
+#endif
 #if IS_USED(MODULE_ED_BLE)
-    valid |= ed_ble_finish(ed, min_exposure_s);
+    valid_ble |= ed_ble_finish(ed, min_exposure_s);
+    valid |= valid_ble;
 #endif
 #if IS_USED(MODULE_ED_BLE_WIN)
-    valid |= ed_ble_win_finish(ed, min_exposure_s);
+    valid_ble |= ed_ble_win_finish(ed, min_exposure_s);
+    valid |= valid_ble;
 #endif
 #if IS_USED(MODULE_ED_UWB)
-    valid |= ed_uwb_finish(ed, min_exposure_s);
+    bool valid_uwb = ed_uwb_finish(ed, min_exposure_s);
+    valid |= valid_uwb;
+#if IS_USED(MODULE_ED_BLE_COMMON) && IS_USED(MODULE_ED_LEDS)
+    if (valid_uwb != valid_ble) {
+        ed_blink_start(LED1_PIN, 10 * MS_PER_SEC);
+    }
+#endif
 #endif
     return valid;
 }

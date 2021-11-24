@@ -8,6 +8,7 @@ PSEUDOMODULES += ed_ble
 PSEUDOMODULES += ed_ble_win
 PSEUDOMODULES += ed_uwb_bpf
 PSEUDOMODULES += ed_uwb_bpf_suit
+PSEUDOMODULES += ed_leds
 
 # include common pepper files
 USEMODULE_INCLUDES += $(USEMODULE_INCLUDES_ed)/../../pepper/include

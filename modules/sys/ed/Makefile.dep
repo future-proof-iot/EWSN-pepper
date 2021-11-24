@@ -17,3 +17,7 @@ endif
 ifneq (,$(filter ed_ble_win,$(USEMODULE)))
   USEMODULE += rdl_window
 endif
+ifneq (,$(filter ed_leds,$(USEMODULE)))
+  USEMODULE += ztimer_msec
+  USEMODULE += ztimer_periodic
+endif

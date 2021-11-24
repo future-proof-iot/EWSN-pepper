@@ -223,6 +223,7 @@ static void _epoch_align(uint32_t epoch_duration_s)
 
     LOG_INFO("[pepper]: delay for %" PRIu32 "s to align uwb_epoch start\n",
              diff);
+    ed_blink_start(LED3_PIN, diff * MS_PER_SEC);
     ztimer_sleep(ZTIMER_EPOCH, diff);
 }
 
@@ -337,6 +338,9 @@ void pepper_start(uint32_t epoch_duration_s, uint32_t advs_per_slice,
     /* bootstrap first epoch */
     _epoch_setup(NULL);
     _epoch_start(NULL);
+    /* switch on status led */
+    ed_blink_stop(LED3_PIN);
+    LED3_ON;
 }
 
 bool pepper_is_running(void)
@@ -363,6 +367,7 @@ void pepper_stop(void)
     desire_ble_adv_stop();
     desire_ble_scan_stop();
     twr_disable();
+    LED3_OFF;
 }
 
 uint32_t pepper_pause(void)
@@ -417,6 +422,7 @@ static uint32_t epoch_duration_s = 0;
 static void _pre_cb(int32_t offset, void *arg)
 {
     (void)arg;
+    LED0_OFF;
     mutex_lock(&_controller.lock);
     if (offset > 0 ? offset > (int32_t)CONFIG_EPOCH_MAX_TIME_OFFSET :
         -offset > (int32_t)CONFIG_EPOCH_MAX_TIME_OFFSET) {
@@ -435,6 +441,7 @@ static void _post_cb(int32_t offset, void *arg)
         epoch_duration_s = 0;
     }
     mutex_unlock(&_controller.lock);
+    LED0_ON;
 }
 static current_time_hook_t _post_hook = CURRENT_TIME_HOOK_INIT(_post_cb, &epoch_duration_s);
 

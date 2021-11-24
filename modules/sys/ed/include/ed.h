@@ -518,6 +518,14 @@ bool ed_uwb_bpf_finish(ed_t *ed);
  */
 void ed_uwb_bpf_init(void);
 
+#include "board.h"
+#include "periph/gpio.h"
+/**
+ * @brief   For 10s toggles a LED every 10ms
+ */
+void ed_blink_stop(gpio_t pin);
+void ed_blink_start(gpio_t pin, uint32_t time_ms);
+
 #ifdef __cplusplus
 }
 #endif
