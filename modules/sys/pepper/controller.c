@@ -182,7 +182,7 @@ static void _adv_cb(uint32_t advs, void *arg)
             if (next->ble.seen_last_s > timestamp - CONFIG_MIA_TIME_S) {
                 /* schedule the request at offset corrected by the delay */
                 uint16_t delay = ztimer_now(ZTIMER_MSEC_BASE) - now_ticks;
-                twr_schedule_request_managed((uint16_t)next->cid,
+                twr_schedule_request_managed(ed_get_short_addr(next),
                                              _get_twr_tx_offset(&next->ebid) - delay);
             }
             else {
