@@ -18,4 +18,5 @@ ifneq (,$(filter ed_uwb_bpf,$(USEMODULE)))
 endif
 
 OUTPUT_FORMAT ?= json
+USEMODULE += test_utils_result_output
 USEMODULE += test_utils_result_output_${OUTPUT_FORMAT}

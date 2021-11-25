@@ -153,14 +153,6 @@ void twr_init(event_queue_t *queue)
     _uwb_mac_cbs.inst_ptr = rng;
     uwb_mac_append_interface(udev, &_uwb_mac_cbs);
 
-    if (IS_USED(MODULE_UWB_CORE_TWR_DS_ACK)) {
-        uwb_set_autoack(udev, true);
-        uwb_set_autoack_delay(udev, 12);
-    }
-
-    /* apply config */
-    uwb_mac_config(udev, NULL);
-    uwb_txrf_config(udev, &udev->config.txrf);
     /* set pan_id */
     twr_set_pan_id(CONFIG_TWR_PAN_ID);
 
