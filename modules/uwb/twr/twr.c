@@ -187,7 +187,7 @@ void twr_set_short_addr(uint16_t address)
 void twr_set_pan_id(uint16_t pan_id)
 {
     _udev->pan_id = pan_id;
-    uwb_set_uid(_udev, _udev->pan_id);
+    uwb_set_panid(_udev, _udev->pan_id);
 }
 
 static void _twr_rng_listen(void *arg)

@@ -1,6 +1,6 @@
 USEMODULE += event
 USEMODULE += event_callback
-USEMODULE += event_timeout
+USEMODULE += event_timeout_ztimer
 USEMODULE += memarray
 
 USEPKG += uwb-core
