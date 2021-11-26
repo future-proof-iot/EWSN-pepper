@@ -18,3 +18,20 @@ ifneq (,$(filter pepper_controller,$(USEMODULE)))
   USEMODULE += ztimer_sec
   USEMODULE += current_time
 endif
+
+ifneq (,$(filter pepper_gatt,$(USEMODULE)))
+  USEMODULE += nimble_autoadv
+  USEMODULE += nimble_svc_gap
+  USEMODULE += nimble_svc_gatt
+  USEMODULE += pepper_util
+endif
+
+ifneq (,$(filter pepper_stdio_nimble,$(USEMODULE)))
+  USEMODULE += pepper_util
+  USEMODULE += stdio_nimble
+endif
+
+ifneq (,$(filter pepper_util,$(USEMODULE)))
+  USEMODULE += luid
+  USEMODULE += fmt
+endif

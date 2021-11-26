@@ -39,6 +39,9 @@
 #include "desire_ble_adv.h"
 #include "desire_ble_scan.h"
 #include "desire_ble_scan_params.h"
+#if IS_USED(MODULE_STORAGE)
+#include "storage.h"
+#endif
 
 #include "current_time.h"
 
@@ -61,6 +64,7 @@ typedef struct controller {
     epoch_data_t data;                  /**> */
     epoch_data_t data_serialize;        /**> */
     mutex_t lock;
+    bool started;
 } controller_t;
 static controller_t _controller = { .lock = MUTEX_INIT };
 
@@ -104,17 +108,9 @@ static void _twr_cb(twr_event_data_t *data)
 
     (void)ed;
 
-    if (LOG_LEVEL == LOG_INFO) {
+    if (LOG_LEVEL == LOG_DEBUG) {
         /* TODO: move to stop watch api */
         ed_serialize_uwb_json(data->range, ed->cid, ztimer_now(ZTIMER_EPOCH), _base_name);
-    }
-    if (LOG_LEVEL == LOG_DEBUG) {
-        print_str("[ble/uwb] twr: addr=(0x");
-        print_byte_hex(data->addr >> 8);
-        print_byte_hex(data->addr);
-        print_str("), d=(");
-        print_u32_dec(data->range);
-        print_str("cm)\n");
     }
 }
 
@@ -140,6 +136,7 @@ static void _scan_cb(uint32_t ticks, const ble_addr_t *addr, int8_t rssi,
         LOG_ERROR("return NULL");
         return;
     }
+    ed->seen_last_s = timestamp;
 
     if (ed->ebid.status.status == EBID_HAS_ALL) {
 #if IS_USED(MODULE_ED_BLE) || IS_USED(MODULE_ED_BLE_WIN)
@@ -150,9 +147,11 @@ static void _scan_cb(uint32_t ticks, const ble_addr_t *addr, int8_t rssi,
         twr_schedule_listen_managed(_get_twr_rx_offset(&_controller.ebid));
     }
 
-    if (LOG_LEVEL == LOG_INFO) {
+    if (LOG_LEVEL == LOG_DEBUG) {
+#if IS_USED(MODULE_ED_BLE) || IS_USED(MODULE_ED_BLE_WIN)
         /* TODO: move to stop watch api */
         ed_serialize_ble_json(rssi, cid, ztimer_now(ZTIMER_EPOCH), _base_name);
+#endif
     }
 }
 
@@ -179,17 +178,18 @@ static void _adv_cb(uint32_t advs, void *arg)
         next = (ed_t *)next->list_node.next;
         if (next->ebid.status.status == EBID_HAS_ALL) {
             /* check if the neighbor was also seen over BLE in the last CONFIG_MIA_TIME_S */
-            if (next->ble.seen_last_s > timestamp - CONFIG_MIA_TIME_S) {
+            if (next->seen_last_s > timestamp - CONFIG_MIA_TIME_S) {
                 /* schedule the request at offset corrected by the delay */
                 uint16_t delay = ztimer_now(ZTIMER_MSEC_BASE) - now_ticks;
                 twr_schedule_request_managed(ed_get_short_addr(next),
                                              _get_twr_tx_offset(&next->ebid) - delay);
             }
             else {
-                LOG_INFO("[ble/uwb]: skip encounter, missing over BLE\n");
+                LOG_DEBUG("[ble/uwb]: skip encounter, missing over BLE\n");
             }
         }
     } while (next != (ed_t *)_controller.ed_list.list.next);
+
     LOG_DEBUG("[ble/uwb] %" PRIu32 ": adv_cb\n", now);
 }
 
@@ -223,7 +223,9 @@ static void _epoch_align(uint32_t epoch_duration_s)
 
     LOG_INFO("[pepper]: delay for %" PRIu32 "s to align uwb_epoch start\n",
              diff);
-    ed_blink_start(LED3_PIN, diff * MS_PER_SEC);
+    if(IS_ACTIVE(MODULE_ED_LEDS)) {
+        ed_blink_start(LED3_PIN, diff * MS_PER_SEC);
+    }
     ztimer_sleep(ZTIMER_EPOCH, diff);
 }
 
@@ -231,7 +233,7 @@ static void _epoch_start(void *arg)
 {
     (void)arg;
     /* start advertisement */
-    LOG_INFO("[pepper]: start adv: %" PRIu32 " times with intervals of "
+    LOG_DEBUG("[pepper]: start adv: %" PRIu32 " times with intervals of "
              "%" PRIu32 " ms\n", _adv_params.max_events, _adv_params.itvl_ms);
     desire_ble_adv_start(&_controller.ebid, _adv_params.itvl_ms,
                          _adv_params.max_events, _adv_params.max_events_slice);
@@ -242,7 +244,7 @@ static void _epoch_start(void *arg)
     /* start scanning */
     uint32_t scan_duration_ms = _adv_params.itvl_ms * _adv_params.max_events;
 
-    LOG_INFO("[pepper]: start scanning for %" PRIu32 "ms\n", scan_duration_ms);
+    LOG_DEBUG("[pepper]: start scanning for %" PRIu32 "ms\n", scan_duration_ms);
     desire_ble_scan_start(scan_duration_ms);
 }
 
@@ -251,20 +253,21 @@ typedef struct {
     epoch_data_t *data;
 } epoch_data_event_t;
 #if IS_ACTIVE(MODULE_STORAGE)
-static uint8_t buffer[2048];
+static uint8_t sd_buffer[2048];
 #endif
 static void _serialize_epoch_handler(event_t *event)
 {
     epoch_data_event_t *d_event = (epoch_data_event_t *)event;
 
     LOG_INFO("[pepper]: dumping epoch data\n");
-#if IS_ACTIVE(MODULE_STORAGE)
-    size_t len = contact_data_serialize_all_json(d_event->data,
-                                                 buffer, sizeof(buffer), _base_name);
-    storage_log(CONFIG_PEPPER_LOGFILE, buffer, len - 1 );
-#else
-    contact_data_serialize_all_printf(d_event->data, _base_name);
-#endif
+    if (IS_USED(MODULE_STORAGE)) {
+        size_t len = contact_data_serialize_all_json(d_event->data,
+                                                     sd_buffer, sizeof(sd_buffer), _base_name);
+        storage_log(CONFIG_PEPPER_LOGFILE, sd_buffer, len - 1 );
+    }
+    if (!IS_USED(MODULE_PEPPER_STDIO_NIMBLE) || !IS_USED(MODULE_STORAGE)) {
+        contact_data_serialize_all_printf(d_event->data, _base_name);
+    }
 }
 static epoch_data_event_t _serialize_epoch =
 { .super.handler = _serialize_epoch_handler };
@@ -283,10 +286,12 @@ static void _epoch_end(void *arg)
     /* post serializing/offloading event */
     memcpy(&_controller.data_serialize, &_controller.data, sizeof(epoch_data_t));
     _serialize_epoch.data = &_controller.data_serialize;
-    /* bootstrap new uwb_epoch */
-    _epoch_setup(NULL);
-    _epoch_start(NULL);
-    /* post after bootstrapping the new epoch */
+    if (pepper_is_running()) {
+        /* bootstrap new uwb_epoch */
+        _epoch_setup(NULL);
+        _epoch_start(NULL);
+    }
+   /* post after bootstrapping the new epoch */
     event_post(EVENT_PRIO_MEDIUM, &_serialize_epoch.super);
 }
 static event_periodic_t _end_epoch;
@@ -294,6 +299,15 @@ static event_callback_t _end_of_epoch = EVENT_CALLBACK_INIT(_epoch_end, NULL);
 
 void pepper_init(void)
 {
+    if(IS_USED(MODULE_PEPPER_GATT)) {
+        pepper_gatt_init();
+    }
+    else if(IS_USED(MODULE_PEPPER_STDIO_NIMBLE)) {
+        pepper_stdio_nimble_init();
+    }
+#if IS_USED(MODULE_STORAGE)
+    storage_init();
+#endif
     /* init ble advertiser */
     desire_ble_adv_init(EVENT_PRIO_HIGHEST);
     desire_ble_adv_set_cb(_adv_cb);
@@ -308,38 +322,42 @@ void pepper_init(void)
     /* init ed management */
     ed_memory_manager_init(&_controller.ed_mem);
     ed_list_init(&_controller.ed_list, &_controller.ed_mem, &_controller.ebid);
+    /* init current time */
+    pepper_current_time_init();
 }
 
-void pepper_start(uint32_t epoch_duration_s, uint32_t advs_per_slice,
-                  uint32_t adv_itvl_ms, bool align)
+void pepper_start(pepper_start_params_t *params)
 {
     if (!mutex_trylock(&_controller.lock)) {
         return;
     }
     /* stop previous advertisements */
     pepper_stop();
+    _controller.started = true;
     /* setup end of uwb_epoch timeout event */
     event_periodic_init(&_end_epoch, ZTIMER_EPOCH, EVENT_PRIO_HIGHEST,
                         &_end_of_epoch.super);
     /* set advertisement parameters */
-    _adv_params.itvl_ms = adv_itvl_ms;
-    _adv_params.max_events_slice = advs_per_slice;
-    _adv_params.max_events = (epoch_duration_s * MS_PER_SEC) / adv_itvl_ms;
+    _adv_params.itvl_ms = params->adv_itvl_ms;
+    _adv_params.max_events_slice = params->advs_per_slice;
+    _adv_params.max_events = (params->epoch_duration_s * MS_PER_SEC) / params->adv_itvl_ms;
     /* set minimum duration */
-    ed_list_set_min_exposure(&_controller.ed_list, epoch_duration_s / 3 );
+    ed_list_set_min_exposure(&_controller.ed_list, params->epoch_duration_s / 3 );
     /* align epoch start */
-    if (align) {
-        _epoch_align(epoch_duration_s);
+    if (params->align) {
+        _epoch_align(params->epoch_duration_s);
     }
     /* stop previous advertisements */
     mutex_unlock(&_controller.lock);
     /* schedule end of epoch event */
-    event_periodic_start(&_end_epoch, epoch_duration_s);
+    event_periodic_start_iter(&_end_epoch, params->epoch_duration_s, params->epoch_iterations);
     /* bootstrap first epoch */
     _epoch_setup(NULL);
     _epoch_start(NULL);
     /* switch on status led */
-    ed_blink_stop(LED3_PIN);
+    if(IS_ACTIVE(MODULE_ED_LEDS)) {
+        ed_blink_stop(LED3_PIN);
+    }
     LED3_ON;
 }
 
@@ -355,7 +373,7 @@ void pepper_resume(uint32_t duration_s, bool align)
         _epoch_align(duration_s);
     }
     /* schedule end of epoch event */
-    event_periodic_start(&_end_epoch, duration_s);
+    event_periodic_start_iter(&_end_epoch, duration_s, _end_epoch.count);
     /* bootstrap first epoch */
     _epoch_setup(NULL);
     _epoch_start(NULL);
@@ -363,6 +381,7 @@ void pepper_resume(uint32_t duration_s, bool align)
 
 void pepper_stop(void)
 {
+    _controller.started = false;
     event_periodic_stop(&_end_epoch);
     desire_ble_adv_stop();
     desire_ble_scan_stop();

@@ -54,7 +54,7 @@ extern "C" {
 #endif
 
 #ifndef CONFIG_PEPPER_LOGFILE
-#define CONFIG_PEPPER_LOGFILE           "/sys/log/pepper.h"
+#define CONFIG_PEPPER_LOGFILE           "sys/log/pepper.txt"
 #endif
 
 typedef struct twr_params {
@@ -68,12 +68,18 @@ typedef struct adv_params {
     int32_t max_events_slice;
 } adv_params_t;
 
+typedef struct __attribute__((__packed__)) {
+    uint32_t epoch_duration_s;
+    uint32_t epoch_iterations;
+    uint32_t advs_per_slice;
+    uint32_t adv_itvl_ms;
+    bool align;
+} pepper_start_params_t;
+
 void pepper_init(void);
-void pepper_start(uint32_t epoch_duration_s, uint32_t advs_per_slice,
-                  uint32_t adv_itvl_ms, bool align);
+void pepper_start(pepper_start_params_t * params);
 void pepper_stop(void);
 uint32_t pepper_pause(void);
-
 void pepper_twr_set_rx_offset(int16_t ticks);
 void pepper_twr_set_tx_offset(int16_t ticks);
 int16_t pepper_twr_get_rx_offset(void);
@@ -82,6 +88,10 @@ int pepper_set_serializer_base_name(char* base_name);
 char* pepper_get_base_name(void);
 void pepper_current_time_init(void);
 bool pepper_is_running(void);
+char *pepper_get_uid(void);
+void pepper_uid_init(void);
+void pepper_gatt_init(void);
+void pepper_stdio_nimble_init(void);
 #ifdef __cplusplus
 }
 #endif

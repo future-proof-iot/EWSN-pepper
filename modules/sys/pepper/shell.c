@@ -29,13 +29,12 @@
 #include "twr.h"
 #include "ed.h"
 
-
 static void _print_usage(void)
 {
     puts("Usage:");
     puts("\tpepper status: controller status information");
     puts("\tpepper start [-d <epoch duration s>] [-i <ms interval>] [-r <advs per slice>]"
-         "[-a (align epoch, store false)]");
+         "[-a (align epoch, store false) [-c <iterations> ]");
     puts("\tpepper stop: stop proximity tracing");
     puts("\tpepper set bn <base name>: sets base name for logging");
     puts("\tpepper twr get win: returns the listen window in us");
@@ -65,10 +64,6 @@ static int _twr_handler(int argc, char **argv)
             }
             if (!strcmp(argv[2], "tx_off")) {
                 pepper_twr_set_tx_offset(atoi(argv[3]));
-                return 0;
-            }
-            if (!strcmp(argv[2], "bn")) {
-                pepper_set_serializer_base_name(argv[3]);
                 return 0;
             }
         }
@@ -105,10 +100,13 @@ static int _pepper_handler(int argc, char **argv)
     }
 
     if (!strcmp(argv[1], "start")) {
-        uint32_t adv_itvl_ms = CONFIG_BLE_ADV_INTERVAL_MS;
-        uint32_t epoch_duration_s = CONFIG_EPOCH_DURATION_SEC;
-        uint32_t advs_per_slice = CONFIG_ADV_PER_SLICE;
-        bool align = true;
+        pepper_start_params_t params = {
+            .epoch_duration_s = CONFIG_EPOCH_DURATION_SEC,
+            .epoch_iterations = 0,
+            .adv_itvl_ms = CONFIG_BLE_ADV_INTERVAL_MS,
+            .advs_per_slice = CONFIG_ADV_PER_SLICE,
+            .align = true,
+        };
         int res = 0;
 
         /* parse command line arguments */
@@ -117,7 +115,7 @@ static int _pepper_handler(int argc, char **argv)
             switch (arg[1]) {
             case 'd':
                 if ((i++) < argc) {
-                    epoch_duration_s = (uint32_t)atoi(argv[i]);
+                    params.epoch_duration_s = (uint32_t)atoi(argv[i]);
                     continue;
                 }
             /* intentionally falls through */
@@ -127,18 +125,24 @@ static int _pepper_handler(int argc, char **argv)
             /* intentionally falls through */
             case 'i':
                 if ((++i) < argc) {
-                    adv_itvl_ms = (uint32_t)atoi(argv[i]);
+                    params.adv_itvl_ms = (uint32_t)atoi(argv[i]);
+                    continue;
+                }
+            /* intentionally falls through */
+            case 'c':
+                if ((++i) < argc) {
+                    params.epoch_iterations = (uint32_t)atoi(argv[i]);
                     continue;
                 }
             /* intentionally falls through */
             case 'r':
                 if ((++i) < argc) {
-                    advs_per_slice = (uint32_t)atoi(argv[i]);
+                    params.advs_per_slice = (uint32_t)atoi(argv[i]);
                     continue;
                 }
             /* intentionally falls through */
             case 'a':
-                align = false;
+                params.align = false;
                 continue;
             /* intentionally falls through */
             default:
@@ -150,16 +154,45 @@ static int _pepper_handler(int argc, char **argv)
             _print_usage();
             return 1;
         }
-
-        pepper_start(epoch_duration_s, advs_per_slice, adv_itvl_ms, align);
         puts("[pepper] shell: start proximity tracing");
+        printf("\tepoch_duration: %" PRIu32 "[s]\n", params.epoch_duration_s);
+        if (params.epoch_iterations != 0 && params.epoch_iterations != UINT32_MAX) {
+            printf("\tepoch_iterations: %" PRIu32 "\n", params.epoch_iterations);
+        }
+        else {
+            printf("\tepoch_iterations: until stopped\n");
+        }
+        printf("\tadv_per_slice: %" PRIu32 "\n", params.advs_per_slice);
+        printf("\tadv_itvl: %" PRIu32 "[ms]\n", params.adv_itvl_ms);
+        pepper_start(&params);
+        char c = '\n';
+        do {
+            if (c != '\n' && c != '\r') {
+                puts("Help: Press s to stop");
+            }
+            c = getchar();
+        } while (c != 's' && pepper_is_running());
+        pepper_stop();
         return 0;
     }
 
-    if (!strcmp(argv[1], "time")) {
-        printf("[current_time]: epoch\n");
-        printf("\tcurrent:     %" PRIu32 "\n", ztimer_now(ZTIMER_EPOCH));
-        return 0;
+    if (!strcmp(argv[1], "get")) {
+        if (argc >= 2) {
+            if (!strcmp(argv[2], "time")) {
+                printf("[current_time]: epoch\n");
+                printf("\tcurrent:     %" PRIu32 "\n", ztimer_now(ZTIMER_EPOCH));
+                return 0;
+            }
+            if (IS_USED(MODULE_PEPPER_UTIL)) {
+                if (!strcmp(argv[2], "uid")) {
+                    printf("[pepper]: uid %s\n", pepper_get_uid());
+                    return 0;
+                }
+
+            }
+        }
+        _print_usage();
+        return -1;
     }
 
     if (!strcmp(argv[1], "stop")) {
@@ -183,7 +216,7 @@ static int _pepper_handler(int argc, char **argv)
     if (!strcmp(argv[1], "set")) {
         if (argc >= 3) {
             if (!strcmp(argv[2], "bn")) {
-                if(pepper_set_serializer_base_name(argv[3]) == 0) {
+                if (pepper_set_serializer_base_name(argv[3]) == 0) {
                     puts("[pepper] shell: set basename");
                     return 0;
                 }
