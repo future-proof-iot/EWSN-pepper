@@ -88,7 +88,7 @@ static int _storage_prepare(vfs_mount_t *fs)
 
 int storage_init(void)
 {
-    if(IS_ACTIVE(MTD_0)) {
+    if(MTD_0) {
         fatfs_mtd_devs[fs_desc.vol_idx] = MTD_0;
         assert(_storage_prepare(&_storage_fs_mount) == 0);
         storage_dirs_create_sys_hier();
@@ -101,7 +101,7 @@ int storage_init(void)
 
 int storage_log(const char* path, uint8_t *buffer, size_t len)
 {
-    if(IS_ACTIVE(MTD_0)) {
+    if(MTD_0) {
         char fullpath[VFS_NAME_MAX + 1];
         snprintf(fullpath, sizeof(fullpath), "%s/%s", STORAGE_FS_MOUNT_POINT, path);
 
