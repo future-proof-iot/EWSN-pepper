@@ -147,6 +147,7 @@ typedef struct ed {
 #if IS_USED(MODULE_ED_UWB) || IS_USED(MODULE_ED_BLE_WIN)
     int16_t obf;                 /**< obfuscation value or calibrated noise (CN) in DESIRE */
 #endif
+    uint16_t seen_last_s;       /**< time of last message, relative to start of epoch [s] */
 } ed_t;
 
 /**

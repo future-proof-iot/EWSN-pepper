@@ -192,7 +192,9 @@ bool ed_finish(ed_t *ed, uint32_t min_exposure_s)
     valid |= valid_uwb;
 #if IS_USED(MODULE_ED_BLE_COMMON) && IS_USED(MODULE_ED_LEDS)
     if (valid_uwb != valid_ble) {
-        ed_blink_start(LED1_PIN, 10 * MS_PER_SEC);
+        if(IS_ACTIVE(MODULE_ED_LEDS)) {
+            ed_blink_start(LED1_PIN, 10 * MS_PER_SEC);
+        }
     }
 #endif
 #endif
