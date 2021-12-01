@@ -27,7 +27,7 @@
 #include "current_time.h"
 
 #ifndef LOG_LEVEL
-#define LOG_LEVEL   LOG_INFO
+#define LOG_LEVEL   LOG_WARNING
 #endif
 #include "log.h"
 
