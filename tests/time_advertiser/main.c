@@ -136,7 +136,7 @@ static void ble_advertise_once(current_time_ble_adv_payload_t *adv_payload)
     adv_params.conn_mode = BLE_GAP_CONN_MODE_NON;
     adv_params.disc_mode = BLE_GAP_DISC_MODE_NON;
     nimble_autoadv_set_ble_gap_adv_params(&adv_params);
-    nimble_auto_adv_set_adv_duration(BLE_NIMBLE_ADV_DURATION_MS);
+    nimble_autoadv_set_adv_duration(BLE_NIMBLE_ADV_DURATION_MS);
 
     /* Add service data uuid */
     uint16_t service_data = CURRENT_TIME_SERVICE_UUID16;
@@ -152,7 +152,7 @@ static void ble_advertise_once(current_time_ble_adv_payload_t *adv_payload)
     assert(nimble_ret == BLUETIL_AD_OK);
 
     /* start, this will end after 10 ms approx */
-    nimble_autoadv_start();
+    nimble_autoadv_start(NULL);
 
     (void)nimble_ret;
 }
