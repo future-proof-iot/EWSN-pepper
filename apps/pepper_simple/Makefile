@@ -30,15 +30,11 @@ USEMODULE += shell
 USEMODULE += shell_commands
 USEMODULE += ps
 
-# Change default timings for faster demo behaviout
-CFLAGS+=-DCONFIG_ADV_PER_SLICE=10
-CFLAGS+=-DCONFIG_EPOCH_DURATION_SEC=300
-
 # The event thread will handle:
 # * advertisement
 # * twr
 # * start/end of epoch
-# * other app event
+# * other app events
 CFLAGS += -DEVENT_THREAD_HIGHEST_STACKSIZE=THREAD_STACKSIZE_LARGE
 CFLAGS += -DEVENT_THREAD_MEDIUM_STACKSIZE=THREAD_STACKSIZE_LARGE
 
