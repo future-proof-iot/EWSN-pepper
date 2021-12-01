@@ -96,6 +96,15 @@ extern "C" {
 #define BLE_ADV_TIMEOUT_NEVER           (UINT32_MAX)
 
 /**
+ * @brief   Advertising parameters structure
+ */
+typedef struct __attribute__((__packed__)) {
+    uint32_t itvl_ms;       /**< the advertisement interval in milliseconds */
+    int32_t advs_max;       /**< the amount of advertisement events */
+    int32_t advs_slice;     /**< the amount of advertisements by slice before rotation */
+} adv_params_t;
+
+/**
  * @brief   Initialize the advertising module
  *
  * @param[in]   queue   The already initialized event queue to handle
@@ -120,12 +129,8 @@ void desire_ble_adv_init_threaded(void);
  * @note If called while an advertisement procedure is ongoing it will stop the later
  *
  * @param[in]       ebid         the EBID to advertise
- * @param[in]       itvl_ms      the advertisement interval in milliseconds
- * @param[in]       advs_max     the amount of advertisement events
- * @param[in]       advs_slice   the amount of advertisements by slice before rotation
  */
-void desire_ble_adv_start(ebid_t *ebid, uint32_t itvl_ms, uint32_t advs_max,
-                          uint32_t advs_slice);
+void desire_ble_adv_start(ebid_t *ebid, adv_params_t *params);
 
 /**
  * @brief   Stops current advertisements if any

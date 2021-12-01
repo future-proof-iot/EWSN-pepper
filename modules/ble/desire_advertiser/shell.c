@@ -60,10 +60,12 @@ static int _adv_handler(int argc, char **argv)
     }
 
     if (!strcmp(argv[1], "start")) {
-        uint32_t itvl_ms = CONFIG_BLE_ADV_INTERVAL_MS;
-        uint32_t advs_max = BLE_ADV_MAX_EVENTS_DEFAULT;
-        uint32_t advs_slice = CONFIG_ADV_PER_SLICE;
-        int res = 0;
+        adv_params_t params = {
+            .itvl_ms = CONFIG_BLE_ADV_INTERVAL_MS,
+            .advs_max = BLE_ADV_MAX_EVENTS_DEFAULT,
+            .advs_slice = CONFIG_ADV_PER_SLICE,
+        }
+       int res = 0;
 
         /* parse command line arguments */
         for (int i = 2; i < argc; i++) {
@@ -71,7 +73,7 @@ static int _adv_handler(int argc, char **argv)
             switch (arg[1]) {
             case 'c':
                 if ((i++) < argc) {
-                    advs_max = (uint32_t)atoi(argv[i]);
+                    params.advs_max = (uint32_t)atoi(argv[i]);
                     continue;
                 }
             /* intentionally falls through */
@@ -81,13 +83,13 @@ static int _adv_handler(int argc, char **argv)
             /* intentionally falls through */
             case 'i':
                 if ((++i) < argc) {
-                    itvl_ms = (uint32_t)atoi(argv[i]);
+                    params.itvl_ms = (uint32_t)atoi(argv[i]);
                     continue;
                 }
             /* intentionally falls through */
             case 'r':
                 if ((++i) < argc) {
-                    advs_slice = (uint32_t)atoi(argv[i]);
+                    params.advs_slice = (uint32_t)atoi(argv[i]);
                     continue;
                 }
             /* intentionally falls through */
@@ -107,9 +109,9 @@ static int _adv_handler(int argc, char **argv)
 
         }
         printf("[adv] shell: start adertising\n");
-        desire_ble_adv_start(&_ebid, itvl_ms, advs_max, advs_slice);
+        desire_ble_adv_start(&_ebid, &params);
         if (IS_ACTIVE(CONFIG_BLE_ADV_SHELL_BLOCKING)) {
-            ztimer_sleep(ZTIMER_MSEC, itvl_ms * advs_max);
+            ztimer_sleep(ZTIMER_MSEC, params.itvl_ms * params.advs_max);
         }
         return 0;
     }

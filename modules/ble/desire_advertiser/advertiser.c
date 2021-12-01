@@ -319,8 +319,7 @@ void desire_ble_adv_stop(void)
     event_timeout_clear(&_adv_event.timeout);
 }
 
-void desire_ble_adv_start(ebid_t *ebid, uint32_t itvl_ms, uint32_t advs_max,
-                          uint32_t advs_slice)
+void desire_ble_adv_start(ebid_t *ebid, adv_params_t *params)
 {
     LOG_DEBUG("[adv]: start adv\n");
     /* stop ongoing advertisements if any */
@@ -328,9 +327,9 @@ void desire_ble_adv_start(ebid_t *ebid, uint32_t itvl_ms, uint32_t advs_max,
     /* set a new NRPA ble address */
     _set_ble_adv_address();
     /* setup advertisement parameters */
-    _adv_mgr_init(ebid, itvl_ms, advs_max, advs_slice);
+    _adv_mgr_init(ebid, params->itvl_ms, params->advs_max, params->advs_slice);
     /* setup first advertisement event */
-    event_timeout_set(&_adv_event.timeout, itvl_ms);
+    event_timeout_set(&_adv_event.timeout, params->itvl_ms);
 }
 
 uint32_t desire_ble_adv_get_cid(void)
