@@ -175,6 +175,7 @@ ed_t *ed_list_process_slice(ed_list_t *list, const uint32_t cid, uint16_t time,
 bool ed_finish(ed_t *ed, uint32_t min_exposure_s)
 {
     bool valid = false;
+
     (void)ed;
 #if IS_USED(MODULE_ED_BLE_COMMON)
     bool valid_ble = false;
@@ -192,7 +193,7 @@ bool ed_finish(ed_t *ed, uint32_t min_exposure_s)
     valid |= valid_uwb;
 #if IS_USED(MODULE_ED_BLE_COMMON) && IS_USED(MODULE_ED_LEDS)
     if (valid_uwb != valid_ble) {
-        if(IS_ACTIVE(MODULE_ED_LEDS)) {
+        if (IS_ACTIVE(MODULE_ED_LEDS)) {
             ed_blink_start(LED1_PIN, 10 * MS_PER_SEC);
         }
     }
@@ -246,6 +247,15 @@ void ed_list_finish(ed_list_t *list)
             }
         } while (list->list.next);
     }
+}
+
+void ed_list_clear(ed_list_t *list)
+{
+    unsigned state = irq_disable();
+    while (list->list.next) {
+        ed_memory_manager_free(list->manager, (ed_t *)clist_lpop(&list->list));
+    }
+    irq_restore(state);
 }
 
 void ed_memory_manager_init(ed_memory_manager_t *manager)

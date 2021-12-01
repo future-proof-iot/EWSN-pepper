@@ -123,6 +123,9 @@ void epoch_finish(epoch_data_t *epoch, ed_list_t *list)
             epoch->contacts[i].uwb.exposure_s = top.top[i].ed->uwb.seen_last_s -
                                                 top.top[i].ed->uwb.seen_first_s;
             epoch->contacts[i].uwb.avg_d_cm = top.top[i].ed->uwb.cumulative_d_cm;
+#if IS_USED(MODULE_ED_UWB_LOS)
+            epoch->contacts[i].uwb.avg_los = top.top[i].ed->uwb.cumulative_los;
+#endif
             epoch->contacts[i].uwb.req_count = top.top[i].ed->uwb.req_count;
 #endif
 #if IS_USED(MODULE_ED_BLE)
@@ -142,10 +145,7 @@ void epoch_finish(epoch_data_t *epoch, ed_list_t *list)
                                     &epoch->contacts[i].pet);
         }
     }
-
-    while (list->list.next) {
-        ed_memory_manager_free(list->manager, (ed_t *)clist_lpop(&list->list));
-    }
+    ed_list_clear(list);
 }
 
 static bool _epoch_valid_contact(contact_data_t *data)
@@ -224,6 +224,10 @@ size_t contact_data_serialize_all_json(epoch_data_t *epoch, uint8_t *buf,
             json_u32(&ctx, epoch->contacts[i].uwb.req_count);
             json_dict_key(&ctx, "avg_d_cm");
             json_u32(&ctx, epoch->contacts[i].uwb.avg_d_cm);
+#if IS_USED(MODULE_ED_UWB_LOS)
+            json_dict_key(&ctx, "avg_los");
+            json_u32(&ctx, epoch->contacts[i].uwb.avg_los);
+#endif
             json_dict_close(&ctx);
 #endif
 #if IS_USED(MODULE_ED_BLE)
@@ -237,6 +241,7 @@ size_t contact_data_serialize_all_json(epoch_data_t *epoch, uint8_t *buf,
             json_float(&ctx, epoch->contacts[i].ble.avg_rssi);
             json_dict_key(&ctx, "avg_d_cm");
             json_u32(&ctx, epoch->contacts[i].ble.avg_d_cm);
+
             json_dict_close(&ctx);
 #endif
 #if IS_USED(MODULE_ED_BLE_WIN)
@@ -302,6 +307,10 @@ void contact_data_serialize_all_printf(epoch_data_t *epoch, const char *prefix)
             turo_u32(&ctx, epoch->contacts[i].uwb.req_count);
             turo_dict_key(&ctx, "avg_d_cm");
             turo_u32(&ctx, epoch->contacts[i].uwb.avg_d_cm);
+#if IS_USED(MODULE_ED_UWB_LOS)
+            turo_dict_key(&ctx, "avg_los");
+            turo_u32(&ctx, epoch->contacts[i].uwb.avg_los);
+#endif
             turo_dict_close(&ctx);
 #endif
 #if IS_USED(MODULE_ED_BLE)
@@ -367,6 +376,14 @@ size_t contact_data_serialize_all_cbor(epoch_data_t *epoch, uint8_t *buf,
         nanocbor_fmt_uint(&enc, epoch->contacts[i].uwb.exposure_s);
         nanocbor_fmt_uint(&enc, epoch->contacts[i].uwb.req_count);
         nanocbor_fmt_uint(&enc, epoch->contacts[i].uwb.avg_d_cm);
+#endif
+#if IS_USED(MODULE_ED_BLE)
+        nanocbor_fmt_tag(&enc, ED_BLE_CBOR_TAG);
+        nanocbor_fmt_array(&enc, 3);
+        nanocbor_fmt_uint(&enc, epoch->contacts[i].ble.exposure_s);
+        nanocbor_fmt_uint(&enc, epoch->contacts[i].ble.scan_count);
+        nanocbor_fmt_uint(&enc, epoch->contacts[i].ble.avg_d_cm);
+        nanocbor_fmt_float(&enc, epoch->contacts[i].ble.avg_rssi);
 #endif
 // #if IS_USED(MODULE_ED_BLE_WIN)
 //         nanocbor_fmt_tag(&enc, ED_BLE_WIN_CBOR_TAG);

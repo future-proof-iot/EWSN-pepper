@@ -10,7 +10,12 @@
 #define ED_SHARED_H
 
 #include <stdint.h>
+
+#if __has_include("pepper/config.h")
+#include "pepper/config.h"
+#else
 #include "config.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {

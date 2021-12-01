@@ -27,15 +27,20 @@
 #endif
 #include "log.h"
 
-void ed_uwb_process_data(ed_t *ed, uint16_t time, uint16_t d_cm)
+void ed_uwb_process_data(ed_t *ed, uint16_t time, uint16_t d_cm, uint16_t los)
 {
     ed->uwb.seen_last_s = time;
     ed->uwb.req_count++;
     ed->uwb.cumulative_d_cm += d_cm;
+#if IS_USED(MODULE_ED_UWB_LOS)
+    ed->uwb.cumulative_los += los;
+#else
+    (void)los;
+#endif
 }
 
 ed_t *ed_list_process_rng_data(ed_list_t *list, const uint16_t addr, uint16_t time,
-                               uint16_t d_cm)
+                               uint16_t d_cm, uint16_t los)
 {
     ed_t *ed = ed_list_get_by_short_addr(list, addr);
 
@@ -43,7 +48,7 @@ ed_t *ed_list_process_rng_data(ed_list_t *list, const uint16_t addr, uint16_t ti
         LOG_WARNING("[ed]: could not find by addr\n");
     }
     else {
-        ed_uwb_process_data(ed, time, d_cm);
+        ed_uwb_process_data(ed, time, d_cm, los);
     }
     return ed;
 }
@@ -56,6 +61,9 @@ bool ed_uwb_finish(ed_t *ed, uint32_t min_exposure_s)
         LOG_DEBUG("[ed] uwb: sum %" PRIu32 "cm, count %" PRIu16 "\n",
                   ed->uwb.cumulative_d_cm, ed->uwb.req_count);
         ed->uwb.cumulative_d_cm = ed->uwb.cumulative_d_cm / ed->uwb.req_count;
+#if IS_USED(MODULE_ED_UWB_LOS)
+        ed->uwb.cumulative_los = ed->uwb.cumulative_los / ed->uwb.req_count;
+#endif
         if (ed->uwb.cumulative_d_cm <= MAX_DISTANCE_CM) {
             if (exposure >= min_exposure_s) {
                 if (ed->uwb.req_count >= MIN_REQUEST_COUNT) {
@@ -79,7 +87,8 @@ bool ed_uwb_finish(ed_t *ed, uint32_t min_exposure_s)
     return false;
 }
 
-void ed_serialize_uwb_json(uint16_t d_cm, uint32_t cid, uint32_t time, const char *base_name)
+void ed_serialize_uwb_json(uint16_t d_cm, uint16_t los, uint32_t cid, uint32_t time,
+                           const char *base_name)
 {
     turo_t ctx;
 
@@ -97,6 +106,14 @@ void ed_serialize_uwb_json(uint16_t d_cm, uint32_t cid, uint32_t time, const cha
     turo_u32(&ctx, (uint32_t)d_cm);
     turo_dict_key(&ctx, "u");
     turo_string(&ctx, "cm");
+#if IS_USED(MODULE_ED_UWB_LOS)
+    turo_dict_key(&ctx, "v");
+    turo_u32(&ctx, (uint32_t)los);
+    turo_dict_key(&ctx, "u");
+    turo_string(&ctx, "%");
+#else
+    (void)los;
+#endif
     turo_dict_close(&ctx);
     print_str("\n");
 }

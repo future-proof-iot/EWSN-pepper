@@ -60,7 +60,10 @@ extern "C" {
 typedef struct contact_uwb_data {
     uint16_t req_count;                     /**< request count */
     uint16_t exposure_s;                    /**< exposure time */
-    uint16_t avg_d_cm;                       /**< distance */
+    uint16_t avg_d_cm;                      /**< distance */
+#if IS_USED(MODULE_ED_UWB_LOS)
+    uint16_t avg_los;                       /**< los */
+#endif
 } contact_uwb_data_t;
 #endif
 

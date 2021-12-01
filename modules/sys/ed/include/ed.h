@@ -23,8 +23,8 @@
  * @author      Francisco Molina <francois-xavier.molina@inria.fr>
  */
 
-#ifndef UWB_ED_H
-#define UWB_ED_H
+#ifndef ED_H
+#define ED_H
 
 #include <inttypes.h>
 #include <assert.h>
@@ -34,6 +34,9 @@
 #include "memarray.h"
 #include "clist.h"
 #include "ebid.h"
+
+/* only needed for the blinking functions that should be removed */
+#include "periph/gpio.h"
 
 #if IS_USED(MODULE_ED_BLE_WIN)
 #include "rdl_window.h"
@@ -80,18 +83,15 @@ extern "C" {
 #define CONFIG_ED_BLE_RX_COMPENSATION_GAIN      (0U)
 #endif
 
-/**
- * @brief   Values above this values will be clipped before being averaged
- */
-#define RSSI_CLIPPING_THRESH    (0)
-
-
 #if IS_USED(MODULE_ED_UWB)
 /**
  * @brief   UWB encounter data, structure to track encounters per epoch
  */
 typedef struct ed_uwb {
     uint32_t cumulative_d_cm;   /**< cumulative distance in cm */
+#if IS_USED(MODULE_ED_UWB_LOS)
+    uint32_t cumulative_los;    /**< cumulative line of sight value  */
+#endif
     uint16_t req_count;         /**< request message count */
     uint16_t seen_first_s;      /**< time of first message, relative to start of epoch [s] */
     uint16_t seen_last_s;       /**< time of last message, relative to start of epoch [s] */
@@ -135,17 +135,17 @@ typedef struct ed {
     clist_node_t list_node;     /**< list head */
     ebid_t ebid;                /**< the ebid structure */
 #if IS_USED(MODULE_ED_BLE)
-    ed_ble_t ble;
+    ed_ble_t ble;               /**< plain ble encounter data */
 #endif
 #if IS_USED(MODULE_ED_BLE_WIN)
-    ed_ble_win_t ble_win;
+    ed_ble_win_t ble_win;       /**< windowed ble encounter data */
 #endif
 #if IS_USED(MODULE_ED_UWB)
-    ed_uwb_t uwb;
+    ed_uwb_t uwb;               /**< uwb encounter data */
 #endif
     uint32_t cid;               /**< the cid */
 #if IS_USED(MODULE_ED_UWB) || IS_USED(MODULE_ED_BLE_WIN)
-    int16_t obf;                 /**< obfuscation value or calibrated noise (CN) in DESIRE */
+    int16_t obf;                /**< obfuscation value or calibrated noise (CN) in DESIRE */
 #endif
     uint16_t seen_last_s;       /**< time of last message, relative to start of epoch [s] */
 } ed_t;
@@ -302,8 +302,9 @@ int ed_add_slice(ed_t *ed, uint16_t time, const uint8_t *slice, uint8_t part);
  * @param[in]       time     the timestamp in seconds relative to the start of
  *                           the epoch
  * @param[in]       d_cm     the distance of the device
+ * @param[in]       los      the los value
  */
-void ed_uwb_process_data(ed_t *ed, uint16_t time, uint16_t d_cm);
+void ed_uwb_process_data(ed_t *ed, uint16_t time, uint16_t d_cm, uint16_t los);
 #endif
 
 #if IS_USED(MODULE_ED_BLE)
@@ -377,13 +378,26 @@ ed_t *ed_list_process_slice(ed_list_t *list, const uint32_t cid, uint16_t time,
  * @param[in]       time     the timestamp in seconds relative to the start of
  *                           the epoch
  * @param[in]       d_cm     the measured distance in cm
+ * @param[in]       los      the estimated los
  *
  * @return the found ed, NULL if no match
  */
 ed_t *ed_list_process_rng_data(ed_list_t *list, const uint16_t addr, uint16_t time,
-                               uint16_t d_cm);
+                               uint16_t d_cm, uint16_t los);
 
-void ed_serialize_uwb_json(uint16_t d_cm, uint32_t cid, uint32_t time, const char* base_name);
+/**
+ * @brief   Serializes UWB encounter data over stdio
+ *
+ * @param[in]       cid      the cid or short addr
+ * @param[in]       time     the timestamp in seconds relative to the start of
+ *                           the epoch
+ * @param[in]       d_cm     the measured distance in cm
+ * @param[in]       los      the estimated los
+ * @param[in]       bn       optional base name tag
+ *
+ */
+void ed_serialize_uwb_json(uint16_t d_cm, uint16_t los, uint32_t cid, uint32_t time,
+                           const char *base_name);
 #endif
 
 #if IS_USED(MODULE_ED_BLE) || IS_USED(MODULE_ED_BLE_WIN)
@@ -403,11 +417,29 @@ void ed_serialize_uwb_json(uint16_t d_cm, uint32_t cid, uint32_t time, const cha
  *
  * @return the found ed, NULL if no match
  */
-ed_t* ed_list_process_scan_data(ed_list_t *list, const uint32_t cid, uint16_t time,
-                               int8_t rssi);
+ed_t *ed_list_process_scan_data(ed_list_t *list, const uint32_t cid, uint16_t time,
+                                int8_t rssi);
 
-void ed_serialize_ble_json(int8_t rssi, uint32_t cid, uint32_t time, const char* base_name);
+/**
+ * @brief   Serializes BLE encounter data over stdio
+ *
+ * @param[in]       rssi     the received signal strength
+ * @param[in]       cid      the cid or short addr
+ * @param[in]       time     the timestamp in seconds relative to the start of
+ *                           the epoch
+ * @param[in]       bn       optional base name tag
+ *
+ */
+void ed_serialize_ble_json(int8_t rssi, uint32_t cid, uint32_t time, const char *base_name);
 
+
+/**
+ * @brief   Converts an rssi value to a distance estimation based on the configured
+ *          path loss model
+ * @param[in]       rssi     the rssi to convert
+ *
+ * @return the found ed, NULL if no match
+ */
 uint16_t ed_ble_rssi_to_cm(float rssi);
 #endif
 
@@ -421,6 +453,13 @@ uint16_t ed_ble_rssi_to_cm(float rssi);
  * @param[in]      list     the encounter data list
  */
 void ed_list_finish(ed_list_t *list);
+
+/**
+ * @brief   Clears the list freeing up the resources
+ *
+ * @param[in]      list     the encounter data list
+ */
+void ed_list_clear(ed_list_t *list);
 
 /**
  * @brief   Finish processing of an encounter data
@@ -519,17 +558,24 @@ bool ed_uwb_bpf_finish(ed_t *ed);
  */
 void ed_uwb_bpf_init(void);
 
-#include "board.h"
-#include "periph/gpio.h"
 /**
- * @brief   For 10s toggles a LED every 10ms
+ * @brief   Stop toggling the pin
+ *
+ * @param[in] pin       the pin
  */
 void ed_blink_stop(gpio_t pin);
+
+/**
+ * @brief   Toggle a pin every 100ms for an amount of time
+ *
+ * @param[in] pin       the pin
+ * @param[in] time_ms   time in milliseconds for which the pin should be toggled
+ */
 void ed_blink_start(gpio_t pin, uint32_t time_ms);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* UWB_ED_H */
+#endif /* ED_H */
 /** @} */
