@@ -15,6 +15,7 @@ USEMODULE += current_time
 USEMODULE += stdio_nimble
 
 # Add a USB product string for udev rules mapping
+CFLAGS += -DCONFIG_NIMBLE_AUTOADV_DEVICE_NAME=\"RIOTTimeServer\"
 CFLAGS += -DCONFIG_USB_PRODUCT_STR=\"RIOTTimeServer\"
 
 # event module
