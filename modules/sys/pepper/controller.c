@@ -43,38 +43,18 @@
 #include "storage.h"
 #endif
 
-#include "current_time.h"
-
 #ifndef LOG_LEVEL
 #define LOG_LEVEL   LOG_INFO
 #endif
 #include "log.h"
 
-#ifndef CONFIG_EPOCH_MAX_TIME_OFFSET
-#define CONFIG_EPOCH_MAX_TIME_OFFSET            (CONFIG_EPOCH_DURATION_SEC / 10)
-#endif
-
-typedef struct controller {
-    ebid_t ebid;                        /**> */
-    ed_list_t ed_list;                  /**> */
-    ed_memory_manager_t ed_mem;         /**> */
-    twr_event_mem_manager_t twr_mem;    /**> */
-    crypto_manager_keys_t keys;         /**> */
-    uint32_t start_time;                /**> */
-    epoch_data_t data;                  /**> */
-    epoch_data_t data_serialize;        /**> */
-    mutex_t lock;
-    bool started;
-} controller_t;
-static controller_t _controller = { .lock = MUTEX_INIT };
-
-static adv_params_t _adv_params;
-static twr_params_t _twr_params = {
-    .rx_offset_ticks = CONFIG_TWR_RX_OFFSET_TICKS,
-    .tx_offset_ticks = CONFIG_TWR_TX_OFFSET_TICKS
+static controller_t _controller = {
+    .lock = MUTEX_INIT,
+    .twr_params = {
+        .rx_offset_ticks = CONFIG_TWR_RX_OFFSET_TICKS,
+        .tx_offset_ticks = CONFIG_TWR_TX_OFFSET_TICKS
+    }
 };
-
-static char _base_name[CONFIG_PEPPER_BASE_NAME_BUFFER] = "pepper";
 
 static uint16_t _get_twr_offset(ebid_t *ebid)
 {
@@ -89,31 +69,44 @@ static uint16_t _get_twr_offset(ebid_t *ebid)
 
 static uint16_t _get_twr_rx_offset(ebid_t *ebid)
 {
-    return _get_twr_offset(ebid) + _twr_params.rx_offset_ticks;
+    return _get_twr_offset(ebid) + _controller.twr_params.rx_offset_ticks;
 }
 
 static uint16_t _get_twr_tx_offset(ebid_t *ebid)
 {
-    return _get_twr_offset(ebid) + _twr_params.tx_offset_ticks;
+    return _get_twr_offset(ebid) + _controller.twr_params.tx_offset_ticks;
 }
 
+static uint32_t pepper_sec_since_start(void)
+{
+    return ztimer_now(ZTIMER_SEC) - _controller.start_time;
+}
+
+/**
+ * @brief Called on a successfull TWR exchange, logs the measure distance on the
+ *        device
+ */
 static void _twr_cb(twr_event_data_t *data)
 {
     (void)data;
-    /* get relative event timestamp */
-    /* TODO: add an API for this */
-    uint32_t timestamp = ztimer_now(ZTIMER_SEC) - _controller.start_time;
 
-    ed_t *ed = ed_list_process_rng_data(&_controller.ed_list, data->addr, timestamp, data->range);
+    ed_t *ed = ed_list_process_rng_data(&_controller.ed_list, data->addr,
+                                        pepper_sec_since_start(), data->range,
+                                        data->los);
 
     (void)ed;
 
-    if (LOG_LEVEL == LOG_DEBUG) {
-        /* TODO: move to stop watch api */
-        ed_serialize_uwb_json(data->range, ed->cid, ztimer_now(ZTIMER_EPOCH), _base_name);
+    if (LOG_LEVEL == LOG_INFO) {
+        /* log with an absolute epoch based timestamp */
+        ed_serialize_uwb_json(data->range, data->los, ed->cid, ztimer_now(ZTIMER_EPOCH),
+                              pepper_get_serializer_bn());
     }
 }
 
+/**
+ * @brief Called when valid PEPPER/DESIRE advertisements are scanned, this event
+ *        is used to scheduler TWR exchanges
+ */
 static void _scan_cb(uint32_t ticks, const ble_addr_t *addr, int8_t rssi,
                      const desire_ble_adv_payload_t *adv_payload)
 {
@@ -123,11 +116,10 @@ static void _scan_cb(uint32_t ticks, const ble_addr_t *addr, int8_t rssi,
 
     uint32_t cid;
     uint8_t part;
-    /* get relative event timestamp */
-    /* TODO: add an API for this */
-    uint32_t timestamp = ztimer_now(ZTIMER_SEC) - _controller.start_time;
+    /* timestamp relative to beginning of epoch */
+    uint32_t timestamp = pepper_sec_since_start();
 
-    /* process the incoming slice */
+    /* 1. process the incoming slice */
     decode_sid_cid(adv_payload->data.sid_cid, &part, &cid);
     ed_t *ed = ed_list_process_slice(&_controller.ed_list, cid, timestamp,
                                      adv_payload->data.ebid_slice, part);
@@ -136,40 +128,48 @@ static void _scan_cb(uint32_t ticks, const ble_addr_t *addr, int8_t rssi,
         LOG_ERROR("return NULL");
         return;
     }
+    /* 2. update last time this encounter was seen, relative to epoch start */
     ed->seen_last_s = timestamp;
 
+    /* 3. if the EBID was reconstructed then either log BLE information (rssi)
+          and/or scheduler a TWR exchange */
     if (ed->ebid.status.status == EBID_HAS_ALL) {
 #if IS_USED(MODULE_ED_BLE) || IS_USED(MODULE_ED_BLE_WIN)
-        /* log rssi data */
+        /* 3.1 log rssi data */
         ed_list_process_scan_data(&_controller.ed_list, cid, timestamp, rssi);
 #endif
-        /* schedule a twr listen event at an EBID based offset */
+#if IS_USED(MODULE_TWR)
+        /* 3.2 schedule a twr listen event at an EBID based offset */
         twr_schedule_listen_managed(_get_twr_rx_offset(&_controller.ebid));
-    }
-
-    if (LOG_LEVEL == LOG_DEBUG) {
-#if IS_USED(MODULE_ED_BLE) || IS_USED(MODULE_ED_BLE_WIN)
-        /* TODO: move to stop watch api */
-        ed_serialize_ble_json(rssi, cid, ztimer_now(ZTIMER_EPOCH), _base_name);
 #endif
+        if (LOG_LEVEL == LOG_DEBUG) {
+#if IS_USED(MODULE_ED_BLE) || IS_USED(MODULE_ED_BLE_WIN)
+            /* log with an absolute epoch based timestamp */
+            ed_serialize_ble_json(rssi, cid, ztimer_now(ZTIMER_EPOCH),
+                                  pepper_get_serializer_bn());
+#endif
+        }
     }
 }
 
+/**
+ * @brief Called when valid PEPPER/DESIRE advertisements are sent out, this event
+ *        is used to schedule TWR exchanges
+ */
 static void _adv_cb(uint32_t advs, void *arg)
 {
     (void)arg;
     (void)advs;
-
+#if IS_USED(MODULE_TWR)
     ed_t *next = (ed_t *)_controller.ed_list.list.next;
 
-    /* get relative event timestamp */
-    /* TODO: add an API for this */
-    uint32_t timestamp = ztimer_now(ZTIMER_SEC) - _controller.start_time;
-    /* system time in ms */
-    uint32_t now = ztimer_now(ZTIMER_MSEC);
+    /* timestamp relative to beginning of epoch */
+    uint32_t timestamp = pepper_sec_since_start();
     /* system time in ticks */
     uint32_t now_ticks = ztimer_now(ZTIMER_MSEC_BASE);
 
+    /* for all registered neighbors that have been seen over BLE recently schedule
+       a TWR exchange request at an offset based on theire EBID */
     if (!next) {
         LOG_DEBUG("[ble/uwb]: no neighbors\n");
         return;
@@ -177,10 +177,11 @@ static void _adv_cb(uint32_t advs, void *arg)
     do {
         next = (ed_t *)next->list_node.next;
         if (next->ebid.status.status == EBID_HAS_ALL) {
-            /* check if the neighbor was also seen over BLE in the last CONFIG_MIA_TIME_S */
+            /* 1. check if advertisement where received from neighbor in last CONFIG_MIA_TIME_S */
             if (next->seen_last_s > timestamp - CONFIG_MIA_TIME_S) {
-                /* schedule the request at offset corrected by the delay */
+                /* compensate for delay in scheduling requests */
                 uint16_t delay = ztimer_now(ZTIMER_MSEC_BASE) - now_ticks;
+                /* 2. schedule the request at the EBID based offset */
                 twr_schedule_request_managed(ed_get_short_addr(next),
                                              _get_twr_tx_offset(&next->ebid) - delay);
             }
@@ -189,8 +190,36 @@ static void _adv_cb(uint32_t advs, void *arg)
             }
         }
     } while (next != (ed_t *)_controller.ed_list.list.next);
+#endif
+}
 
-    LOG_DEBUG("[ble/uwb] %" PRIu32 ": adv_cb\n", now);
+void pepper_core_enable(ebid_t *ebid, adv_params_t *params, uint32_t duration_ms)
+{
+    /* start advertising */
+    LOG_DEBUG("[pepper]: start adv: %" PRIu32 " times with intervals of "
+              "%" PRIu32 " ms\n", params->advs_max, params->itvl_ms);
+    desire_ble_adv_start(ebid, params);
+#if IS_USED(MODULE_TWR)
+    /* set new short addr */
+    uint16_t short_addr = desire_ble_adv_get_cid();
+    LOG_DEBUG("[pepper]: enable TWR with addr 0x%" PRIx16 "ms\n", short_addr);
+    twr_set_short_addr(short_addr);
+    twr_enable();
+#endif
+    LOG_DEBUG("[pepper]: start scanning for %" PRIu32 "ms\n", duration_ms);
+    /* start scanning */
+    desire_ble_scan_start(duration_ms);
+}
+
+void pepper_core_disable(void)
+{
+    /* stop advertising and scanning */
+    desire_ble_scan_stop();
+    desire_ble_adv_stop();
+#if IS_USED(MODULE_TWR)
+    /* disable uwb */
+    twr_disable();
+#endif
 }
 
 static void _epoch_setup(void *arg)
@@ -198,12 +227,10 @@ static void _epoch_setup(void *arg)
     (void)arg;
     /* timestamp the start of the epoch in relative units*/
     _controller.start_time = ztimer_now(ZTIMER_SEC);
-    /* timestamp absolute */
-    uint32_t now_epoch = ztimer_now(ZTIMER_EPOCH);
-
-    LOG_INFO("[pepper]: new uwb_epoch t=%" PRIu32 "\n", now_epoch);
-    /* initiate epoch and generate new keys */
-    epoch_init(&_controller.data, now_epoch, &_controller.keys);
+    /* only use the ZTIMER_EPOCH timestamps for absolute and not for relative
+       differences */
+    LOG_INFO("[pepper]: new uwb_epoch t=%" PRIu32 "\n", ztimer_now(ZTIMER_EPOCH));
+    epoch_init(&_controller.data, ztimer_now(ZTIMER_EPOCH), &_controller.keys);
     /* update local ebid */
     ebid_init(&_controller.ebid);
     LOG_INFO("[pepper]: new ebid generation\n");
@@ -215,46 +242,18 @@ static void _epoch_setup(void *arg)
     LOG_INFO("]\n");
 }
 
-static void _epoch_align(uint32_t epoch_duration_s)
-{
-    /* setup end of uwb_epoch timeout event */
-    uint32_t modulo = ztimer_now(ZTIMER_EPOCH) % epoch_duration_s;
-    uint32_t diff = modulo ? epoch_duration_s - modulo : 0;
-
-    LOG_INFO("[pepper]: delay for %" PRIu32 "s to align uwb_epoch start\n",
-             diff);
-    if(IS_ACTIVE(MODULE_ED_LEDS)) {
-        ed_blink_start(LED3_PIN, diff * MS_PER_SEC);
-    }
-    ztimer_sleep(ZTIMER_EPOCH, diff);
-}
-
 static void _epoch_start(void *arg)
 {
     (void)arg;
-    /* start advertisement */
-    LOG_DEBUG("[pepper]: start adv: %" PRIu32 " times with intervals of "
-             "%" PRIu32 " ms\n", _adv_params.max_events, _adv_params.itvl_ms);
-    desire_ble_adv_start(&_controller.ebid, _adv_params.itvl_ms,
-                         _adv_params.max_events, _adv_params.max_events_slice);
-    /* set new short addr */
-    twr_set_short_addr(desire_ble_adv_get_cid());
-    /* enable twr activity */
-    twr_enable();
-    /* start scanning */
-    uint32_t scan_duration_ms = _adv_params.itvl_ms * _adv_params.max_events;
-
-    LOG_DEBUG("[pepper]: start scanning for %" PRIu32 "ms\n", scan_duration_ms);
-    desire_ble_scan_start(scan_duration_ms);
+    pepper_core_enable(&_controller.ebid, &_controller.adv,
+                       _controller.epoch.duration_s * MS_PER_SEC);
 }
 
 typedef struct {
     event_t super;
     epoch_data_t *data;
 } epoch_data_event_t;
-#if IS_ACTIVE(MODULE_STORAGE)
-static uint8_t sd_buffer[2048];
-#endif
+static uint8_t sd_buffer[IS_ACTIVE(MODULE_STORAGE) * 2048];
 static void _serialize_epoch_handler(event_t *event)
 {
     epoch_data_event_t *d_event = (epoch_data_event_t *)event;
@@ -262,23 +261,34 @@ static void _serialize_epoch_handler(event_t *event)
     LOG_INFO("[pepper]: dumping epoch data\n");
     if (IS_USED(MODULE_STORAGE)) {
         size_t len = contact_data_serialize_all_json(d_event->data,
-                                                     sd_buffer, sizeof(sd_buffer), _base_name);
+                                                     sd_buffer, sizeof(sd_buffer),
+                                                     pepper_get_serializer_bn());
+        (void)len;
+#if IS_USED(MODULE_STORAGE)
         storage_log(CONFIG_PEPPER_LOGFILE, sd_buffer, len - 1 );
+#endif
     }
     if (!IS_USED(MODULE_PEPPER_STDIO_NIMBLE) || !IS_USED(MODULE_STORAGE)) {
-        contact_data_serialize_all_printf(d_event->data, _base_name);
+        contact_data_serialize_all_printf(d_event->data, pepper_get_serializer_bn());
     }
 }
-static epoch_data_event_t _serialize_epoch =
-{ .super.handler = _serialize_epoch_handler };
 
+static epoch_data_event_t _serialize_epoch = { .super.handler = _serialize_epoch_handler };
+
+static event_periodic_t _end_epoch;
 static void _epoch_end(void *arg)
 {
     (void)arg;
+    /* update controller status */
+    mutex_lock(&_controller.lock);
     LOG_INFO("[pepper]: end of uwb_epoch\n");
-    /* stop advertising and scanning */
-    desire_ble_scan_stop();
-    desire_ble_adv_stop();
+    if (!ztimer_is_set(ZTIMER_EPOCH, &_end_epoch.timer.timer) && \
+        _controller.status != PEPPER_PAUSED) {
+        _controller.status = PEPPER_STOPPED;
+        LED3_OFF;
+    }
+    mutex_unlock(&_controller.lock);
+    pepper_core_disable();
     /* process uwb_epoch data */
     LOG_INFO("[pepper]: process all uwb_epoch data\n");
     ed_list_finish(&_controller.ed_list);
@@ -286,24 +296,42 @@ static void _epoch_end(void *arg)
     /* post serializing/offloading event */
     memcpy(&_controller.data_serialize, &_controller.data, sizeof(epoch_data_t));
     _serialize_epoch.data = &_controller.data_serialize;
-    if (pepper_is_running()) {
-        /* bootstrap new uwb_epoch */
+    event_post(EVENT_PRIO_MEDIUM, &_serialize_epoch.super);
+    /* bootstrap new epoch if required */
+    if (pepper_is_active()) {
         _epoch_setup(NULL);
         _epoch_start(NULL);
     }
-   /* post after bootstrapping the new epoch */
-    event_post(EVENT_PRIO_MEDIUM, &_serialize_epoch.super);
 }
-static event_periodic_t _end_epoch;
 static event_callback_t _end_of_epoch = EVENT_CALLBACK_INIT(_epoch_end, NULL);
+
+static void _align_end_of_epoch(uint32_t epoch_duration_s)
+{
+    /* ZTIMER_EPOCH is only used for absolute timestamps and aligning the end
+       of epoch events */
+    uint32_t timeout = epoch_duration_s - (ztimer_now(ZTIMER_EPOCH) % epoch_duration_s);
+
+    /* schedule end of epoch event */
+    event_periodic_start_iter(&_end_epoch, timeout, _controller.epoch.iterations);
+    /* fix subsequent timeouts */
+    _end_epoch.timer.interval = epoch_duration_s;
+    /* setup end of uwb_epoch timeout event */
+    LOG_INFO("[pepper]: align first epoch end in %" PRIu32 "s\n", timeout);
+}
 
 void pepper_init(void)
 {
-    if(IS_USED(MODULE_PEPPER_GATT)) {
+    /* set initial status to STOPPED */
+    _controller.status = PEPPER_STOPPED;
+    /* pepper_gatt and pepper_stdio_nimble are mutually exclusive */
+    if (IS_USED(MODULE_PEPPER_GATT)) {
         pepper_gatt_init();
     }
-    else if(IS_USED(MODULE_PEPPER_STDIO_NIMBLE)) {
+    else if (IS_USED(MODULE_PEPPER_STDIO_NIMBLE)) {
         pepper_stdio_nimble_init();
+    }
+    if (IS_USED(MODULE_PEPPER_CURRENT_TIME)) {
+        pepper_current_time_init();
     }
 #if IS_USED(MODULE_STORAGE)
     storage_init();
@@ -322,151 +350,116 @@ void pepper_init(void)
     /* init ed management */
     ed_memory_manager_init(&_controller.ed_mem);
     ed_list_init(&_controller.ed_list, &_controller.ed_mem, &_controller.ebid);
-    /* init current time */
-    pepper_current_time_init();
+    /* setup end of uwb_epoch timeout event */
+    event_periodic_init(&_end_epoch, ZTIMER_EPOCH, EVENT_PRIO_HIGHEST, &_end_of_epoch.super);
 }
 
 void pepper_start(pepper_start_params_t *params)
 {
-    if (!mutex_trylock(&_controller.lock)) {
-        return;
-    }
     /* stop previous advertisements */
     pepper_stop();
-    _controller.started = true;
-    /* setup end of uwb_epoch timeout event */
-    event_periodic_init(&_end_epoch, ZTIMER_EPOCH, EVENT_PRIO_HIGHEST,
-                        &_end_of_epoch.super);
+    mutex_lock(&_controller.lock);
+    _controller.status = PEPPER_RUNNING;
     /* set advertisement parameters */
-    _adv_params.itvl_ms = params->adv_itvl_ms;
-    _adv_params.max_events_slice = params->advs_per_slice;
-    _adv_params.max_events = (params->epoch_duration_s * MS_PER_SEC) / params->adv_itvl_ms;
+    _controller.adv.itvl_ms = params->adv_itvl_ms;
+    _controller.adv.advs_slice = params->advs_per_slice;
+    _controller.adv.advs_max = (params->epoch_duration_s * MS_PER_SEC) / params->adv_itvl_ms;
+    /* set epoch params */
+    _controller.epoch.duration_s = params->epoch_duration_s;
+    _controller.epoch.iterations = params->epoch_iterations;
     /* set minimum duration */
-    ed_list_set_min_exposure(&_controller.ed_list, params->epoch_duration_s / 3 );
+    ed_list_set_min_exposure(&_controller.ed_list, _controller.epoch.duration_s / 3 );
+    /* */
     /* align epoch start */
     if (params->align) {
-        _epoch_align(params->epoch_duration_s);
+        _align_end_of_epoch(_controller.epoch.duration_s);
     }
-    /* stop previous advertisements */
-    mutex_unlock(&_controller.lock);
-    /* schedule end of epoch event */
-    event_periodic_start_iter(&_end_epoch, params->epoch_duration_s, params->epoch_iterations);
-    /* bootstrap first epoch */
-    _epoch_setup(NULL);
-    _epoch_start(NULL);
-    /* switch on status led */
-    if(IS_ACTIVE(MODULE_ED_LEDS)) {
-        ed_blink_stop(LED3_PIN);
+    else {
+        /* schedule end of epoch event */
+        event_periodic_start_iter(&_end_epoch, _controller.epoch.duration_s,
+                                  _controller.epoch.iterations);
     }
     LED3_ON;
-}
-
-bool pepper_is_running(void)
-{
-    return ztimer_is_set(ZTIMER_EPOCH, &_end_epoch.timer.timer);
-}
-
-void pepper_resume(uint32_t duration_s, bool align)
-{
-    /* align epoch start */
-    if (align) {
-        _epoch_align(duration_s);
-    }
-    /* schedule end of epoch event */
-    event_periodic_start_iter(&_end_epoch, duration_s, _end_epoch.count);
+    mutex_unlock(&_controller.lock);
     /* bootstrap first epoch */
     _epoch_setup(NULL);
     _epoch_start(NULL);
+}
+
+void pepper_resume(bool align)
+{
+    mutex_lock(&_controller.lock);
+    if (pepper_is_active()) {
+        /* align epoch start */
+        if (align) {
+            _align_end_of_epoch(_controller.epoch.duration_s);
+        }
+        else {
+            /* schedule end of epoch event with remaining counts */
+            event_periodic_start_iter(&_end_epoch, _controller.epoch.duration_s,
+                                      _end_epoch.count);
+            /* re-enable BLE and UWB */
+            pepper_core_enable(&_controller.ebid, &_controller.adv,
+                               _controller.epoch.duration_s);
+        }
+        _controller.status = PEPPER_RUNNING;
+    }
+    mutex_unlock(&_controller.lock);
 }
 
 void pepper_stop(void)
 {
-    _controller.started = false;
-    event_periodic_stop(&_end_epoch);
-    desire_ble_adv_stop();
-    desire_ble_scan_stop();
-    twr_disable();
+    mutex_lock(&_controller.lock);
     LED3_OFF;
+    _controller.status = PEPPER_STOPPED;
+    event_periodic_stop(&_end_epoch);
+    pepper_core_disable();
+    ed_list_clear(&_controller.ed_list);
+    mutex_unlock(&_controller.lock);
 }
 
-uint32_t pepper_pause(void)
+void pepper_pause(void)
 {
-    uint32_t ret = 0;
-
-    if (pepper_is_running()) {
-        ret = _end_epoch.timer.interval;
+    mutex_lock(&_controller.lock);
+    pepper_core_disable();
+    event_periodic_stop(&_end_epoch);
+    if (pepper_is_active()) {
+        _controller.status = PEPPER_PAUSED;
     }
-    pepper_stop();
-    return ret;
+    else {
+        _controller.status = PEPPER_STOPPED;
+    }
+    mutex_unlock(&_controller.lock);
+}
+
+bool pepper_is_active(void)
+{
+    return _controller.status != PEPPER_STOPPED;
 }
 
 void pepper_twr_set_rx_offset(int16_t ticks)
 {
     assert(ticks > -1 * (int16_t)CONFIG_TWR_MIN_OFFSET_TICKS);
-    _twr_params.rx_offset_ticks = ticks;
+    _controller.twr_params.rx_offset_ticks = ticks;
 }
 
 void pepper_twr_set_tx_offset(int16_t ticks)
 {
     assert(ticks > (int16_t)-1 * (int16_t)CONFIG_TWR_MIN_OFFSET_TICKS);
-    _twr_params.tx_offset_ticks = ticks;
+    _controller.twr_params.tx_offset_ticks = ticks;
 }
 
 int16_t pepper_twr_get_rx_offset(void)
 {
-    return _twr_params.rx_offset_ticks;
+    return _controller.twr_params.rx_offset_ticks;
 }
 
 int16_t pepper_twr_get_tx_offset(void)
 {
-    return _twr_params.tx_offset_ticks;
+    return _controller.twr_params.tx_offset_ticks;
 }
 
-int pepper_set_serializer_base_name(char *base_name)
+controller_t *pepper_get_controller(void)
 {
-    if (strlen(base_name) > CONFIG_PEPPER_BASE_NAME_BUFFER) {
-        return -1;
-    }
-    memcpy(_base_name, base_name, strlen(base_name));
-    _base_name[strlen(base_name)] = '\0';
-    return 0;
-}
-
-char *pepper_get_base_name(void)
-{
-    return _base_name;
-}
-
-static uint32_t epoch_duration_s = 0;
-static void _pre_cb(int32_t offset, void *arg)
-{
-    (void)arg;
-    LED0_OFF;
-    mutex_lock(&_controller.lock);
-    if (offset > 0 ? offset > (int32_t)CONFIG_EPOCH_MAX_TIME_OFFSET :
-        -offset > (int32_t)CONFIG_EPOCH_MAX_TIME_OFFSET) {
-        epoch_duration_s = pepper_pause();
-        LOG_INFO("[pepper]: time diff is too high, bootstrap from 0\n");
-    }
-}
-static current_time_hook_t _pre_hook = CURRENT_TIME_HOOK_INIT(_pre_cb, &epoch_duration_s);
-
-static void _post_cb(int32_t offset, void *arg)
-{
-    (void)offset;
-    (void)arg;
-    if (epoch_duration_s) {
-        pepper_resume(epoch_duration_s, true);
-        epoch_duration_s = 0;
-    }
-    mutex_unlock(&_controller.lock);
-    LED0_ON;
-}
-static current_time_hook_t _post_hook = CURRENT_TIME_HOOK_INIT(_post_cb, &epoch_duration_s);
-
-void pepper_current_time_init(void)
-{
-    current_time_init();
-    current_time_add_pre_cb(&_pre_hook);
-    current_time_add_post_cb(&_post_hook);
+    return &_controller;
 }

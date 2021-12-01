@@ -21,8 +21,6 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
-#include "timex.h"
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -40,7 +38,7 @@ extern "C" {
  *
  */
 #ifndef CONFIG_EPOCH_DURATION_SEC
-#define CONFIG_EPOCH_DURATION_SEC        (15LU * SEC_PER_MIN)
+#define CONFIG_EPOCH_DURATION_SEC        (15LU * 60)
 #endif
 
 /**
@@ -50,6 +48,11 @@ extern "C" {
 #ifndef CONFIG_EBID_ROTATION_T_S
 #define CONFIG_EBID_ROTATION_T_S        (CONFIG_EPOCH_DURATION_SEC)
 #endif
+
+/**
+ * @brief   Values above this values will be clipped before being averaged
+ */
+#define RSSI_CLIPPING_THRESH    (0)
 
 #ifdef __cplusplus
 }

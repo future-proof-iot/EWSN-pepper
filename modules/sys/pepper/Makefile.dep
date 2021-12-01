@@ -11,12 +11,10 @@ ifneq (,$(filter pepper_controller,$(USEMODULE)))
   USEMODULE += event_periodic
   USEMODULE += event_timeout_ztimer
   USEMODULE += desire_scanner
-  USEMODULE += desire_scanner_time_update
   USEMODULE += desire_advertiser
   USEMODULE += ztimer_epoch
   USEMODULE += ztimer_msec
   USEMODULE += ztimer_sec
-  USEMODULE += current_time
 endif
 
 ifneq (,$(filter pepper_gatt,$(USEMODULE)))
@@ -34,4 +32,11 @@ endif
 ifneq (,$(filter pepper_util,$(USEMODULE)))
   USEMODULE += luid
   USEMODULE += fmt
+endif
+
+ifneq (,$(filter pepper_current_time,$(USEMODULE)))
+  USEMODULE += current_time
+  # TODO: move this to its own service
+  USEMODULE += desire_scanner
+  USEMODULE += desire_scanner_time_update
 endif

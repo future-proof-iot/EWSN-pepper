@@ -171,7 +171,7 @@ static int _pepper_handler(int argc, char **argv)
                 puts("Help: Press s to stop");
             }
             c = getchar();
-        } while (c != 's' && pepper_is_running());
+        } while (c != 's' && pepper_is_active());
         pepper_stop();
         return 0;
     }
@@ -216,7 +216,7 @@ static int _pepper_handler(int argc, char **argv)
     if (!strcmp(argv[1], "set")) {
         if (argc >= 3) {
             if (!strcmp(argv[2], "bn")) {
-                if (pepper_set_serializer_base_name(argv[3]) == 0) {
+                if (pepper_set_serializer_bn(argv[3]) == 0) {
                     puts("[pepper] shell: set basename");
                     return 0;
                 }

@@ -6,6 +6,7 @@ PSEUDOMODULES += pepper_gatt
 PSEUDOMODULES += pepper_util
 PSEUDOMODULES += pepper_shell
 PSEUDOMODULES += pepper_stdio_nimble
+PSEUDOMODULES += pepper_current_time
 
 CFLAGS += -DCONFIG_TURO_JSON_WHITESPACE_AFTER_SYMBOL=0
 
