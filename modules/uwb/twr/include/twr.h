@@ -66,6 +66,7 @@ extern "C" {
 typedef struct twr_data {
     uint16_t addr;          /**< the neighbour address */
     uint16_t range;         /**< the range value in cm */
+    uint16_t los;           /**< los as %*/
     uint32_t time;          /**< the measurement timestamp in msec */
 } twr_event_data_t;
 
