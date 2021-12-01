@@ -28,7 +28,7 @@
 
 #include <inttypes.h>
 
-#include "pepper.h"
+#include "pepper/config.h"
 #include "timex.h"
 
 #ifdef __cplusplus
