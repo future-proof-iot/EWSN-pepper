@@ -120,7 +120,7 @@ static void test_epoch_finish(void)
         /* mock UWB data that will pass contact filter */
         ed->ble.seen_first_s = 0;
         ed->ble.seen_last_s = MIN_EXPOSURE_TIME_S + i;
-        ed->ble.cumulative_rssi = -80;
+        ed->ble.cumulative_rssi = -72;
         ed->ble.scan_count = 1;
 #endif
 #if IS_USED(MODULE_ED_BLE_WIN)

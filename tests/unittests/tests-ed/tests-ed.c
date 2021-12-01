@@ -24,7 +24,7 @@ static uint16_t data_ts[TEST_VALUES_NUMOF] = {
 };
 
 static float data_rssi[TEST_VALUES_NUMOF] = {
-    -80, -70, -50, -10, -20, -30, -40, -75, -25, -35,
+    -72, -70, -50, -10, -20, -30, -40, -75, -25, -35,
 };
 
 #if (MODULE_ED_BLE_WIN)
@@ -240,10 +240,10 @@ static void test_ed_uwb_process_data(void)
     ed_t ed;
 
     ed_init(&ed, 0x01);
-    ed_uwb_process_data(&ed, 10, 200);
-    ed_uwb_process_data(&ed, 40, 100);
-    ed_uwb_process_data(&ed, 300, 50);
-    ed_uwb_process_data(&ed, MIN_EXPOSURE_TIME_S, 50);
+    ed_uwb_process_data(&ed, 10, 200, 0);
+    ed_uwb_process_data(&ed, 40, 100, 0);
+    ed_uwb_process_data(&ed, 300, 50, 0);
+    ed_uwb_process_data(&ed, MIN_EXPOSURE_TIME_S, 50, 0);
     TEST_ASSERT_EQUAL_INT(400, ed.uwb.cumulative_d_cm);
     TEST_ASSERT_EQUAL_INT(MIN_EXPOSURE_TIME_S, ed.uwb.seen_last_s);
     TEST_ASSERT_EQUAL_INT(4, ed.uwb.req_count);
@@ -271,9 +271,9 @@ static void test_ed_list_process_rng_data(void)
 {
     ed_t *ed;
 
-    TEST_ASSERT(!ed_list_process_rng_data(&list, 0x00, 0, 100));
+    TEST_ASSERT(!ed_list_process_rng_data(&list, 0x00, 0, 100, 0));
     ed = ed_list_process_slice(&list, 0x00, 0, ebid_slice[2], EBID_SLICE_3);
-    TEST_ASSERT(ed_list_process_rng_data(&list, 0x00, 0, 100) == ed);
+    TEST_ASSERT(ed_list_process_rng_data(&list, 0x00, 0, 100, 0) == ed);
 }
 #endif
 
@@ -379,7 +379,12 @@ static void test_ed_ble_finish(void)
     ed.ble.seen_first_s = 0;
     ed.ble.seen_last_s = MIN_EXPOSURE_TIME_S - 1;
     TEST_ASSERT(ed_ble_finish(&ed, MIN_EXPOSURE_TIME_S) == false);
+    ed.ble.scan_count = 1;
+    ed.ble.cumulative_rssi = pow(10.0, -90 / 10.0);;
     ed.ble.seen_last_s = MIN_EXPOSURE_TIME_S;
+    TEST_ASSERT(ed_ble_finish(&ed, MIN_EXPOSURE_TIME_S) == false);
+    ed.ble.scan_count = 1;
+    ed.ble.cumulative_rssi = pow(10.0, -30 / 10.0);;
     TEST_ASSERT(ed_ble_finish(&ed, MIN_EXPOSURE_TIME_S) == true);
 }
 #endif

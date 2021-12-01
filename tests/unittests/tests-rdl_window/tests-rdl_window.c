@@ -20,7 +20,7 @@ static uint16_t data_ts[TEST_VALUES_NUMOF] = {
 };
 
 static float data_rssi[TEST_VALUES_NUMOF] = {
-    -80, -70, -50, -10, -20, -30, -40, -75, -25, -35,
+    -72, -70, -50, -10, -20, -30, -40, -75, -25, -35,
 };
 
 static int expected_samples[WINDOWS_PER_EPOCH] = {
