@@ -90,7 +90,10 @@ int storage_init(void)
 {
     if(MTD_0) {
         fatfs_mtd_devs[fs_desc.vol_idx] = MTD_0;
-        assert(_storage_prepare(&_storage_fs_mount) == 0);
+        if(_storage_prepare(&_storage_fs_mount) != 0 ) {
+            LOG_ERROR("[fs]: ERROR, failed to setup storage backends\n");
+            return -1;
+        }
         storage_dirs_create_sys_hier();
         return 0;
     }
@@ -108,11 +111,11 @@ int storage_log(const char* path, uint8_t *buffer, size_t len)
         int fd = vfs_open(fullpath, O_WRONLY | O_APPEND | O_CREAT, 0);
 
         if (fd < 0) {
-            printf("[fs]: error while trying to create %s\n", fullpath);
+            LOG_ERROR("[fs]: error while trying to create %s\n", fullpath);
             return 1;
         }
         if (vfs_write(fd, buffer, len) != (ssize_t)len) {
-            LOG_ERROR("[fs]: error while writing");
+            LOG_ERROR("[fs]: error while writing\n");
         }
         vfs_close(fd);
         return 0;
