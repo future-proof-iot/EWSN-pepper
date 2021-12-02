@@ -25,6 +25,9 @@
 #include "ed.h"
 #include "ed_shared.h"
 
+#include "timex.h"
+#include "board.h"
+
 #ifndef LOG_LEVEL
 #define LOG_LEVEL   LOG_WARNING
 #endif
