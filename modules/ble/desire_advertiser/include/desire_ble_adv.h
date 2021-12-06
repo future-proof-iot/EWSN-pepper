@@ -50,7 +50,7 @@ extern "C" {
  * @brief   The Advertiser Instance
  */
 #ifndef CONFIG_DESIRE_ADV_INST
-#define CONFIG_DESIRE_ADV_INST         (0)
+#define CONFIG_DESIRE_ADV_INST          (0)
 #endif
 
 /**
@@ -64,7 +64,7 @@ extern "C" {
  * @brief   The advertisement interval in milliseconds
  */
 #ifndef CONFIG_BLE_ADV_STATIC_CID
-#define CONFIG_BLE_ADV_STATIC_CID      0
+#define CONFIG_BLE_ADV_STATIC_CID       0
 #endif
 
 #if IS_USED(MODULE_DESIRE_ADVERTISER_THREADED)
