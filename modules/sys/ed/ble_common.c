@@ -30,7 +30,7 @@
 
 uint16_t ed_ble_rssi_to_cm(float rssi)
 {
-    return (uint16_t) (0.943487 * pow(0.916837, rssi));
+    return (uint16_t) (0.0066256 * pow(0.8546459, rssi));
 }
 
 void ed_ble_set_obf_value(ed_t *ed, ebid_t *ebid)
