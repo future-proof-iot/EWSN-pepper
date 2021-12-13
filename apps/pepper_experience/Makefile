@@ -29,6 +29,7 @@ USEMODULE += ed_leds
 USEMODULE += storage
 USEMODULE += mtd_sdcard
 FEATURES_REQUIED += periph_gpio_irq
+USEMODULE += twr_shell
 
 # Include shell and, process information fonctionality
 USEMODULE += shell
@@ -36,21 +37,25 @@ USEMODULE += shell_commands
 USEMODULE += ps
 
 # Change default timings for faster demo behaviout
-ADV_PER_SLICE ?= 1
+ADV_PER_SLICE ?= 10           # 10 advertisements per slice
 CFLAGS += -DCONFIG_ADV_PER_SLICE=$(ADV_PER_SLICE)
-EPOCH_DURATION_SEC ?= 60
+EPOCH_DURATION_SEC ?= 300     # 5min
 CFLAGS += -DCONFIG_EPOCH_DURATION_SEC=$(EPOCH_DURATION_SEC)
-MAX_DISTANCE_CM ?= 1000 # 10m
-CFLAGS += -DMAX_DISTANCE=$(MAX_DISTANCE_CM)
-TWR_LISTEN_WINDOW_US ?= 2000
+MAX_DISTANCE_CM ?= 1000       # 10m so everything is logged
+CFLAGS += -DMAX_DISTANCE_CM=$(MAX_DISTANCE_CM)
+TWR_LISTEN_WINDOW_US ?= 2000  # 2ms listen windows
 CFLAGS += -DCONFIG_TWR_LISTEN_WINDOW_US=$(TWR_LISTEN_WINDOW_US)
+ADV_ITVL_MS ?= 1000           # 1 adv per second
+CFLAGS += -DCONFIG_BLE_ADV_ITVL_MS=$(ADV_ITVL_MS)
+
+# Disable shell echo
+CFLAGS += -DCONFIG_SHELL_NO_ECHO=1
 
 # The event thread will handle:
 # * advertisement
 # * twr
 # * start/end of epoch
 # * other app event
-CFLAGS += -DEVENT_THREAD_HIGHEST_STACKSIZE=THREAD_STACKSIZE_LARGE
 CFLAGS += -DEVENT_THREAD_MEDIUM_STACKSIZE=THREAD_STACKSIZE_LARGE
 
 include $(RIOTBASE)/Makefile.include
