@@ -21,7 +21,7 @@ from ble_iface import BLEScanner, PEPPERConfig, PEPPERNode
 from ble_iface import PEPPERStart
 
 CONFIG_EPOCH_DURATION_SEC = 5 * 60
-CONFIG_BLE_ADV_INTERVAL_MS = 1000
+CONFIG_BLE_ADV_ITVL_MS = 1000
 CONFIG_ADV_PER_SLICE = 20
 
 # decorator to ease documenting CLI commands with f-strings
@@ -80,6 +80,39 @@ class BLEPrompt(Cmd):
         # do noting on empty line
         pass
 
+    def do_connect(self, arg: str):
+        """Connects to all scanned nodes"""
+        out = None
+        try:
+            for node in self.ble_nodes:
+                if node.is_connected:
+                    print(f"node {node.name} is already connected")
+                    continue
+                print(f"Connecting to node: {node.name}")
+                self.loop.run_until_complete(node.connect())
+                print(f"\tConnected to node: {node.name}")
+        except Exception as e:
+            print(f"[Error] BLE failure: {e}")
+            print(traceback.format_exc())
+            out = e
+
+        return out
+
+    def do_disconnect(self, arg: str):
+        """Disconnects from all scanned nodes"""
+        out = None
+        try:
+            for node in self.ble_nodes:
+                print(f"Disconnecting from node: {node.name}")
+                self.loop.run_until_complete(node.disconnect())
+                print(f"\tDisconnected from node: {node.name}")
+        except Exception as e:
+            print(f"[Error] BLE failure: {e}")
+            print(traceback.format_exc())
+            out = e
+
+        return out
+
     @WrapperCmdLineArgParser(parser=None)
     def do_scan(self, line: str, parsed, get_parser=False):
         """Scans for BLE nodes."""
@@ -102,6 +135,11 @@ class BLEPrompt(Cmd):
             )
             return parser
         try:
+            # disconnect from nodes
+            ex = self.do_disconnect("")
+            if ex is not None:
+                raise (ex)
+
             self.current_node = None
             self.ble_nodes = []
             nodes = self.loop.run_until_complete(
@@ -144,6 +182,15 @@ class BLEPrompt(Cmd):
                         else f" Must be in [0-{len(self.ble_nodes)-1}]"
                     )
                     print(f"[Error]: provided index {args[0]} out of range. {err_msg}")
+                if not self.current_node.is_connected:
+                    try:
+                        print(f"Connecting to node: {self.current_node.name}")
+                        self.loop.run_until_complete(self.current_node.connect())
+                        print(f"\tConnected to node: {self.current_node.name}")
+                    except Exception as e:
+                        print(f"[Error] BLE failure: {e}")
+                        print(traceback.format_exc())
+                        out = e
 
     def do_discover(self, line: str):
         """Discovers the selected BLE node by printing its services and characteristics"""
@@ -152,9 +199,13 @@ class BLEPrompt(Cmd):
             self.do_ls("")
             return
 
-        self.loop.run_until_complete(
-            self.ble_scanner.discover(self.current_node.device)
-        )
+        try:
+            self.loop.run_until_complete(
+                self.ble_scanner.discover(self.current_node.client)
+            )
+        except Exception as e:
+            print(f"[Error] BLE discovery failure: {e}")
+            print(traceback.format_exc())
 
     def do_stop(self, line: str):
         """Performs an ifconfig over BLE on selected node"""
@@ -179,7 +230,7 @@ class BLEPrompt(Cmd):
                 "--base-name",
                 "-bn",
                 default=None,
-                help="Base name to vonfigure",
+                help="Base name to configure",
             )
             return parser
 
@@ -203,7 +254,7 @@ class BLEPrompt(Cmd):
             base_name = self.loop.run_until_complete(node.read_pepper_config())
             print(f"Base name: {base_name.base_name}")
         except Exception as e:
-            print(f'[Error] BLE read_rng_conf failure: {e}')
+            print(f"[Error] BLE read_rng_conf failure: {e}")
             print(traceback.format_exc())
 
     @WrapperCmdLineArgParser(parser=None)
@@ -222,7 +273,7 @@ class BLEPrompt(Cmd):
                 "--adv-interval",
                 "-i",
                 type=int,
-                default=CONFIG_BLE_ADV_INTERVAL_MS,
+                default=CONFIG_BLE_ADV_ITVL_MS,
                 help="Advertisement interval in milliseconds",
             )
             parser.add_argument(
@@ -279,7 +330,11 @@ class BLEPrompt(Cmd):
 
 def main(args):
     # CLI loop
-    BLEPrompt().cmdloop()
+    cli = BLEPrompt()
+    try:
+        cli.cmdloop()
+    finally:
+        cli.do_disconnect("")
 
 
 if __name__ == "__main__":

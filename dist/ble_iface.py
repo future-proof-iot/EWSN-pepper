@@ -9,7 +9,7 @@
 """
 
 from dataclasses import dataclass, field
-from typing import List, Dict, Callable, Any
+from typing import List, Dict, Callable, Any, Optional
 from enum import IntFlag, unique
 
 import re
@@ -92,10 +92,32 @@ class PEPPERStart:
 @dataclass
 class PEPPERNode:
     device: BLEDevice
+    connection_timeout: Optional[int] = 10
+    client: BleakClient = field(init=False)
+
+    def __post_init__(self):
+        def disc_callback(client: BleakClient):
+            print(f"Disconnected from device {self.device}")
+
+        self.client = BleakClient(
+            self.device,
+            timeout=self.connection_timeout,
+            disconnected_callback=disc_callback,
+        )
+
+    async def connect(self):
+        await self.client.connect(timeout=self.connection_timeout)
+
+    async def disconnect(self):
+        await self.client.disconnect()
 
     @property
     def name(self) -> str:
         return self.device.name
+
+    @property
+    def is_connected(self) -> bool:
+        return self.client.is_connected
 
     async def read_pepper_config(self) -> PEPPERConfig:
         value = await self.__read_ble_char(
@@ -121,17 +143,15 @@ class PEPPERNode:
         )
 
     async def __read_ble_char(self, ble_char: str):
-        async with BleakClient(self.device) as client:
-            while not client.is_connected:
-                pass
-            value = await client.read_gatt_char(ble_char)
-            return value
+        if not self.is_connected:
+            raise ConnectionError("Device not connected")
+        value = await self.client.read_gatt_char(ble_char)
+        return value
 
     async def __write_ble_char(self, ble_char: str, value: bytearray):
-        async with BleakClient(self.device) as client:
-            while not client.is_connected:
-                pass
-            await client.write_gatt_char(ble_char, value)
+        if not self.is_connected:
+            raise ConnectionError("Device not connected")
+        await self.client.write_gatt_char(ble_char, value)
 
 
 @dataclass
