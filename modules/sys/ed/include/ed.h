@@ -83,6 +83,24 @@ extern "C" {
 #define CONFIG_ED_BLE_RX_COMPENSATION_GAIN      (0U)
 #endif
 
+#if IS_USED(MODULE_ED_UWB_STATS)
+/**
+ * @brief   UWB encounter statistics
+ */
+typedef struct {
+    struct {
+        uint16_t scheduled; /**< scheduled requests */
+        uint16_t aborted;   /**< aborted requests */
+        uint16_t timeout;   /**< timeout requests */
+    } req;                  /**< request statistics, when initiator */
+    struct {
+        uint16_t scheduled; /**< scheduled listens */
+        uint16_t aborted;   /**< aborted listens */
+        uint16_t timeout;   /**< timeout listens */
+    } lst;                  /**< listen statistics, when responder */
+} ed_uwb_stats_t;
+#endif
+
 #if IS_USED(MODULE_ED_UWB)
 /**
  * @brief   UWB encounter data, structure to track encounters per epoch
@@ -93,6 +111,9 @@ typedef struct ed_uwb {
     uint32_t cumulative_los;    /**< cumulative line of sight value  */
 #endif
     uint16_t req_count;         /**< request message count */
+#if IS_USED(MODULE_ED_UWB_STATS)
+    ed_uwb_stats_t stats;
+#endif
     uint16_t seen_first_s;      /**< time of first message, relative to start of epoch [s] */
     uint16_t seen_last_s;       /**< time of last message, relative to start of epoch [s] */
     bool valid;                 /**< valid encounter */

@@ -127,6 +127,11 @@ void epoch_finish(epoch_data_t *epoch, ed_list_t *list)
             epoch->contacts[i].uwb.avg_los = top.top[i].ed->uwb.cumulative_los;
 #endif
             epoch->contacts[i].uwb.req_count = top.top[i].ed->uwb.req_count;
+
+#if IS_USED(MODULE_ED_UWB_STATS)
+            memcpy(&epoch->contacts[i].uwb.stats, &top.top[i].ed->uwb.stats,
+                   sizeof(ed_uwb_stats_t));
+#endif
 #endif
 #if IS_USED(MODULE_ED_BLE)
             epoch->contacts[i].ble.exposure_s = top.top[i].ed->ble.seen_last_s -
@@ -196,7 +201,7 @@ size_t contact_data_serialize_all_json(epoch_data_t *epoch, uint8_t *buf,
 {
     json_encoder_t ctx;
 
-    json_encoder_init(&ctx, (char*)buf, len);
+    json_encoder_init(&ctx, (char *)buf, len);
     json_dict_open(&ctx);
     if (prefix) {
         json_dict_key(&ctx, "tag");
@@ -220,6 +225,20 @@ size_t contact_data_serialize_all_json(epoch_data_t *epoch, uint8_t *buf,
             json_dict_open(&ctx);
             json_dict_key(&ctx, "exposure");
             json_u32(&ctx, epoch->contacts[i].uwb.exposure_s);
+#if IS_USED(MODULE_ED_UWB_STATS)
+            json_dict_key(&ctx, "lst_scheduled");
+            json_u32(&ctx, epoch->contacts[i].uwb.stats.lst.scheduled);
+            json_dict_key(&ctx, "lst_aborted");
+            json_u32(&ctx, epoch->contacts[i].uwb.stats.lst.aborted);
+            json_dict_key(&ctx, "lst_timeout");
+            json_u32(&ctx, epoch->contacts[i].uwb.stats.lst.timeout);
+            json_dict_key(&ctx, "req_scheduled");
+            json_u32(&ctx, epoch->contacts[i].uwb.stats.req.scheduled);
+            json_dict_key(&ctx, "req_aborted");
+            json_u32(&ctx, epoch->contacts[i].uwb.stats.req.aborted);
+            json_dict_key(&ctx, "req_timeout");
+            json_u32(&ctx, epoch->contacts[i].uwb.stats.req.timeout);
+#endif
             json_dict_key(&ctx, "req_count");
             json_u32(&ctx, epoch->contacts[i].uwb.req_count);
             json_dict_key(&ctx, "avg_d_cm");
@@ -303,6 +322,20 @@ void contact_data_serialize_all_printf(epoch_data_t *epoch, const char *prefix)
             turo_dict_open(&ctx);
             turo_dict_key(&ctx, "exposure");
             turo_u32(&ctx, epoch->contacts[i].uwb.exposure_s);
+#if IS_USED(MODULE_ED_UWB_STATS)
+            turo_dict_key(&ctx, "lst_scheduled");
+            turo_u32(&ctx, epoch->contacts[i].uwb.stats.lst.scheduled);
+            turo_dict_key(&ctx, "lst_aborted");
+            turo_u32(&ctx, epoch->contacts[i].uwb.stats.lst.aborted);
+            turo_dict_key(&ctx, "lst_timeout");
+            turo_u32(&ctx, epoch->contacts[i].uwb.stats.lst.timeout);
+            turo_dict_key(&ctx, "req_scheduled");
+            turo_u32(&ctx, epoch->contacts[i].uwb.stats.req.scheduled);
+            turo_dict_key(&ctx, "req_aborted");
+            turo_u32(&ctx, epoch->contacts[i].uwb.stats.req.aborted);
+            turo_dict_key(&ctx, "req_timeout");
+            turo_u32(&ctx, epoch->contacts[i].uwb.stats.req.timeout);
+#endif
             turo_dict_key(&ctx, "req_count");
             turo_u32(&ctx, epoch->contacts[i].uwb.req_count);
             turo_dict_key(&ctx, "avg_d_cm");

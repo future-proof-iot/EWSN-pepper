@@ -86,9 +86,10 @@ static uint32_t pepper_sec_since_start(void)
  * @brief Called on a successfull TWR exchange, logs the measured distance on the
  *        device
  */
-static void _twr_cb(twr_event_data_t *data)
+static void _twr_cb(twr_event_data_t *data, twr_status_t status)
 {
     (void)data;
+    (void)status;
 
     ed_t *ed = ed_list_process_rng_data(&_controller.ed_list, data->addr,
                                         pepper_sec_since_start(), data->range,
@@ -101,6 +102,40 @@ static void _twr_cb(twr_event_data_t *data)
         ed_serialize_uwb_json(data->range, data->los, ed->cid, ztimer_now(ZTIMER_MSEC),
                               pepper_get_serializer_bn());
     }
+}
+
+/**
+ * @brief Called on a successfull TWR exchange, logs the measured distance on the
+ *        device
+ */
+static void _twr_timeout_cb(twr_event_data_t *data, twr_status_t status)
+{
+    (void)data;
+    (void)status;
+#if IS_USED(MODULE_ED_UWB_STATS)
+    ed_t *ed = ed_list_get_by_short_addr(&_controller.ed_list, data->addr);
+    if (status == TWR_RNG_INITIATOR) {
+        ed->uwb.stats.req.timeout++;
+    }
+    else {
+        ed->uwb.stats.lst.timeout++;
+    }
+#endif
+}
+
+static void _twr_busy_cb(twr_event_data_t *data, twr_status_t status)
+{
+    (void)data;
+    (void)status;
+#if IS_USED(MODULE_ED_UWB_STATS)
+    ed_t *ed = ed_list_get_by_short_addr(&_controller.ed_list, data->addr);
+    if (status == TWR_RNG_INITIATOR) {
+        ed->uwb.stats.req.aborted++;
+    }
+    else {
+        ed->uwb.stats.lst.aborted++;
+    }
+#endif
 }
 
 /**
@@ -139,8 +174,16 @@ static void _scan_cb(uint32_t ticks, const ble_addr_t *addr, int8_t rssi,
         ed_list_process_scan_data(&_controller.ed_list, cid, timestamp, rssi);
 #endif
 #if IS_USED(MODULE_TWR)
+#if IS_USED(MODULE_ED_UWB_STATS)
+        ed->uwb.stats.lst.scheduled++;
+#endif
         /* 3.2 schedule a twr listen event at an EBID based offset */
-        twr_schedule_listen_managed(_get_twr_rx_offset(&_controller.ebid));
+        if (twr_schedule_listen_managed(ed_get_short_addr(ed),
+                                        _get_twr_rx_offset(&_controller.ebid))) {
+#if IS_USED(MODULE_ED_UWB_STATS)
+            ed->uwb.stats.lst.aborted++;
+#endif
+        }
 #endif
         if (LOG_LEVEL == LOG_DEBUG) {
 #if IS_USED(MODULE_ED_BLE) || IS_USED(MODULE_ED_BLE_WIN)
@@ -182,8 +225,15 @@ static void _adv_cb(uint32_t advs, void *arg)
                 /* compensate for delay in scheduling requests */
                 uint16_t delay = ztimer_now(ZTIMER_MSEC_BASE) - now_ticks;
                 /* 2. schedule the request at the EBID based offset */
-                twr_schedule_request_managed(ed_get_short_addr(next),
-                                             _get_twr_tx_offset(&next->ebid) - delay);
+#if IS_USED(MODULE_ED_UWB_STATS)
+                next->uwb.stats.req.scheduled++;
+#endif
+                if (twr_schedule_request_managed(
+                        ed_get_short_addr(next), _get_twr_tx_offset(&next->ebid) - delay)) {
+#if IS_USED(MODULE_ED_UWB_STATS)
+                    next->uwb.stats.req.aborted++;
+#endif
+                }
             }
             else {
                 LOG_DEBUG("[ble/uwb]: skip encounter, missing over BLE\n");
@@ -350,7 +400,9 @@ void pepper_init(void)
     twr_managed_set_manager(&_controller.twr_mem);
     twr_init(CONFIG_UWB_BLE_EVENT_PRIO);
     twr_disable();
-    twr_register_rng_cb(_twr_cb);
+    twr_set_complete_cb(_twr_cb);
+    twr_set_busy_cb(_twr_busy_cb);
+    twr_set_rx_timeout_cb(_twr_timeout_cb);
     /* init ed management */
     ed_memory_manager_init(&_controller.ed_mem);
     ed_list_init(&_controller.ed_list, &_controller.ed_mem, &_controller.ebid);

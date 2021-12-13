@@ -36,7 +36,9 @@
 #include "log.h"
 
 /* pointer to user set callback */
-static twr_callback_t _usr_rng_callback = NULL;
+static twr_callback_t _usr_complete_cb = NULL;
+static twr_callback_t _usr_rx_timeout_cb = NULL;
+static twr_callback_t _usr_busy_cb = NULL;
 /* the event queue to offload to */
 static event_queue_t *_twr_queue = NULL;
 
@@ -49,6 +51,10 @@ static uint16_t listen_window_us = CONFIG_TWR_LISTEN_WINDOW_US;
 
 /* mask TWR activity */
 static bool _enabled = false;
+/* status variable */
+static twr_status_t _status = TWR_RNG_IDLE;
+/* the present req dest short addr, or allowed short addr */
+static uint16_t _other_short_addr;
 
 /* memory manager pointer if any */
 twr_event_mem_manager_t *_manager = NULL;
@@ -109,7 +115,7 @@ static bool _complete_cb(struct uwb_dev *inst, struct uwb_mac_interface *cbs)
     /* TODO: can this be negative sometimes? */
     data.range = ((uint16_t)(range_f * 100));
 
-    if (_usr_rng_callback == NULL) {
+    if (_usr_complete_cb == NULL) {
         LOG_DEBUG("[twr]: %" PRIu16 ", no usr callback\n", data.addr);
         LOG_DEBUG("\t - range: %" PRIu16 ".%" PRIu16 "\n",
                   (uint16_t)(data.range / 100U), (uint16_t)(data.range % 100U));
@@ -120,9 +126,10 @@ static bool _complete_cb(struct uwb_dev *inst, struct uwb_mac_interface *cbs)
     }
     else {
         LOG_DEBUG("[twr]: %" PRIu32 ", calling usr callback\n", data.time);
-        _usr_rng_callback(&data);
+        _usr_complete_cb(&data, _status);
     }
 
+    _status = TWR_RNG_IDLE;
     return true;
 }
 
@@ -139,6 +146,11 @@ static bool _rx_timeout_cb(struct uwb_dev *inst, struct uwb_mac_interface *cbs)
     (void)cbs;
     (void)inst;
     LOG_DEBUG("[twr]: rx_timeout\n");
+    if (_usr_rx_timeout_cb) {
+        twr_event_data_t data = { .addr = _other_short_addr };
+        _usr_rx_timeout_cb(&data, _status);
+    }
+    _status = TWR_RNG_IDLE;
     return true;
 }
 
@@ -167,15 +179,27 @@ void twr_init(event_queue_t *queue)
     /* set pan_id */
     twr_set_pan_id(CONFIG_TWR_PAN_ID);
 
+    /* set state idle */
+    _status = TWR_RNG_IDLE;
     /* set event queue */
     _twr_queue = queue;
     /* enable by default */
     twr_enable();
 }
 
-void twr_register_rng_cb(twr_callback_t callback)
+void twr_set_complete_cb(twr_callback_t callback)
 {
-    _usr_rng_callback = callback;
+    _usr_complete_cb = callback;
+}
+
+void twr_set_rx_timeout_cb(twr_callback_t callback)
+{
+    _usr_rx_timeout_cb = callback;
+}
+
+void twr_set_busy_cb(twr_callback_t callback)
+{
+    _usr_busy_cb = callback;
 }
 
 void twr_set_listen_window(uint16_t time)
@@ -203,11 +227,15 @@ void twr_set_pan_id(uint16_t pan_id)
 
 static void _twr_rng_listen(void *arg)
 {
-    (void)arg;
+    twr_event_t *event = (twr_event_t *)arg;
+
     if (_enabled) {
         if (dpl_sem_get_count(&_rng->sem) == 1) {
             LOG_DEBUG("[twr]: rng listen start\n");
+            _status = TWR_RNG_RESPONDER;
+            _other_short_addr = event->addr;
             uwb_rng_listen(_rng, listen_window_us, UWB_NONBLOCKING);
+            return;
         }
         else {
             LOG_WARNING("[twr]: rng listen aborted, busy\n");
@@ -215,6 +243,10 @@ static void _twr_rng_listen(void *arg)
     }
     else {
         LOG_DEBUG("[twr]: skip, is disabled\n");
+    }
+    if (_usr_busy_cb) {
+        twr_event_data_t data = { .addr = event->addr };
+        _usr_busy_cb(&data, TWR_RNG_RESPONDER);
     }
 }
 
@@ -237,16 +269,19 @@ void twr_schedule_listen(twr_event_t *event, uint16_t offset)
     _twr_schedule_listen(event, offset, _twr_rng_listen);
 }
 
-void twr_schedule_listen_managed(uint16_t offset)
+int twr_schedule_listen_managed(uint16_t addr, uint16_t offset)
 {
     assert(_manager);
     twr_event_t *event = twr_event_mem_manager_calloc(_manager);
 
+    event->addr = addr;
+
     if (!event) {
         LOG_ERROR("[twr]: error, no lst event\n");
-        return;
+        return -ENOMEM;
     }
     _twr_schedule_listen(event, offset, _twr_rng_listen_managed);
+    return 0;
 }
 
 static void _twr_rng_request(void *arg)
@@ -256,7 +291,10 @@ static void _twr_rng_request(void *arg)
     if (_enabled) {
         if (dpl_sem_get_count(&_rng->sem) == 1) {
             LOG_DEBUG("[twr]: rng request to %4" PRIx16 "\n", event->addr);
+            _status = TWR_RNG_INITIATOR;
+            _other_short_addr = event->addr;
             uwb_rng_request(_rng, event->addr, CONFIG_TWR_EVENT_ALGO_DEFAULT);
+            return;
         }
         else {
             LOG_WARNING("[twr]: rng request aborted, busy\n");
@@ -264,6 +302,10 @@ static void _twr_rng_request(void *arg)
     }
     else {
         LOG_DEBUG("[twr]: skip, is disabled\n");
+    }
+    if (_usr_busy_cb) {
+        twr_event_data_t data = { .addr = event->addr };
+        _usr_busy_cb(&data, TWR_RNG_INITIATOR);
     }
 }
 
@@ -289,16 +331,17 @@ void twr_schedule_request(twr_event_t *event, uint16_t dest, uint16_t offset)
     _twr_schedule_request(event, dest, offset, _twr_rng_request);
 }
 
-void twr_schedule_request_managed(uint16_t dest, uint16_t offset)
+int twr_schedule_request_managed(uint16_t dest, uint16_t offset)
 {
     assert(_manager);
     twr_event_t *event = twr_event_mem_manager_calloc(_manager);
 
     if (!event) {
         LOG_ERROR("[twr]: error, no req event\n");
-        return;
+        return -ENOMEM;
     }
     _twr_schedule_request(event, dest, offset, _twr_rng_request_managed);
+    return 0;
 }
 
 void twr_event_mem_manager_init(twr_event_mem_manager_t *manager)
@@ -347,6 +390,6 @@ void twr_reset(void)
     uwb_phy_forcetrxoff(_udev);
     if (dpl_sem_get_count(&_rng->sem) == 0) {
         dpl_error_t err = dpl_sem_release(&_rng->sem);
-        assert(err == (dpl_error_t) DPL_OK);
+        assert(err == (dpl_error_t)DPL_OK);
     }
 }

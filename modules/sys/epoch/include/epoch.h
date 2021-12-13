@@ -64,6 +64,9 @@ typedef struct contact_uwb_data {
 #if IS_USED(MODULE_ED_UWB_LOS)
     uint16_t avg_los;                       /**< los */
 #endif
+#if IS_USED(MODULE_ED_UWB_STATS)
+    ed_uwb_stats_t stats;
+#endif
 } contact_uwb_data_t;
 #endif
 

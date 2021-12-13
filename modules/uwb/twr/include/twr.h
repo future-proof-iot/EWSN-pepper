@@ -60,6 +60,12 @@ extern "C" {
 #define CONFIG_TWR_EVENT_ALGO_DEFAULT   (UWB_DATA_CODE_SS_TWR_ONE)
 #endif
 
+typedef enum {
+    TWR_RNG_IDLE,
+    TWR_RNG_INITIATOR,
+    TWR_RNG_RESPONDER,
+} twr_status_t;
+
 /**
  * @brief   TWR event data type
  */
@@ -96,7 +102,7 @@ typedef struct twr_req_event {
 /**
  * @brief   Callback for ranging event notification
  */
-typedef void (*twr_callback_t)(twr_event_data_t *);
+typedef void (*twr_callback_t)(twr_event_data_t *, twr_status_t);
 
 /**
  * @brief
@@ -118,7 +124,21 @@ void twr_init(event_queue_t *queue);
  *
  * @param[in]   callback    the callback
  */
-void twr_register_rng_cb(twr_callback_t callback);
+void twr_set_complete_cb(twr_callback_t callback);
+
+/**
+ * @brief   Register a callback to be called on RX timeout event
+ *
+ * @param[in]   callback    the callback
+ */
+void twr_set_rx_timeout_cb(twr_callback_t callback);
+
+/**
+ * @brief   Register a callback to be called when failed to schedule an event
+ *
+ * @param[in]   callback    the callback
+ */
+void twr_set_busy_cb(twr_callback_t callback);
 
 /**
  * @brief   Set the UWB device short address
@@ -164,8 +184,10 @@ void twr_schedule_request(twr_event_t *event, uint16_t dest, uint16_t offset);
  *
  * @param[in]       dest    the destination short address
  * @param[in]       offset  the time offset at witch to send the rng_request
+ *
+ * @return  0 on success, -ENOMEM if no event available
  */
-void twr_schedule_request_managed(uint16_t dest, uint16_t offset);
+int twr_schedule_request_managed(uint16_t dest, uint16_t offset);
 
 /**
  *
@@ -183,8 +205,10 @@ void twr_schedule_listen(twr_event_t *event, uint16_t offset);
  * @pre     A initialized @ref twr_event_mem_manager, and twr_managed_set_manager()
  *
  * @param[in]       offset  the time offset at witch to start listening
+ *
+ * @return  0 on success, -ENOMEM if no event available
  */
-void twr_schedule_listen_managed(uint16_t offset);
+int twr_schedule_listen_managed(uint16_t addr, uint16_t offset);
 
 /**
  * @brief   Init the memory manager
