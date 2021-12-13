@@ -34,7 +34,7 @@ static void _print_usage(void)
     puts("Usage:");
     puts("\tpepper status: controller status information");
     puts("\tpepper start [-d <epoch duration s>] [-i <ms interval>] [-r <advs per slice>]"
-         "[-a (align epoch, store false) [-c <iterations> ]");
+         "[-a (align epoch) [-c <iterations> ]");
     puts("\tpepper stop: stop proximity tracing");
     puts("\tpepper set bn <base name>: sets base name for logging");
     puts("\tpepper twr get win: returns the listen window in us");
@@ -105,7 +105,7 @@ static int _pepper_handler(int argc, char **argv)
             .epoch_iterations = 0,
             .adv_itvl_ms = CONFIG_BLE_ADV_ITVL_MS,
             .advs_per_slice = CONFIG_ADV_PER_SLICE,
-            .align = true,
+            .align = false,
         };
         int res = 0;
 
@@ -142,7 +142,7 @@ static int _pepper_handler(int argc, char **argv)
                 }
             /* intentionally falls through */
             case 'a':
-                params.align = false;
+                params.align = true;
                 continue;
             /* intentionally falls through */
             default:
@@ -165,14 +165,13 @@ static int _pepper_handler(int argc, char **argv)
         printf("\tadv_per_slice: %" PRIu32 "\n", params.advs_per_slice);
         printf("\tadv_itvl: %" PRIu32 "[ms]\n", params.adv_itvl_ms);
         pepper_start(&params);
-        char c = '\n';
-        do {
-            if (c != '\n' && c != '\r') {
-                puts("Help: Press s to stop");
+        if (IS_ACTIVE(CONFIG_PEPPER_SHELL_BLOCKING)) {
+            /* if iterations == 0 the loop will not run and this wont't block
+               which is wanted */
+            for (uint32_t i = 0; i < params.epoch_iterations; i ++) {
+                ztimer_sleep(ZTIMER_MSEC, params.epoch_duration_s * MS_PER_SEC);
             }
-            c = getchar();
-        } while (c != 's' && pepper_is_active());
-        pepper_stop();
+        }
         return 0;
     }
 
@@ -188,7 +187,6 @@ static int _pepper_handler(int argc, char **argv)
                     printf("[pepper]: uid %s\n", pepper_get_uid());
                     return 0;
                 }
-
             }
         }
         _print_usage();
@@ -202,10 +200,22 @@ static int _pepper_handler(int argc, char **argv)
     }
 
     if (!strcmp(argv[1], "status")) {
-        puts("status:");
+        printf("status: ");
+        if (pepper_is_active()) {
+            printf("active\n");
+        }
+        else {
+            printf("idle\n");
+        }
         puts("  twr:");
         printf("    mem: %d/%d (free/total)\n",
-               memarray_available(&twr_managed_get_manager()->mem), CONFIG_TWR_EVENT_BUF_SIZE);
+               memarray_available(&pepper_get_controller()->twr_mem.mem),
+               CONFIG_TWR_EVENT_BUF_SIZE);
+        puts("  ed:");
+        printf("    mem: %d/%d (free/total)\n",
+               memarray_available(&pepper_get_controller()->ed_mem.mem),
+               CONFIG_ED_BUF_SIZE);
+
         return 0;
     }
 

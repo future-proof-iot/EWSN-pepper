@@ -291,7 +291,6 @@ void pepper_gatt_init(void)
 {
     int rc = 0;
 
-    pepper_uid_init();
     char *uid = pepper_get_uid();
 
     /* verify and add our custom services */

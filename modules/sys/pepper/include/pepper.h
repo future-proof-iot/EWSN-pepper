@@ -21,23 +21,48 @@
 #ifndef PEPPER_H
 #define PEPPER_H
 
+#include "event/thread.h"
 #include "ztimer/config.h"
 #include "timex.h"
 #include "pepper/config.h"
 #include "epoch.h"
 #include "ed.h"
+#if IS_USED(MODULE_TWR)
 #include "twr.h"
+#endif
 #include "ebid.h"
+#if IS_USED(MODULE_DESIRE_ADVERTISER)
 #include "desire_ble_adv.h"
 #include "desire_ble_scan.h"
 #include "desire_ble_scan_params.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+/**
+ * @brief   The following event priorities are defined in a way that:
+ *              - epoch state machine event come before any other events
+ *              - uwb & ble events have same priority
+ *              - serialization events are handled last
+ *
+ *          This allows a single even thread to handle all events.
+ */
+#ifndef CONFIG_PEPPER_EVENT_PRIO
+#define CONFIG_PEPPER_EVENT_PRIO        (EVENT_PRIO_HIGHEST)
+#endif
+
+#ifndef CONFIG_PEPPER_LOW_EVENT_PRIO
+#define CONFIG_PEPPER_LOW_EVENT_PRIO    (EVENT_PRIO_LOWEST)
+#endif
+
+#ifndef CONFIG_UWB_BLE_EVENT_PRIO
+#define CONFIG_UWB_BLE_EVENT_PRIO       (EVENT_PRIO_MEDIUM)
+#endif
+
 #ifndef CONFIG_TWR_MIN_OFFSET_MS
-#define CONFIG_TWR_MIN_OFFSET_MS        (100)
+#define CONFIG_TWR_MIN_OFFSET_MS        (100LU)
 #endif
 
 #ifndef CONFIG_TWR_MIN_OFFSET_TICKS
@@ -53,11 +78,19 @@ extern "C" {
 #endif
 
 #ifndef CONFIG_MIA_TIME_S
-#define CONFIG_MIA_TIME_S               (5)
+#define CONFIG_MIA_TIME_S               (30LU)
 #endif
 
 #ifndef CONFIG_PEPPER_BASE_NAME_BUFFER
 #define CONFIG_PEPPER_BASE_NAME_BUFFER  (32)
+#endif
+/**
+ * @brief   If active shell `pepper_start` commands will block until
+ *          completion
+ *
+ */
+#ifndef CONFIG_PEPPER_SHELL_BLOCKING
+#define CONFIG_PEPPER_SHELL_BLOCKING    0
 #endif
 
 #ifndef CONFIG_PEPPER_LOGFILE
@@ -92,15 +125,19 @@ typedef struct controller {
     ebid_t ebid;                        /**> */
     ed_list_t ed_list;                  /**> */
     ed_memory_manager_t ed_mem;         /**> */
+#if IS_USED(MODULE_TWR)
     twr_event_mem_manager_t twr_mem;    /**> */
     twr_params_t twr_params;            /**> */
+#endif
     crypto_manager_keys_t keys;         /**> */
     uint32_t start_time;                /**> */
     epoch_data_t data;                  /**> */
     epoch_data_t data_serialize;        /**> */
     mutex_t lock;                       /**> */
     epoch_params_t epoch;               /**> */
+#if IS_USED(MODULE_DESIRE_ADVERTISER)
     adv_params_t adv;
+#endif
     pepper_status_t status;             /**> */
 } controller_t;
 

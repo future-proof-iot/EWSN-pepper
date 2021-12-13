@@ -59,7 +59,7 @@ static controller_t _controller = {
 static uint16_t _get_twr_offset(ebid_t *ebid)
 {
     /* last two bytes of the EBID */
-    uint16_t offset_ms = ebid->parts.ebid.u8[0] + (ebid->parts.ebid.u8[1] << 8);
+    uint32_t offset_ms = ebid->parts.ebid.u8[0] + (ebid->parts.ebid.u8[1] << 8);
 
     /* add a minimum offset and a random EBID based one */
     offset_ms = (offset_ms % CONFIG_BLE_ADV_ITVL_MS) + CONFIG_TWR_MIN_OFFSET_MS;
@@ -83,7 +83,7 @@ static uint32_t pepper_sec_since_start(void)
 }
 
 /**
- * @brief Called on a successfull TWR exchange, logs the measure distance on the
+ * @brief Called on a successfull TWR exchange, logs the measured distance on the
  *        device
  */
 static void _twr_cb(twr_event_data_t *data)
@@ -96,9 +96,9 @@ static void _twr_cb(twr_event_data_t *data)
 
     (void)ed;
 
-    if (LOG_LEVEL == LOG_INFO) {
-        /* log with an absolute epoch based timestamp */
-        ed_serialize_uwb_json(data->range, data->los, ed->cid, ztimer_now(ZTIMER_EPOCH),
+    if (LOG_LEVEL == LOG_DEBUG) {
+        /* log with a milliseconds based timestamp */
+        ed_serialize_uwb_json(data->range, data->los, ed->cid, ztimer_now(ZTIMER_MSEC),
                               pepper_get_serializer_bn());
     }
 }
@@ -125,7 +125,7 @@ static void _scan_cb(uint32_t ticks, const ble_addr_t *addr, int8_t rssi,
                                      adv_payload->data.ebid_slice, part);
 
     if (ed == NULL) {
-        LOG_ERROR("return NULL");
+        LOG_ERROR("return NULL\n");
         return;
     }
     /* 2. update last time this encounter was seen, relative to epoch start */
@@ -144,8 +144,8 @@ static void _scan_cb(uint32_t ticks, const ble_addr_t *addr, int8_t rssi,
 #endif
         if (LOG_LEVEL == LOG_DEBUG) {
 #if IS_USED(MODULE_ED_BLE) || IS_USED(MODULE_ED_BLE_WIN)
-            /* log with an absolute epoch based timestamp */
-            ed_serialize_ble_json(rssi, cid, ztimer_now(ZTIMER_EPOCH),
+            /* log with a milliseconds based timestamp */
+            ed_serialize_ble_json(rssi, cid, ztimer_now(ZTIMER_MSEC),
                                   pepper_get_serializer_bn());
 #endif
         }
@@ -178,7 +178,7 @@ static void _adv_cb(uint32_t advs, void *arg)
         next = (ed_t *)next->list_node.next;
         if (next->ebid.status.status == EBID_HAS_ALL) {
             /* 1. check if advertisement where received from neighbor in last CONFIG_MIA_TIME_S */
-            if (next->seen_last_s > timestamp - CONFIG_MIA_TIME_S) {
+            if (next->seen_last_s + CONFIG_MIA_TIME_S > timestamp) {
                 /* compensate for delay in scheduling requests */
                 uint16_t delay = ztimer_now(ZTIMER_MSEC_BASE) - now_ticks;
                 /* 2. schedule the request at the EBID based offset */
@@ -222,9 +222,9 @@ void pepper_core_disable(void)
 #endif
 }
 
-static void _epoch_setup(void *arg)
+static void _epoch_start(event_t *event)
 {
-    (void)arg;
+    (void)event;
     /* timestamp the start of the epoch in relative units*/
     _controller.start_time = ztimer_now(ZTIMER_SEC);
     /* only use the ZTIMER_EPOCH timestamps for absolute and not for relative
@@ -235,16 +235,16 @@ static void _epoch_setup(void *arg)
     ebid_init(&_controller.ebid);
     LOG_INFO("[pepper]: new ebid generation\n");
     ebid_generate(&_controller.ebid, &_controller.keys);
-    LOG_INFO("[pepper]: local ebid: [");
+    LOG_INFO("[pepper]: local ebid: \n\t");
     for (uint8_t i = 0; i < EBID_SIZE; i++) {
-        LOG_INFO("%d, ", _controller.ebid.parts.ebid.u8[i]);
+        if ((i + 1) % 8 == 0 && i != (EBID_SIZE - 1)) {
+            LOG_INFO("0x%02x\n\t", _controller.ebid.parts.ebid.u8[i]);
+        }
+        else {
+            LOG_INFO("0x%02x ", _controller.ebid.parts.ebid.u8[i]);
+        }
     }
-    LOG_INFO("]\n");
-}
-
-static void _epoch_start(void *arg)
-{
-    (void)arg;
+    LOG_INFO("\n");
     pepper_core_enable(&_controller.ebid, &_controller.adv,
                        _controller.epoch.duration_s * MS_PER_SEC);
 }
@@ -272,10 +272,11 @@ static void _serialize_epoch_handler(event_t *event)
         contact_data_serialize_all_printf(d_event->data, pepper_get_serializer_bn());
     }
 }
-
 static epoch_data_event_t _serialize_epoch = { .super.handler = _serialize_epoch_handler };
 
+
 static event_periodic_t _end_epoch;
+static event_t _start_epoch = { .handler = _epoch_start };
 static void _epoch_end(void *arg)
 {
     (void)arg;
@@ -296,11 +297,11 @@ static void _epoch_end(void *arg)
     /* post serializing/offloading event */
     memcpy(&_controller.data_serialize, &_controller.data, sizeof(epoch_data_t));
     _serialize_epoch.data = &_controller.data_serialize;
-    event_post(EVENT_PRIO_MEDIUM, &_serialize_epoch.super);
+    event_post(CONFIG_PEPPER_LOW_EVENT_PRIO, &_serialize_epoch.super);
     /* bootstrap new epoch if required */
     if (pepper_is_active()) {
-        _epoch_setup(NULL);
-        _epoch_start(NULL);
+        /* by posting an event we allowed all other queued events to be handled */
+        event_post(CONFIG_UWB_BLE_EVENT_PRIO, &_start_epoch);
     }
 }
 static event_callback_t _end_of_epoch = EVENT_CALLBACK_INIT(_epoch_end, NULL);
@@ -323,6 +324,9 @@ void pepper_init(void)
 {
     /* set initial status to STOPPED */
     _controller.status = PEPPER_STOPPED;
+    if (IS_USED(MODULE_PEPPER_UTIL)) {
+        pepper_uid_init();
+    }
     /* pepper_gatt and pepper_stdio_nimble are mutually exclusive */
     if (IS_USED(MODULE_PEPPER_GATT)) {
         pepper_gatt_init();
@@ -337,21 +341,23 @@ void pepper_init(void)
     storage_init();
 #endif
     /* init ble advertiser */
-    desire_ble_adv_init(EVENT_PRIO_HIGHEST);
+    desire_ble_adv_init(CONFIG_UWB_BLE_EVENT_PRIO);
     desire_ble_adv_set_cb(_adv_cb);
     /* init ble scanner and current_time */
     desire_ble_scan_init(&desire_ble_scanner_params, _scan_cb);
     /* init twr */
     twr_event_mem_manager_init(&_controller.twr_mem);
     twr_managed_set_manager(&_controller.twr_mem);
-    twr_init(EVENT_PRIO_HIGHEST);
+    twr_init(CONFIG_UWB_BLE_EVENT_PRIO);
     twr_disable();
     twr_register_rng_cb(_twr_cb);
     /* init ed management */
     ed_memory_manager_init(&_controller.ed_mem);
     ed_list_init(&_controller.ed_list, &_controller.ed_mem, &_controller.ebid);
     /* setup end of uwb_epoch timeout event */
-    event_periodic_init(&_end_epoch, ZTIMER_EPOCH, EVENT_PRIO_HIGHEST, &_end_of_epoch.super);
+    /* TODO: move this to a different event queue, use defines to force it */
+    event_periodic_init(&_end_epoch, ZTIMER_EPOCH, CONFIG_PEPPER_EVENT_PRIO,
+                        &_end_of_epoch.super);
 }
 
 void pepper_start(pepper_start_params_t *params)
@@ -382,8 +388,7 @@ void pepper_start(pepper_start_params_t *params)
     LED3_ON;
     mutex_unlock(&_controller.lock);
     /* bootstrap first epoch */
-    _epoch_setup(NULL);
-    _epoch_start(NULL);
+    event_post(CONFIG_UWB_BLE_EVENT_PRIO, &_start_epoch);
 }
 
 void pepper_resume(bool align)
@@ -400,7 +405,7 @@ void pepper_resume(bool align)
                                       _end_epoch.count);
             /* re-enable BLE and UWB */
             pepper_core_enable(&_controller.ebid, &_controller.adv,
-                               _controller.epoch.duration_s);
+                               _controller.epoch.duration_s * MS_PER_SEC);
         }
         _controller.status = PEPPER_RUNNING;
     }
