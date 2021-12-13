@@ -7,6 +7,7 @@ ifneq (,$(filter pepper_controller,$(USEMODULE)))
   USEMODULE += fmt
   USEMODULE += event
   USEMODULE += event_thread
+  USEMODULE += event_thread_highest
   USEMODULE += event_callback
   USEMODULE += event_periodic
   USEMODULE += event_timeout_ztimer
