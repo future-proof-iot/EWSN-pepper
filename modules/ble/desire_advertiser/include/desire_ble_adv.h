@@ -56,8 +56,8 @@ extern "C" {
 /**
  * @brief   The advertisement interval in milliseconds
  */
-#ifndef CONFIG_BLE_ADV_INTERVAL_MS
-#define CONFIG_BLE_ADV_INTERVAL_MS      (1LU * MS_PER_SEC)
+#ifndef CONFIG_BLE_ADV_ITVL_MS
+#define CONFIG_BLE_ADV_ITVL_MS      (1LU * MS_PER_SEC)
 #endif
 
 /**

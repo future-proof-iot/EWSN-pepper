@@ -32,7 +32,7 @@
 #include "pepper.h"
 
 #define BLE_ADV_MAX_EVENTS_DEFAULT  ((CONFIG_EBID_ROTATION_T_S * MS_PER_SEC) / \
-                                     CONFIG_BLE_ADV_INTERVAL_MS)
+                                     CONFIG_BLE_ADV_ITVL_MS)
 
 /* dummy ebid */
 static ebid_t _ebid;
@@ -46,7 +46,7 @@ static void _print_usage(void)
     printf("\t - advs count: number of advertisements to send"
            " (default: %" PRIu32 ")\n", BLE_ADV_MAX_EVENTS_DEFAULT);
     printf("\t - ms interval: the delay between advertisements"
-           " (default: %" PRIu32 ")\n", CONFIG_BLE_ADV_INTERVAL_MS);
+           " (default: %" PRIu32 ")\n", CONFIG_BLE_ADV_ITVL_MS);
     puts("\tadv stop: stop ongoing advertisements if any");
     puts("\tadv get cid: returns current cid");
     puts("\tadv set <cid>: sets new cid");
@@ -61,7 +61,7 @@ static int _adv_handler(int argc, char **argv)
 
     if (!strcmp(argv[1], "start")) {
         adv_params_t params = {
-            .itvl_ms = CONFIG_BLE_ADV_INTERVAL_MS,
+            .itvl_ms = CONFIG_BLE_ADV_ITVL_MS,
             .advs_max = BLE_ADV_MAX_EVENTS_DEFAULT,
             .advs_slice = CONFIG_ADV_PER_SLICE,
         }

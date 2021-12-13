@@ -62,7 +62,7 @@ static uint16_t _get_twr_offset(ebid_t *ebid)
     uint16_t offset_ms = ebid->parts.ebid.u8[0] + (ebid->parts.ebid.u8[1] << 8);
 
     /* add a minimum offset and a random EBID based one */
-    offset_ms = (offset_ms % CONFIG_BLE_ADV_INTERVAL_MS) + CONFIG_TWR_MIN_OFFSET_MS;
+    offset_ms = (offset_ms % CONFIG_BLE_ADV_ITVL_MS) + CONFIG_TWR_MIN_OFFSET_MS;
     /* TODO: add some RIOT functions for this */
     return os_cputime_usecs_to_ticks(offset_ms * US_PER_MS);
 }
