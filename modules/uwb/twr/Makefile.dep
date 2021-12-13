@@ -5,5 +5,7 @@ USEMODULE += memarray
 
 USEPKG += uwb-core
 USEPKG += uwb-dw1000
+# Use event threads instead of a custom event queue
+USEMODULE += uwb-core_event_thread
 # Include SS TWR
 USEMODULE += uwb-core_twr_ss_one

@@ -17,6 +17,7 @@
  *
  * @}
  */
+#include <assert.h>
 #include <errno.h>
 
 #include "twr.h"
@@ -209,7 +210,7 @@ static void _twr_rng_listen(void *arg)
             uwb_rng_listen(_rng, listen_window_us, UWB_NONBLOCKING);
         }
         else {
-            LOG_ERROR("[twr]: rng listen aborted, busy\n");
+            LOG_WARNING("[twr]: rng listen aborted, busy\n");
         }
     }
     else {
@@ -258,7 +259,7 @@ static void _twr_rng_request(void *arg)
             uwb_rng_request(_rng, event->addr, CONFIG_TWR_EVENT_ALGO_DEFAULT);
         }
         else {
-            LOG_ERROR("[twr]: rng request aborted, busy\n");
+            LOG_WARNING("[twr]: rng request aborted, busy\n");
         }
     }
     else {
@@ -336,4 +337,16 @@ void twr_enable(void)
 void twr_disable(void)
 {
     _enabled = false;
+    /* TODO: this should make sure that at least at the end of an epoch all twr
+       event get releases: it would be important to log when it happens... */
+    uwb_phy_forcetrxoff(_udev);
+}
+
+void twr_reset(void)
+{
+    uwb_phy_forcetrxoff(_udev);
+    if (dpl_sem_get_count(&_rng->sem) == 0) {
+        dpl_error_t err = dpl_sem_release(&_rng->sem);
+        assert(err == (dpl_error_t) DPL_OK);
+    }
 }

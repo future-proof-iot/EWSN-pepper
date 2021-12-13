@@ -24,6 +24,8 @@
 #include "shell_commands.h"
 #include "xfa.h"
 
+#include "uwb/uwb.h"
+#include "uwb_rng/uwb_rng.h"
 #include "twr.h"
 
 static void _print_usage(void)
@@ -37,6 +39,11 @@ static int _twr_handler(int argc, char **argv)
 {
     if (argc < 2) {
         _print_usage();
+        return -1;
+    }
+
+    if (!strcmp(argv[1], "reset")) {
+        twr_reset();
         return -1;
     }
 
@@ -65,7 +72,13 @@ static int _twr_handler(int argc, char **argv)
     if (!strcmp(argv[1], "status")) {
         puts("  twr:");
         printf("    mem: %d/%d (free/total)\n",
-            memarray_available(twr_managed_get_manager()), CONFIG_TWR_EVENT_BUF_SIZE);
+            memarray_available(&twr_managed_get_manager()->mem), CONFIG_TWR_EVENT_BUF_SIZE);
+        struct uwb_dev *udev = uwb_dev_idx_lookup(0);
+        struct uwb_rng_instance *rng =
+            (struct uwb_rng_instance *)uwb_mac_find_cb_inst_ptr(udev, UWBEXT_RNG);
+        printf("    irq_sem: %d \n", udev->irq_sem.sem.sema.value);
+        printf("    rng_sem: %d \n", rng->sem.sem.sema.value);
+        return 0;
     }
     _print_usage();
     return -1;

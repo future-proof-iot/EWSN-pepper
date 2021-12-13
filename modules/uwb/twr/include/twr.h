@@ -234,6 +234,11 @@ void twr_enable(void);
  */
 void twr_disable(void);
 
+/**
+ * @brief   Reset twr
+ */
+void twr_reset(void);
+
 #ifdef __cplusplus
 }
 #endif
