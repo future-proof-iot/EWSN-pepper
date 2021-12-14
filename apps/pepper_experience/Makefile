@@ -24,6 +24,8 @@ USEMODULE += pepper_current_time
 USEMODULE += pepper_shell
 USEMODULE += pepper_util
 USEMODULE += ed_uwb
+USEMODULE += ed_uwb_stats
+# USEMODULE += ed_uwb_los
 USEMODULE += ed_ble
 USEMODULE += ed_leds
 USEMODULE += storage
@@ -57,5 +59,6 @@ CFLAGS += -DCONFIG_SHELL_NO_ECHO=1
 # * start/end of epoch
 # * other app event
 CFLAGS += -DEVENT_THREAD_MEDIUM_STACKSIZE=THREAD_STACKSIZE_LARGE
+CFLAGS += -DEVENT_THREAD_HIGHEST_STACKSIZE=THREAD_STACKSIZE_LARGE
 
 include $(RIOTBASE)/Makefile.include

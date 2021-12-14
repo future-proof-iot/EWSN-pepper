@@ -21,9 +21,10 @@ EXTERNAL_MODULE_DIRS += $(CURDIR)/../../modules/uwb/
 USEMODULE += pepper
 USEMODULE += pepper_controller
 USEMODULE += pepper_shell
+USEMODULE += pepper_util
 USEMODULE += ed_uwb
 USEMODULE += ed_ble
-USEMODULE += ed_ble_win
+USEMODULE += twr_shell
 
 # Include shell and, process information fonctionality
 USEMODULE += shell
