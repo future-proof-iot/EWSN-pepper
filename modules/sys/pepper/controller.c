@@ -318,6 +318,9 @@ static void _serialize_epoch_handler(event_t *event)
         storage_log(CONFIG_PEPPER_LOGFILE, sd_buffer, len - 1 );
 #endif
     }
+    if (IS_USED(MODULE_PEPPER_GATT)) {
+        /* TODO: either notify serialized data in JSON or CBOR or packed data */
+    }
     if (!IS_USED(MODULE_PEPPER_STDIO_NIMBLE) || !IS_USED(MODULE_STORAGE)) {
         contact_data_serialize_all_printf(d_event->data, pepper_get_serializer_bn());
     }
