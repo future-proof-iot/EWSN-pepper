@@ -16,6 +16,31 @@
  * @file
  *
  * @author      Francisco Molina <francois-xavier.molina@inria.fr>
+ *
+ * ### Radio Sleeping
+ *
+ * Sleep handling could be improved by saving information on the next to trigger
+ * event offset. I suspect that poor behaviour is because the radio is shutdown
+ * just before it should be configured to rx/tx, this leads to delays that at
+ * the end ruin synchronization.
+ *
+ * With information on the next to trigger two things can be done:
+ *  - schedule the wakeup of the radio just before the event actually triggers
+ *  - avoid putting the radio to sleep if an event is about to trigger
+ *
+ * Ideas:
+ *  - something like `evtimer` but with `ZTIMER_MSEC_BASE`, why? Because using
+ *    `ZTIMER_MSEC_BASE` gives more precise timestamping an accuracy for scheduled
+ *     events.
+ *  - add some kind of wakeup and sleep watchdog that are set/reset based on the
+ *    radio status and the next to trigger event.
+ *
+ * #### Current status
+ *
+ * It is enabled with `twr_sleep` module. What is usually seen is that if there
+ * are two nodes one will be able to perform ranging correctly while the second one
+ * will fail.
+ *
  */
 
 #ifndef TWR_H
@@ -79,25 +104,11 @@ typedef struct twr_data {
 /**
  * @brief   TWR event type
  */
-typedef struct twr_req_event {
+typedef struct twr_event {
     event_timeout_t timeout;    /**< the event timeout */
     event_callback_t event;     /**< the event callback */
     uint16_t addr;              /**< the address of destination */
 } twr_event_t;
-
-// typedef struct twr_trx_dbg_data {
-//     uint32_t scheduled;
-//     uint32_t aborted;
-//     uint32_t completed;
-//     uint32_t timeout;
-// } twr_trx_dbg_data_t;
-
-
-// typedef struct twr_dbg_data {
-//     twr_trx_dbg_data_t rx;
-//     twr_trx_dbg_data_t tx;
-//     uint16_t addr;
-// }twr_dbg_data;
 
 /**
  * @brief   Callback for ranging event notification

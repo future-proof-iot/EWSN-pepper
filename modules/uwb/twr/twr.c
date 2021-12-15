@@ -31,7 +31,7 @@
 #include "event/timeout.h"
 
 #ifndef LOG_LEVEL
-#define LOG_LEVEL   LOG_ERROR
+#define LOG_LEVEL   LOG_WARNING
 #endif
 #include "log.h"
 
@@ -57,7 +57,22 @@ static twr_status_t _status = TWR_RNG_IDLE;
 static uint16_t _other_short_addr;
 
 /* memory manager pointer if any */
-twr_event_mem_manager_t *_manager = NULL;
+static twr_event_mem_manager_t *_manager = NULL;
+
+/* */
+static void _sleep_handler(event_t *event)
+{
+    (void)event;
+    /* TODO: somehow save the offset of the next to be called scheduled event and
+             only go to sleep if the next event is not close */
+    if (IS_USED(MODULE_TWR_SLEEP)) {
+        if (!_udev->status.sleeping && _status == TWR_RNG_IDLE) {
+            uwb_sleep_config(_udev);
+            uwb_enter_sleep(_udev);
+        }
+    }
+}
+static event_t _sleep_event = { .handler = _sleep_handler };
 
 /**
  * @brief Range request complete callback.
@@ -130,6 +145,7 @@ static bool _complete_cb(struct uwb_dev *inst, struct uwb_mac_interface *cbs)
     }
 
     _status = TWR_RNG_IDLE;
+    event_post(_twr_queue, &_sleep_event);
     return true;
 }
 
@@ -150,6 +166,7 @@ static bool _rx_timeout_cb(struct uwb_dev *inst, struct uwb_mac_interface *cbs)
         twr_event_data_t data = { .addr = _other_short_addr };
         _usr_rx_timeout_cb(&data, _status);
     }
+    event_post(_twr_queue, &_sleep_event);
     _status = TWR_RNG_IDLE;
     return true;
 }
@@ -232,6 +249,10 @@ static void _twr_rng_listen(void *arg)
     if (_enabled) {
         if (dpl_sem_get_count(&_rng->sem) == 1) {
             LOG_DEBUG("[twr]: rng listen start\n");
+            if (IS_USED(MODULE_TWR_SLEEP) && _udev->status.sleeping) {
+                uwb_wakeup(_udev);
+                uwb_phy_forcetrxoff(_udev);
+            }
             _status = TWR_RNG_RESPONDER;
             _other_short_addr = event->addr;
             uwb_rng_listen(_rng, listen_window_us, UWB_NONBLOCKING);
@@ -252,7 +273,9 @@ static void _twr_rng_listen(void *arg)
 
 static void _twr_rng_listen_managed(void *arg)
 {
-    _twr_rng_listen(arg);
+    twr_event_t *event = (twr_event_t *)arg;
+
+    _twr_rng_listen(event);
     twr_event_mem_manager_free(_manager, (twr_event_t *)arg);
 }
 
@@ -291,8 +314,13 @@ static void _twr_rng_request(void *arg)
     if (_enabled) {
         if (dpl_sem_get_count(&_rng->sem) == 1) {
             LOG_DEBUG("[twr]: rng request to %4" PRIx16 "\n", event->addr);
-            _status = TWR_RNG_INITIATOR;
             _other_short_addr = event->addr;
+            /* wake up if needed */
+            if (IS_USED(MODULE_TWR_SLEEP) && _udev->status.sleeping) {
+                uwb_wakeup(_udev);
+                uwb_phy_forcetrxoff(_udev);
+            }
+            _status = TWR_RNG_INITIATOR;
             uwb_rng_request(_rng, event->addr, CONFIG_TWR_EVENT_ALGO_DEFAULT);
             return;
         }
@@ -311,7 +339,9 @@ static void _twr_rng_request(void *arg)
 
 static void _twr_rng_request_managed(void *arg)
 {
-    _twr_rng_request(arg);
+    twr_event_t *event = (twr_event_t *)arg;
+
+    _twr_rng_request(event);
     twr_event_mem_manager_free(_manager, (twr_event_t *)arg);
 }
 
@@ -375,18 +405,30 @@ twr_event_mem_manager_t *twr_managed_get_manager(void)
 void twr_enable(void)
 {
     _enabled = true;
+    if (IS_USED(MODULE_TWR_SLEEP) && _udev->status.sleeping) {
+        uwb_wakeup(_udev);
+        uwb_phy_forcetrxoff(_udev);
+    }
 }
 
 void twr_disable(void)
 {
     _enabled = false;
+    _status = TWR_RNG_IDLE;
     /* TODO: this should make sure that at least at the end of an epoch all twr
        event get releases: it would be important to log when it happens... */
     uwb_phy_forcetrxoff(_udev);
+
+    if (IS_USED(MODULE_TWR_SLEEP) && !_udev->status.sleeping) {
+        uwb_sleep_config(_udev);
+        uwb_enter_sleep(_udev);
+    }
 }
 
 void twr_reset(void)
 {
+    _enabled = false;
+    _status = TWR_RNG_IDLE;
     uwb_phy_forcetrxoff(_udev);
     if (dpl_sem_get_count(&_rng->sem) == 0) {
         dpl_error_t err = dpl_sem_release(&_rng->sem);
