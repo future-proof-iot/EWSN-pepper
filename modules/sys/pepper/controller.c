@@ -253,8 +253,8 @@ void pepper_core_enable(ebid_t *ebid, adv_params_t *params, uint32_t duration_ms
     /* set new short addr */
     uint16_t short_addr = desire_ble_adv_get_cid();
     LOG_DEBUG("[pepper]: enable TWR with addr 0x%" PRIx16 "ms\n", short_addr);
-    twr_set_short_addr(short_addr);
     twr_enable();
+    twr_set_short_addr(short_addr);
 #endif
     LOG_DEBUG("[pepper]: start scanning for %" PRIu32 "ms\n", duration_ms);
     /* start scanning */
@@ -399,6 +399,7 @@ void pepper_init(void)
     /* init ble scanner and current_time */
     desire_ble_scan_init(&desire_ble_scanner_params, _scan_cb);
     /* init twr */
+#if IS_USED(MODULE_TWR)
     twr_event_mem_manager_init(&_controller.twr_mem);
     twr_managed_set_manager(&_controller.twr_mem);
     twr_init(CONFIG_UWB_BLE_EVENT_PRIO);
@@ -406,6 +407,7 @@ void pepper_init(void)
     twr_set_complete_cb(_twr_cb);
     twr_set_busy_cb(_twr_busy_cb);
     twr_set_rx_timeout_cb(_twr_timeout_cb);
+#endif
     /* init ed management */
     ed_memory_manager_init(&_controller.ed_mem);
     ed_list_init(&_controller.ed_list, &_controller.ed_mem, &_controller.ebid);
