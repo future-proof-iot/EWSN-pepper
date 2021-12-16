@@ -25,187 +25,189 @@
 #include "json_encoder.h"
 #include "fmt.h"
 
-// static int _norm_f(double *val)
-// {
-//     double value = *val;
-//     const double pos_exp_thresh = 1e7;
-//     const double neg_exp_thresh = 1e-5;
-//     int exp = 0;
+#if IS_USED(MODULE_JSON_ENCODER_FLOAT_FULL)
+static int _norm_f(double *val)
+{
+    double value = *val;
+    const double pos_exp_thresh = 1e7;
+    const double neg_exp_thresh = 1e-5;
+    int exp = 0;
 
-//     if (value >= pos_exp_thresh) {
-//         if (value >= 1e256) {
-//             value /= 1e256;
-//             exp += 256;
-//         }
-//         if (value >= 1e128) {
-//             value /= 1e128;
-//             exp += 128;
-//         }
-//         if (value >= 1e64) {
-//             value /= 1e64;
-//             exp += 64;
-//         }
-//         if (value >= 1e32) {
-//             value /= 1e32;
-//             exp += 32;
-//         }
-//         if (value >= 1e16) {
-//             value /= 1e16;
-//             exp += 16;
-//         }
-//         if (value >= 1e8) {
-//             value /= 1e8;
-//             exp += 8;
-//         }
-//         if (value >= 1e4) {
-//             value /= 1e4;
-//             exp += 4;
-//         }
-//         if (value >= 1e2) {
-//             value /= 1e2;
-//             exp += 2;
-//         }
-//         if (value >= 1e1) {
-//             value /= 1e1;
-//             exp += 1;
-//         }
-//     }
+    if (value >= pos_exp_thresh) {
+        if (value >= 1e256) {
+            value /= 1e256;
+            exp += 256;
+        }
+        if (value >= 1e128) {
+            value /= 1e128;
+            exp += 128;
+        }
+        if (value >= 1e64) {
+            value /= 1e64;
+            exp += 64;
+        }
+        if (value >= 1e32) {
+            value /= 1e32;
+            exp += 32;
+        }
+        if (value >= 1e16) {
+            value /= 1e16;
+            exp += 16;
+        }
+        if (value >= 1e8) {
+            value /= 1e8;
+            exp += 8;
+        }
+        if (value >= 1e4) {
+            value /= 1e4;
+            exp += 4;
+        }
+        if (value >= 1e2) {
+            value /= 1e2;
+            exp += 2;
+        }
+        if (value >= 1e1) {
+            value /= 1e1;
+            exp += 1;
+        }
+    }
 
-//     if (value > 0 && value <= neg_exp_thresh) {
-//         if (value < 1e-255) {
-//             value *= 1e256;
-//             value *= 1e128;
-//             exp -= 128;
-//         }
-//         if (value < 1e-63) {
-//             value *= 1e64;
-//             exp -= 64;
-//         }
-//         if (value < 1e-31) {
-//             value *= 1e32;
-//             exp -= 32;
-//         }
-//         if (value < 1e-15) {
-//             value *= 1e16;
-//             exp -= 16;
-//         }
-//         if (value < 1e-7) {
-//             value *= 1e8;
-//             exp -= 8;
-//         }
-//         if (value < 1e-3) {
-//             value *= 1e4;
-//             exp -= 4;
-//         }
-//         if (value < 1e-1) {
-//             value *= 1e2;
-//             exp -= 2;
-//         }
-//         if (value < 1e0) {
-//             value *= 1e1;
-//             exp -= 1;
-//         }
-//     }
+    if (value > 0 && value <= neg_exp_thresh) {
+        if (value < 1e-255) {
+            value *= 1e256;
+            value *= 1e128;
+            exp -= 128;
+        }
+        if (value < 1e-63) {
+            value *= 1e64;
+            exp -= 64;
+        }
+        if (value < 1e-31) {
+            value *= 1e32;
+            exp -= 32;
+        }
+        if (value < 1e-15) {
+            value *= 1e16;
+            exp -= 16;
+        }
+        if (value < 1e-7) {
+            value *= 1e8;
+            exp -= 8;
+        }
+        if (value < 1e-3) {
+            value *= 1e4;
+            exp -= 4;
+        }
+        if (value < 1e-1) {
+            value *= 1e2;
+            exp -= 2;
+        }
+        if (value < 1e0) {
+            value *= 1e1;
+            exp -= 1;
+        }
+    }
 
-//     return exp;
-// }
+    return exp;
+}
 
 
-// static void _split_float(double value, uint32_t *integer, uint32_t *fraction, int16_t *exponent)
-// {
-//     uint32_t int_part, dec_part;
-//     int16_t exp;
+static void _split_float(double value, uint32_t *integer, uint32_t *fraction, int16_t *exponent)
+{
+    uint32_t int_part, dec_part;
+    int16_t exp;
 
-//     exp = _norm_f(&value);
-//     int_part = (uint32_t)value;
-//     double rem = value - int_part;
+    exp = _norm_f(&value);
+    int_part = (uint32_t)value;
+    double rem = value - int_part;
 
-//     rem *= 1e9;
-//     dec_part = (uint32_t)rem;
+    rem *= 1e9;
+    dec_part = (uint32_t)rem;
 
-//     rem -= dec_part;
-//     if (rem >= 0.5) {
-//         dec_part++;
-//         if (dec_part >= 1000000000) {
-//             dec_part = 0;
-//             int_part++;
-//             if (exp != 0 && int_part >= 10) {
-//                 exp++;
-//                 int_part = 1;
-//             }
-//         }
-//     }
+    rem -= dec_part;
+    if (rem >= 0.5) {
+        dec_part++;
+        if (dec_part >= 1000000000) {
+            dec_part = 0;
+            int_part++;
+            if (exp != 0 && int_part >= 10) {
+                exp++;
+                int_part = 1;
+            }
+        }
+    }
 
-//     int width = 9;
-//     while( dec_part % 10 == 0 && width > 0) {
-//         dec_part /= 10;
-//         width--;
-//     }
+    int width = 9;
+    while( dec_part % 10 == 0 && width > 0) {
+        dec_part /= 10;
+        width--;
+    }
 
-//     *exponent = exp;
-//     *integer = int_part;
-//     *fraction = dec_part;
-// }
+    *exponent = exp;
+    *integer = int_part;
+    *fraction = dec_part;
+}
 
-// static size_t _fmt_float(char *out, double value){
-//     unsigned negative = (value < 0);
+static size_t fmt_float_full(char *out, double value){
+    unsigned negative = (value < 0);
 
-//     if (isnan(value)) {
-//         return fmt_str(out, "nan");
-//     }
+    if (isnan(value)) {
+        return fmt_str(out, "nan");
+    }
 
-//     if (isinf(value)) {
-//         return fmt_str(out, "inf");
-//     }
+    if (isinf(value)) {
+        return fmt_str(out, "inf");
+    }
 
-//     if (negative) {
-//         value = -value;
-//         if (out) {
-//             *out++ = '-';
-//         }
-//     }
+    if (negative) {
+        value = -value;
+        if (out) {
+            *out++ = '-';
+        }
+    }
 
-//     uint32_t integer, fraction;
-//     int16_t exp;
-//     _split_float(value, &integer, &fraction, &exp);
+    uint32_t integer, fraction;
+    int16_t exp;
+    _split_float(value, &integer, &fraction, &exp);
 
-//     size_t res = fmt_u32_dec(out, integer);
-//     if (fraction) {
-//         if (out) {
-//             out += res;
-//             *out++ = '.';
-//         }
-//         res++;
-//         size_t tmp = fmt_u32_dec(out, fraction);
-//         res += tmp;
-//         if (out) {
-//             out += tmp;
-//         }
-//     }
+    size_t res = fmt_u32_dec(out, integer);
+    if (fraction) {
+        if (out) {
+            out += res;
+            *out++ = '.';
+        }
+        res++;
+        size_t tmp = fmt_u32_dec(out, fraction);
+        res += tmp;
+        if (out) {
+            out += tmp;
+        }
+    }
 
-//     if (exp < 0) {
-//         size_t tmp = fmt_str(out, "e-");
-//         res += tmp;
-//         if (out) {
-//             out += tmp;
-//         }
-//         fmt_u16_dec(out, -exp);
-//     }
+    if (exp < 0) {
+        size_t tmp = fmt_str(out, "e-");
+        res += tmp;
+        if (out) {
+            out += tmp;
+        }
+        fmt_u16_dec(out, -exp);
+    }
 
-//     if (exp > 0) {
-//         if (out) {
-//             *out++ = 'e';
-//         }
-//         res++;
-//         size_t tmp = fmt_u16_dec(out, exp);
-//         res += tmp;
-//         if (out) {
-//             out += tmp;
-//         }
-//     }
+    if (exp > 0) {
+        if (out) {
+            *out++ = 'e';
+        }
+        res++;
+        size_t tmp = fmt_u16_dec(out, exp);
+        res += tmp;
+        if (out) {
+            out += tmp;
+        }
+    }
 
-//     return res;
-// }
+    return res;
+}
+#endif
 
 int json_array_open(json_encoder_t *enc)
 {
@@ -323,7 +325,12 @@ int json_float(json_encoder_t *enc, float val)
 {
     int len = 0;
 
+
+#if IS_USED(MODULE_JSON_ENCODER_FLOAT_FULL)
+    len += fmt_float_full(enc->cur + len, val);
+#else
     len += fmt_float(enc->cur + len, val, 7);
+#endif
     len += fmt_char(enc->cur + len, ',');
     enc->len += len;
     enc->cur += len;

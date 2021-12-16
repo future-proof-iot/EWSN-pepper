@@ -1,2 +1,4 @@
 USEMODULE_INCLUDES_json_encoder := $(LAST_MAKEFILEDIR)/include
 USEMODULE_INCLUDES += $(USEMODULE_INCLUDES_json_encoder)
+
+PSEUDOMODULE += json_encoder_float_full
