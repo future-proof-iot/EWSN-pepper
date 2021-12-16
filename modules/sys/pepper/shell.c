@@ -26,7 +26,9 @@
 
 #include "desire_ble_adv.h"
 #include "pepper.h"
+#if IS_USED(MODULE_TWR)
 #include "twr.h"
+#endif
 #include "ed.h"
 
 static void _print_usage(void)
@@ -39,12 +41,15 @@ static void _print_usage(void)
     puts("\tpepper set bn <base name>: sets base name for logging");
     puts("\tpepper twr get win: returns the listen window in us");
     puts("\tpepper twr set <win_us>: sets listen window in us, win_us < UINT16_MAX");
+#if IS_USED(MODULE_TWR)
     printf("\tpepper twr set rx_off <offset ticks>: offset > -%" PRIu32 "\n",
            CONFIG_TWR_MIN_OFFSET_TICKS);
     printf("\tpepper twr set tx_off <offset ticks>: offset > -%" PRIu32 "\n",
            CONFIG_TWR_MIN_OFFSET_TICKS);
+#endif
 }
 
+#if IS_USED(MODULE_TWR)
 static int _twr_handler(int argc, char **argv)
 {
     if (argc < 2) {
@@ -91,6 +96,7 @@ static int _twr_handler(int argc, char **argv)
     }
     return 0;
 }
+#endif
 
 static int _pepper_handler(int argc, char **argv)
 {
@@ -207,10 +213,12 @@ static int _pepper_handler(int argc, char **argv)
         else {
             printf("idle\n");
         }
+#if IS_USED(MODULE_TWR)
         puts("  twr:");
         printf("    mem: %d/%d (free/total)\n",
                memarray_available(&pepper_get_controller()->twr_mem.mem),
                CONFIG_TWR_EVENT_BUF_SIZE);
+#endif
         puts("  ed:");
         printf("    mem: %d/%d (free/total)\n",
                memarray_available(&pepper_get_controller()->ed_mem.mem),
@@ -219,9 +227,11 @@ static int _pepper_handler(int argc, char **argv)
         return 0;
     }
 
+#if IS_USED(MODULE_TWR)
     if (!strcmp(argv[1], "twr")) {
         return _twr_handler(argc - 1, &argv[1]);
     }
+#endif
 
     if (!strcmp(argv[1], "set")) {
         if (argc >= 3) {

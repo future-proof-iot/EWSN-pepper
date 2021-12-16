@@ -34,7 +34,9 @@
 
 #include "epoch.h"
 #include "ed.h"
+#if IS_USED(MODULE_TWR)
 #include "twr.h"
+#endif
 #include "ebid.h"
 #include "desire_ble_adv.h"
 #include "desire_ble_scan.h"
@@ -50,12 +52,20 @@
 
 static controller_t _controller = {
     .lock = MUTEX_INIT,
+#if IS_USED(MODULE_TWR)
     .twr_params = {
         .rx_offset_ticks = CONFIG_TWR_RX_OFFSET_TICKS,
         .tx_offset_ticks = CONFIG_TWR_TX_OFFSET_TICKS
     }
+#endif
 };
 
+static uint32_t pepper_sec_since_start(void)
+{
+    return ztimer_now(ZTIMER_SEC) - _controller.start_time;
+}
+
+#if IS_USED(MODULE_TWR)
 static uint16_t _get_twr_offset(ebid_t *ebid)
 {
     /* last two bytes of the EBID */
@@ -77,11 +87,6 @@ static uint16_t _get_twr_tx_offset(ebid_t *ebid)
     return _get_twr_offset(ebid) + _controller.twr_params.tx_offset_ticks;
 }
 
-static uint32_t pepper_sec_since_start(void)
-{
-    return ztimer_now(ZTIMER_SEC) - _controller.start_time;
-}
-
 /**
  * @brief Called on a successfull TWR exchange, logs the measured distance on the
  *        device
@@ -97,7 +102,7 @@ static void _twr_cb(twr_event_data_t *data, twr_status_t status)
 
     (void)ed;
 
-    if (LOG_LEVEL == LOG_DEBUG) {
+    if (LOG_LEVEL == LOG_DEBUG || IS_ACTIVE(CONFIG_PEPPER_LOG_UWB)) {
         /* log with a milliseconds based timestamp */
         ed_serialize_uwb_json(data->range, data->los, ed->cid, ztimer_now(ZTIMER_MSEC),
                               pepper_get_serializer_bn());
@@ -137,6 +142,7 @@ static void _twr_busy_cb(twr_event_data_t *data, twr_status_t status)
     }
 #endif
 }
+#endif
 
 /**
  * @brief Called when valid PEPPER/DESIRE advertisements are scanned, this event
@@ -185,7 +191,7 @@ static void _scan_cb(uint32_t ticks, const ble_addr_t *addr, int8_t rssi,
 #endif
         }
 #endif
-        if (LOG_LEVEL == LOG_DEBUG) {
+        if (LOG_LEVEL == LOG_DEBUG || IS_ACTIVE(CONFIG_PEPPER_LOG_BLE) ) {
 #if IS_USED(MODULE_ED_BLE) || IS_USED(MODULE_ED_BLE_WIN)
             /* log with a milliseconds based timestamp */
             ed_serialize_ble_json(rssi, cid, ztimer_now(ZTIMER_MSEC),
@@ -501,24 +507,40 @@ bool pepper_is_active(void)
 
 void pepper_twr_set_rx_offset(int16_t ticks)
 {
+#if IS_USED(MODULE_TWR)
     assert(ticks > -1 * (int16_t)CONFIG_TWR_MIN_OFFSET_TICKS);
     _controller.twr_params.rx_offset_ticks = ticks;
+#else
+    (void)ticks;
+#endif
 }
 
 void pepper_twr_set_tx_offset(int16_t ticks)
 {
+#if IS_USED(MODULE_TWR)
     assert(ticks > (int16_t)-1 * (int16_t)CONFIG_TWR_MIN_OFFSET_TICKS);
     _controller.twr_params.tx_offset_ticks = ticks;
+#else
+    (void)ticks;
+#endif
 }
 
 int16_t pepper_twr_get_rx_offset(void)
 {
+#if IS_USED(MODULE_TWR)
     return _controller.twr_params.rx_offset_ticks;
+#else
+    return 0;
+#endif
 }
 
 int16_t pepper_twr_get_tx_offset(void)
 {
+#if IS_USED(MODULE_TWR)
     return _controller.twr_params.tx_offset_ticks;
+#else
+    return 0;
+#endif
 }
 
 controller_t *pepper_get_controller(void)

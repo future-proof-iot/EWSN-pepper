@@ -2,7 +2,6 @@ ifneq (,$(filter pepper_controller,$(USEMODULE)))
   USEMODULE += epoch
   USEMODULE += ebid
   USEMODULE += crypto_manager
-  USEMODULE += twr
   USEMODULE += ed
   USEMODULE += fmt
   USEMODULE += event
@@ -40,4 +39,8 @@ ifneq (,$(filter pepper_current_time,$(USEMODULE)))
   # TODO: move this to its own service
   USEMODULE += desire_scanner
   USEMODULE += desire_scanner_time_update
+endif
+
+ifneq (,$(filter ed_uwb,$(USEMODULE)))
+  USEMODULE += twr
 endif

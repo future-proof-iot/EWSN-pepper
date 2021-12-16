@@ -97,6 +97,16 @@ extern "C" {
 #define CONFIG_PEPPER_LOGFILE           "sys/log/pepper.txt"
 #endif
 
+#ifndef CONFIG_PEPPER_LOG_BLE
+#define CONFIG_PEPPER_LOG_BLE       0
+#endif
+
+#ifndef CONFIG_PEPPER_LOG_UWB
+#define CONFIG_PEPPER_LOG_UWB       0
+#endif
+
+
+
 typedef struct twr_params {
     int16_t rx_offset_ticks;
     int16_t tx_offset_ticks;
