@@ -55,7 +55,7 @@ pepper-gatt> start -r 10 -c 5 -d 300
 
 Repeat as many times as needed, then remove the SD card and inspect the results. Optionally the logged output could be captured over serial or notified via the GATT interface (but this is not yet supported).
 
-### Experiment parameters
+### Parameters summary
 
 - Advertisement per EBID slice: 10
 - Epoch duration: 300s
@@ -63,4 +63,39 @@ Repeat as many times as needed, then remove the SD card and inspect the results.
 - Scan window: 1024 ms
 - Scan interval: 1024 ms
 - UWB listen window: 2ms
+- Iterations: 5
+
+## BLE calibration
+
+The BLE calibration captures where obtained with a similar setup,
+one node was set to advertise every 500ms and the epoch duration was
+set very high:
+
+```
+> pepper start -d 60000 -i 500
+```
+
+On a second device the same application was flashed but with the BLE
+RSSI logs enabled (`ed_serialize_ble_json()`) and the scanner was
+ser to be always on (there is no way of changing this currently but in the header `modules/ble/desire_scanner/include/desire_ble_scan_params.h` by setting `SCAN_WIN_MS` == `SCAN_ITVL_MS`).
+
+A new untested flag has been added to enables BLE logging as well:
+
+```
+CFLAGS=-DCONFIG_PEPPER_LOG_BLE=1 make -C apps/pepper_experience flash term
+```
+
+Then over 40cm steps pepper was started and the BLE scanned data was
+logged to a file.
+
+```
+> pepper set bn "los-100"
+> pepper start -c 5 -d 60000 -i 500
+```
+
+### Parameters Summary
+
+- 40cm::400cm (40cm step)
+- Advertisement Interval: 500ms
+- Advertisement duration: 60 * 1000ms
 - Iterations: 5
