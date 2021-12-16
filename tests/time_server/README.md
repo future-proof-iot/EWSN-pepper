@@ -1,6 +1,20 @@
-# BLE time advertiser
+# BLE time server
 
 This application sets up a current-time BLE advertiser.
+
+## Notes
+
+Compare to the [time_advertiser](../time_advertiser) application this has been
+re-written to use extended advertisements, this allows for the time advertisement
+logic to run in parallel with e.g.: `stdio_nimble` or `nimble_netif`.
+
+## TODO:
+
+- The application was written with re-usability in mind so the first half of the
+code could and should be split into its own module that allows for extended auto-adv
+where a user callback can be called after every advertisement event completion. In
+this case such callback changes the advertisement payload to the current system time.
+- Improve this application and turn it into a wall-clock.
 
 ## Usage
 
