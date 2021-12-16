@@ -1,6 +1,15 @@
-# riot-desire Modules
+# PEPPER Modules
 
 This directory holds the different firmware modules.
+
+## [`pepper`](sys/pepper/include/pepper.h)
+
+This modules implements [pepper_draft.md](../rdm/pepper_draft.md).
+
+
+### usage
+
+See [doc](sys/pepper/include/pepper.h)
 
 ## [`crypto_manager`](sys/crypto_manager/include/crypto_manager.h)
 

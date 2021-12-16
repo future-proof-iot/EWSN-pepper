@@ -17,7 +17,18 @@
  *
  * @author      Francisco Molina <francois-xavier.molina@inria.fr>
  *
- * ### IUsed ZTIMER clocks
+ * ## SUBMODULES
+ *
+ * - `pepper_shell`: includes shell commands to start/stop and configure pepper
+ * - `pepper_gatt`: adds a gatt service interface to start/stop and configure pepper
+ * - `pepper_stdio_nimble`: add stdio over BLE to provide a shell interface to start
+ *    stop and configure PEPPER.
+ * - `pepper_current_time`: adds service to listen to BLE current time advertisements
+ *    and synchronize to them
+ * - `pepper_util`: collection of utilities, currently UID generation and basename
+ *    serialization tags.
+ *
+ * ### Used ZTIMER clocks
  *
  * All used timers can be backed by `ztimer_periph_rtt` allowing the device to
  * sleep. ZTIMER_USEC is not used and should be avoided like the plague.
