@@ -1,18 +1,20 @@
 USEMODULE += ebid
 USEMODULE += ed
 USEMODULE += crypto_manager
-
 USEMODULE += memarray
-
-OUTPUT_FORMAT ?= json
-USEMODULE += test_utils_result_output
-USEMODULE += test_utils_result_output_${OUTPUT_FORMAT}
-USEMODULE += fmt
-USEPKG += nanocbor
-
-USEMODULE += json_encoder
+USEMODULE += epoch_serializer
 
 ifneq (,$(filter epoch_random,$(USEMODULE)))
   USEMODULE += ztimer_epoch
   USEMODULE += random
+endif
+
+ifneq (,$(filter epoch_serializer,$(USEMODULE)))
+  OUTPUT_FORMAT ?= json
+  USEMODULE += test_utils_result_output
+  USEMODULE += test_utils_result_output_${OUTPUT_FORMAT}
+  USEMODULE += fmt
+  USEPKG += nanocbor
+
+  USEMODULE += json_encoder
 endif

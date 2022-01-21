@@ -2,3 +2,4 @@ USEMODULE_INCLUDES_uwb_epoch := $(LAST_MAKEFILEDIR)/include
 USEMODULE_INCLUDES += $(USEMODULE_INCLUDES_uwb_epoch)
 
 PSEUDOMODULES += epoch_random
+PSEUDOMODULES += epoch_serializer

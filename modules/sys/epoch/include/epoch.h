@@ -36,7 +36,6 @@ extern "C" {
 #define EPOCH_CBOR_TAG                      (0x4544)
 #define ED_UWB_CBOR_TAG                     (0x4500)
 #define ED_BLE_CBOR_TAG                     (0x4501)
-#define ED_BLE_WIN_CBOR_TAG                 (0x4502)
 /** @} */
 
 /**
@@ -160,8 +159,8 @@ uint8_t epoch_contacts(epoch_data_t *epoch);
  *
  * @return  Encoded length
  */
-size_t contact_data_serialize_cbor(epoch_data_t *data, uint8_t idx, uint8_t *buf, size_t len);
-
+size_t contact_data_serialize_cbor(contact_data_t *contact, uint32_t timestamp,
+                                   uint8_t *buf, size_t len);
 /**
  * @brief   Loads serialized contact_uwb data
  *
@@ -172,7 +171,8 @@ size_t contact_data_serialize_cbor(epoch_data_t *data, uint8_t idx, uint8_t *buf
  *
  * @return  0 on success, <0 otherwise
  */
-int contact_data_load_cbor(uint8_t *buf, size_t len, epoch_data_t *data, uint8_t idx);
+int contact_data_load_cbor(uint8_t *buf, size_t len, contact_data_t *contact,
+                           uint32_t *timestamp);
 
 /**
  * @brief   Serialize (CBOR) epoch data
@@ -214,7 +214,7 @@ int contact_data_load_all_cbor(uint8_t *buf, size_t len, epoch_data_t *epoch);
  *
  * @param[in]       epoch       the epoch data to serialize
  */
-void contact_data_serialize_all_printf(epoch_data_t *epoch, const char* prefix);
+void contact_data_serialize_all_printf(epoch_data_t *epoch, const char *prefix);
 
 /**
  * @brief   Init the memory manager
@@ -254,6 +254,37 @@ void random_contact(contact_data_t *data);
  * @param[in]       epoch       the epoch data
  */
 void random_epoch(epoch_data_t *data);
+
+bool epoch_valid_contact(contact_data_t *data);
+
+typedef enum {
+    EPOCH_SERIALIZE_CBOR,
+    EPOCH_SERIALIZE_JSON,
+} epoch_serializer_type_t;
+
+typedef enum {
+    EPOCH_LABEL_EPOCH = 0,
+    EPOCH_LABEL_PETS,
+    EPOCH_LABEL_ET,
+    EPOCH_LABEL_RT,
+    EPOCH_LABEL_UWB,
+    EPOCH_LABEL_BLE,
+    EPOCH_LABEL_COUNT,
+    EPOCH_LABEL_DISTANCE,
+    EPOCH_LABEL_RSSI,
+    EPOCH_LABEL_EXPOSURE,
+} epoch_label_t;
+
+#define EPOCH_LABEL_JSON_EPOCH       "epoch"
+#define EPOCH_LABEL_JSON_PETS        "pets"
+#define EPOCH_LABEL_JSON_ET          "et"
+#define EPOCH_LABEL_JSON_RT          "rt"
+#define EPOCH_LABEL_JSON_UWB         "uwb"
+#define EPOCH_LABEL_JSON_BLE         "ble"
+#define EPOCH_LABEL_JSON_COUNT       "count"
+#define EPOCH_LABEL_JSON_DISTANCE    "d_cm"
+#define EPOCH_LABEL_JSON_RSSI        "rssi"
+#define EPOCH_LABEL_JSON_EXPOSURE    "exp_s"
 
 #ifdef __cplusplus
 }
