@@ -130,6 +130,11 @@ static inline void current_time_hook_init(current_time_hook_t *hook,
  */
 void current_time_update(uint32_t time);
 
+/**
+ * @brief   Returns if current time has been set
+ */
+bool current_time_valid(void);
+
 #ifdef __cplusplus
 }
 #endif

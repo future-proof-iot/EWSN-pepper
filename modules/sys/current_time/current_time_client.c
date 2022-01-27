@@ -33,6 +33,7 @@
 
 static current_time_hook_t _pre;
 static current_time_hook_t _post;
+static bool _sync = false;
 
 static bool _time_is_in_range(int32_t diff, int32_t range)
 {
@@ -59,11 +60,13 @@ void current_time_update(uint32_t epoch)
 
     /* adjust time only if out of CONFIG_CURRENT_TIME_RANGE_S */
     if (!_time_is_in_range(diff, CONFIG_CURRENT_TIME_RANGE_S)) {
+        _sync = false;
         clist_foreach(&_pre.list_node, _hook_cb, &diff);
         uint32_t elapsed = ztimer_now(ZTIMER_EPOCH) - sys_epoch;
         ztimer_adjust_time(ZTIMER_EPOCH, diff + elapsed);
         LOG_DEBUG("\tnew-current: %" PRIu32 "\n", ztimer_now(ZTIMER_EPOCH));
         clist_foreach(&_post.list_node, _hook_cb, &diff);
+        _sync = true;
     }
 }
 
@@ -109,4 +112,10 @@ void current_time_init(void)
 {
     memset(&_pre, '\0', sizeof(current_time_hook_t));
     memset(&_post, '\0', sizeof(current_time_hook_t));
+    _sync = false;
+}
+
+bool current_time_valid(void)
+{
+    return _sync;
 }
