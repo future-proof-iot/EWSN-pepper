@@ -205,7 +205,7 @@ typedef enum {
     PEPPER_STOPPED,     /**< PEPPER is stopped */
     PEPPER_PAUSED,      /**< PEPPER is paused */
     PEPPER_RUNNING,     /**< PEPPER is active */
-} pepper_status_t;
+} controller_status_t;
 
 /**
  * @brief   PEPPER controller data
@@ -231,7 +231,7 @@ typedef struct controller {
 #if IS_USED(MODULE_DESIRE_ADVERTISER)
     adv_params_t adv;                   /**> configured advertisement parameters */
 #endif
-    pepper_status_t status;             /**> controller status */
+    controller_status_t status;         /**> controller status */
 } controller_t;
 
 /**

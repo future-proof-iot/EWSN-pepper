@@ -110,8 +110,7 @@ static void _twr_cb(twr_event_data_t *data, twr_status_t status)
 }
 
 /**
- * @brief Called on a successfull TWR exchange, logs the measured distance on the
- *        device
+ * @brief Called when a TWR exchange timeouts
  */
 static void _twr_timeout_cb(twr_event_data_t *data, twr_status_t status)
 {
@@ -146,7 +145,7 @@ static void _twr_busy_cb(twr_event_data_t *data, twr_status_t status)
 
 /**
  * @brief Called when valid PEPPER/DESIRE advertisements are scanned, this event
- *        is used to scheduler TWR exchanges
+ *        is used to schedule TWR exchanges
  */
 static void _scan_cb(uint32_t ticks, const ble_addr_t *addr, int8_t rssi,
                      const desire_ble_adv_payload_t *adv_payload)
