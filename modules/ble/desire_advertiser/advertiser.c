@@ -25,7 +25,7 @@
 #include "net/bluetil/ad.h"
 
 #include "desire_ble_adv.h"
-#include "desire_ble_pkt.h"
+#include "desire/ble_pkt.h"
 #include "ble_pkt_dbg.h"
 
 #include "event.h"
@@ -357,12 +357,13 @@ void desire_ble_adv_status_print(void)
     printf("[adv] status:\n");
     dbg_dump_buffer("\t ebid = ", ebid_get(_adv_mgr.ebid), EBID_SIZE, '\n');
     uint8_t slice_id = ((_adv_mgr.advs / _adv_mgr.advs_slice) % EBID_PARTS);
+
     printf("\t cid = %" PRIx32 ", sid = %d\n", _adv_mgr.cid, slice_id);
     dbg_dump_buffer("\t slice = ", ebid_get_slice(_adv_mgr.ebid, slice_id),
                     EBID_SLICE_SIZE_LONG, '\n');
     dbg_dump_buffer("\t adv_payload = ", _adv_mgr.ble_adv_payload.bytes,
                     DESIRE_ADV_PAYLOAD_SIZE, '\n');
     printf("\t itvl_ms = %" PRIu32 ", advs_slice = %" PRIu32 "\n", _adv_mgr.itvl_ms,
-          _adv_mgr.advs_slice);
+           _adv_mgr.advs_slice);
     printf("\t advs = %" PRIu32 "/%" PRIu32 "\n", _adv_mgr.advs, _adv_mgr.advs_max);
 }

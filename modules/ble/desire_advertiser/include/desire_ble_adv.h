@@ -33,7 +33,7 @@
 #endif
 
 #include "ebid.h"
-#include "desire_ble_pkt.h"
+#include "desire/ble_pkt.h"
 
 #ifdef __cplusplus
 extern "C" {

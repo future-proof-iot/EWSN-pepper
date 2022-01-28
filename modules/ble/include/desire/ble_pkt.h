@@ -27,7 +27,6 @@
 #include <stdbool.h>
 
 #include "ebid.h"
-
 #ifdef __cplusplus
 extern "C" {
 #endif
