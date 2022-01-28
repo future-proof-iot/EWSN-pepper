@@ -1,0 +1,6 @@
+USEMODULE_INCLUDES_ble_scanner := $(LAST_MAKEFILEDIR)/include
+USEMODULE_INCLUDES += $(USEMODULE_INCLUDES_ble_scanner)
+
+USEMODULE_INCLUDES += $(USEMODULE_INCLUDES_ble_scanner)/../../include
+
+PSEUDOMODULES += ble_scanner_conn

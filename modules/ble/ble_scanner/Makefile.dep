@@ -1,0 +1,4 @@
+USEPKG += nimble
+USEMODULE += nimble_scanner
+USEMODULE += bluetil_ad
+USEMODULE += ztimer_msec
