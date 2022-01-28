@@ -113,6 +113,10 @@ void current_time_init(void)
     memset(&_pre, '\0', sizeof(current_time_hook_t));
     memset(&_post, '\0', sizeof(current_time_hook_t));
     _sync = false;
+
+    if (IS_USED(MODULE_CURRENT_TIME_BLE_SCANNER)) {
+        current_time_init_ble_scanner();
+    }
 }
 
 bool current_time_valid(void)

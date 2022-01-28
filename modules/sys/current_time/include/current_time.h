@@ -135,6 +135,11 @@ void current_time_update(uint32_t time);
  */
 bool current_time_valid(void);
 
+/**
+ * @brief   Initializes the current time ble scanner service
+ */
+void current_time_init_ble_scanner(void);
+
 #ifdef __cplusplus
 }
 #endif
