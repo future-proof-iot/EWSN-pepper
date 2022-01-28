@@ -44,29 +44,31 @@ extern "C" {
  * @brief   Set of scan connection parameters
  */
 typedef struct {
+    /** scan interval applied while in scanning state [in ms] */
+    uint32_t scan_itvl_ms;
+    /** scan window applied while in scanning state [in ms] */
+    uint32_t scan_win_ms;
     /** opening a new connection is aborted after this time [in ms] */
-    uint32_t conn_timeout;
+    uint32_t conn_timeout_ms;
     /** connection interval used when opening a new connection, lower bound.
      *  [in ms] */
-    uint32_t conn_itvl_min;
+    uint32_t conn_itvl_min_ms;
     /** connection interval, upper bound [in ms] */
-    uint32_t conn_itvl_max;
+    uint32_t conn_itvl_max_ms;
     /** slave latency used for new connections [in ms] */
-    uint16_t conn_latency;
+    uint16_t conn_latency_ms;
     /** supervision timeout used for new connections [in ms] */
-    uint32_t conn_super_to;
-} ble_scan_conn_params_t;
+    uint32_t conn_super_to_ms;
+} ble_scan_netif_params_t;
 
 /**
  * @brief   Set of configuration parameters needed to run autoconn
  */
 typedef struct {
     /** scan interval applied while in scanning state [in ms] */
-    uint32_t scan_itvl;
+    uint32_t scan_itvl_ms;
     /** scan window applied while in scanning state [in ms] */
-    uint32_t scan_win;
-    /** can connection parameters */
-    ble_scan_conn_params_t conn_params;
+    uint32_t scan_win_ms;
 } ble_scan_params_t;
 
 /**
@@ -131,7 +133,6 @@ void ble_scanner_start(int32_t scan_duration_ms);
 
 /**
  * @brief   Stops any ongoing scan.
- *
  */
 void ble_scanner_stop(void);
 
@@ -141,6 +142,25 @@ void ble_scanner_stop(void);
  * @param[in] params        new parameters to apply
  */
 void ble_scanner_update(const ble_scan_params_t *params);
+
+/**
+ * @brief   Returns if there is a connection
+ *
+ * @return  true if connected, false otherwise
+ */
+bool ble_scanner_is_enabled(void);
+
+/**
+ * @brief   Updates the used parameters
+ *
+ * @param[in] params        new parameters to apply
+ */
+void ble_scanner_netif_update(const ble_scan_netif_params_t *params);
+
+/**
+ * @brief   Initialize the netif scanning module
+ */
+void ble_scanner_netif_init(void);
 
 #ifdef __cplusplus
 }

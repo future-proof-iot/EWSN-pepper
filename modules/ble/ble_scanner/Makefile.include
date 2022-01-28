@@ -3,4 +3,4 @@ USEMODULE_INCLUDES += $(USEMODULE_INCLUDES_ble_scanner)
 
 USEMODULE_INCLUDES += $(USEMODULE_INCLUDES_ble_scanner)/../../include
 
-PSEUDOMODULES += ble_scanner_conn
+PSEUDOMODULES += ble_scanner_netif

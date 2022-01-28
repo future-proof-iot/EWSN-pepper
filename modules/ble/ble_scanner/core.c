@@ -61,19 +61,30 @@ void ble_scanner_register(ble_scan_listener_t *listener)
 {
     unsigned state = irq_disable();
 
+    LOG_DEBUG("[ble_scanner]: register listener\n");
     if (!listener->list_node.next) {
         clist_rpush(&_list.list_node, &listener->list_node);
     }
     irq_restore(state);
+    if (_enabled && ble_gap_disc_active()) {
+        LOG_DEBUG("[ble_scanner]: new listener re-start\n");
+        nimble_scanner_start();
+    }
 }
 
 void ble_scanner_unregister(ble_scan_listener_t *listener)
 {
     unsigned state = irq_disable();
 
+    LOG_DEBUG("[ble_scanner]: unregister unregister\n");
     clist_remove(&_list.list_node, &listener->list_node);
+    listener->list_node.next = NULL;
     _list.list_node.next = NULL;
     irq_restore(state);
+    if (clist_count(&_list.list_node) == 0) {
+        LOG_DEBUG("[ble_scanner]: no listeners stop\n");
+        nimble_scanner_stop();
+    }
 }
 
 static void _on_scan_evt(uint8_t type, const ble_addr_t *addr,
@@ -108,8 +119,8 @@ void ble_scanner_update(const ble_scan_params_t *params)
     nimble_scanner_cfg_t scan_params;
 
     LOG_DEBUG("[ble_scanner]: update scan parmeters\n");
-    scan_params.itvl_ms = BLE_GAP_SCAN_ITVL_MS(params->scan_itvl);
-    scan_params.win_ms = BLE_GAP_SCAN_WIN_MS(params->scan_win);
+    scan_params.itvl_ms = params->scan_itvl_ms;
+    scan_params.win_ms = params->scan_win_ms;
     scan_params.flags = NIMBLE_SCANNER_PHY_1M;
 
     int ret = nimble_scanner_init(&scan_params, _on_scan_evt);
@@ -120,6 +131,8 @@ void ble_scanner_update(const ble_scan_params_t *params)
 
 void ble_scanner_start(int32_t scan_duration_ms)
 {
+    _enabled = true;
+
     LOG_DEBUG("[ble_scanner]: start for ");
     if (scan_duration_ms == BLE_HS_FOREVER) {
         LOG_DEBUG("forever\n");
@@ -156,4 +169,9 @@ void ble_scanner_init(const ble_scan_params_t *params)
     if (IS_ACTIVE(CONFIG_BLE_SCANNER_AUTO_START)) {
         ble_scanner_start(BLE_HS_FOREVER);
     }
+}
+
+bool ble_scanner_is_enabled(void)
+{
+    return _enabled;
 }
