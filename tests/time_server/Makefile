@@ -12,7 +12,7 @@ USEMODULE += nimble_svc_gap
 USEMODULE += nimble_adv_ext
 USEMODULE += bluetil_ad
 USEMODULE += current_time
-USEMODULE += stdio_nimble
+USEMODULE += rtc_utils
 
 # Add a USB product string for udev rules mapping
 CFLAGS += -DCONFIG_NIMBLE_AUTOADV_DEVICE_NAME=\"RIOTTimeServer\"
