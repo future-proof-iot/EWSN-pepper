@@ -6,7 +6,6 @@
 #include "shell_commands.h"
 
 #include "desire_ble_scan.h"
-#include "desire_ble_scan_params.h"
 #include "ble_pkt_dbg.h"
 
 /* default scan duration (20s) */
@@ -107,7 +106,7 @@ int main(void)
     puts("Desire BLE Scanner Test Application");
 
     /* initialize the desire scanner */
-    desire_ble_scan_init(&desire_ble_scanner_params, detection_cb);
+    desire_ble_scan_init(detection_cb);
     init_ebid_tracker(0);
 
     /* start shell */
