@@ -2,6 +2,3 @@ USEMODULE_INCLUDES_desire_scanner := $(LAST_MAKEFILEDIR)/include
 USEMODULE_INCLUDES += $(USEMODULE_INCLUDES_desire_scanner)
 
 USEMODULE_INCLUDES += $(USEMODULE_INCLUDES_desire_scanner)/../../include
-
-PSEUDOMODULES += desire_scanner_time_update
-PSEUDOMODULES += desire_scanner_netif
