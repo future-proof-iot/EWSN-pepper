@@ -68,7 +68,6 @@
 #if IS_USED(MODULE_DESIRE_ADVERTISER)
 #include "desire_ble_adv.h"
 #include "desire_ble_scan.h"
-#include "desire_ble_scan_params.h"
 #endif
 
 #ifdef __cplusplus

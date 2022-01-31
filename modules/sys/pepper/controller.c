@@ -40,13 +40,12 @@
 #include "ebid.h"
 #include "desire_ble_adv.h"
 #include "desire_ble_scan.h"
-#include "desire_ble_scan_params.h"
 #if IS_USED(MODULE_STORAGE)
 #include "storage.h"
 #endif
 
 #ifndef LOG_LEVEL
-#define LOG_LEVEL   LOG_INFO
+#define LOG_LEVEL   LOG_DEBUG
 #endif
 #include "log.h"
 
@@ -371,7 +370,8 @@ static void _align_end_of_epoch(uint32_t epoch_duration_s)
     uint32_t timeout = epoch_duration_s - (ztimer_now(ZTIMER_EPOCH) % epoch_duration_s);
 
     /* schedule end of epoch event */
-    event_periodic_start_iter(&_end_epoch, timeout, _controller.epoch.iterations);
+    event_periodic_set_count(&_end_epoch, _controller.epoch.iterations);
+    event_periodic_start(&_end_epoch, timeout);
     /* fix subsequent timeouts */
     _end_epoch.timer.interval = epoch_duration_s;
     /* setup end of uwb_epoch timeout event */
@@ -402,7 +402,7 @@ void pepper_init(void)
     desire_ble_adv_init(CONFIG_UWB_BLE_EVENT_PRIO);
     desire_ble_adv_set_cb(_adv_cb);
     /* init ble scanner and current_time */
-    desire_ble_scan_init(&desire_ble_scanner_params, _scan_cb);
+    desire_ble_scan_init(_scan_cb);
     /* init twr */
 #if IS_USED(MODULE_TWR)
     twr_event_mem_manager_init(&_controller.twr_mem);
@@ -444,8 +444,8 @@ void pepper_start(pepper_start_params_t *params)
     }
     else {
         /* schedule end of epoch event */
-        event_periodic_start_iter(&_end_epoch, _controller.epoch.duration_s,
-                                  _controller.epoch.iterations);
+        event_periodic_set_count(&_end_epoch, _controller.epoch.iterations);
+        event_periodic_start(&_end_epoch, _controller.epoch.duration_s);
     }
     LED3_ON;
     mutex_unlock(&_controller.lock);
@@ -463,8 +463,8 @@ void pepper_resume(bool align)
         }
         else {
             /* schedule end of epoch event with remaining counts */
-            event_periodic_start_iter(&_end_epoch, _controller.epoch.duration_s,
-                                      _end_epoch.count);
+            event_periodic_set_count(&_end_epoch, _end_epoch.count);
+            event_periodic_start(&_end_epoch, _controller.epoch.duration_s);
             /* re-enable BLE and UWB */
             pepper_core_enable(&_controller.ebid, &_controller.adv,
                                _controller.epoch.duration_s * MS_PER_SEC);

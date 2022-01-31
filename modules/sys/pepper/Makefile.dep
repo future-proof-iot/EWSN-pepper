@@ -36,9 +36,7 @@ endif
 
 ifneq (,$(filter pepper_current_time,$(USEMODULE)))
   USEMODULE += current_time
-  # TODO: move this to its own service
-  USEMODULE += desire_scanner
-  USEMODULE += desire_scanner_time_update
+  USEMODULE += current_time_ble_scanner
 endif
 
 ifneq (,$(filter ed_uwb,$(USEMODULE)))
