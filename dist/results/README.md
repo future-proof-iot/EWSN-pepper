@@ -77,7 +77,18 @@ set very high:
 
 On a second device the same application was flashed but with the BLE
 RSSI logs enabled (`ed_serialize_ble_json()`) and the scanner was
-ser to be always on (there is no way of changing this currently but in the header `modules/ble/desire_scanner/include/desire_ble_scan_params.h` by setting `SCAN_WIN_MS` == `SCAN_ITVL_MS`).
+ser to be always on. This can be done by setting in the application
+makefile or at compile time:
+
+```makefile
+CFLAGS+=-DDESIRE_BLE_SCAN_PARAMS=BLE_SCANNER_LOW_LATENCY_PARAMS
+```
+
+or on the command line
+
+```
+CFLAGS=-DDESIRE_BLE_SCAN_PARAMS=BLE_SCANNER_LOW_LATENCY_PARAMS make -C apps/pepper_experience flash term
+```
 
 A new untested flag has been added to enables BLE logging as well:
 
