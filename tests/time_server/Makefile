@@ -41,3 +41,8 @@ DEVELHELP ?= 1
 QUIET ?= 1
 
 include $(RIOTBASE)/Makefile.include
+
+set_node_time:
+	@echo "Setting time of day and starting time advertisments every 5 seconds "
+	@echo "CURDIR = $(CURDIR)"
+	@python $(CURDIR)/bletimadv_serial_iface.py -a 5
