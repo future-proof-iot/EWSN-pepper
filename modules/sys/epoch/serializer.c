@@ -278,6 +278,8 @@ int contact_data_load_all_cbor(uint8_t *buf, size_t len, epoch_data_t *epoch)
     nanocbor_value_t arr2;
     nanocbor_value_t arr3;
     nanocbor_value_t arr4;
+
+    (void)arr4;
     uint32_t tag;
 
     nanocbor_decoder_init(&dec, buf, len);
@@ -367,6 +369,8 @@ int contact_data_load_cbor(uint8_t *buf, size_t len,
     nanocbor_value_t dec;
     nanocbor_value_t arr1;
     nanocbor_value_t arr2;
+
+    (void)arr2;
     uint32_t tag;
     size_t blen;
     const uint8_t *pet;
