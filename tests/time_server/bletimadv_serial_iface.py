@@ -1,27 +1,27 @@
-# Copyright (C) 2021 Inria
+# Copyright (C) 2022 Inria
 #
 # This file is subject to the terms and conditions of the GNU Lesser
 # General Public License v2.1. See the file LICENSE in the top level
 # directory for more details.
 
 from datetime import datetime
-import cffi
 from riotctrl.ctrl import RIOTCtrl
-import os
 
-def main(adv_period:int, reboot:bool) :
+
+def main(adv_period: int, reboot: bool):
     """
-    Configures a bletimeadv_server firmware to current time of day and to advetise every <adv_period> seconds
+    Configures a bletimeadv_server firmware to current time of day and to
+    advertise every <adv_period> seconds
     Assumes RIOT firmwree exposes  the following shell commands :
         - reboot : reset the node
-        - time <year> <month> <day> <hour> <min> <sec> : sets current time 
+        - time <year> <month> <day> <hour> <min> <sec> : sets current time
         - start <period> : start time advertisements every <period> seconds
     """
     ctrl = RIOTCtrl()
 
-    def repl(cmd:str):
+    def repl(cmd: str):
         ctrl.term.sendline(cmd)  # send the command
-        ctrl.term.expect(">")    # wait for the command result to finnish
+        ctrl.term.expect(">")  # wait for the command result to finnish
         print(ctrl.term.before)  # print the command result
 
     with ctrl.run_term():
@@ -33,12 +33,24 @@ def main(adv_period:int, reboot:bool) :
         repl(f"start {adv_period}")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     import argparse
+
     parser = argparse.ArgumentParser()
-    parser.add_argument("-a", "--adv_period", help="Advertisement period in seconds", type=int, default=10)
-    parser.add_argument("-r", "--reboot", help="Reboot node prior config", action="store_true", default=False)
+    parser.add_argument(
+        "-a",
+        "--adv_period",
+        help="Advertisement period in seconds",
+        type=int,
+        default=10,
+    )
+    parser.add_argument(
+        "-r",
+        "--reboot",
+        help="Reboot node prior config",
+        action="store_true",
+        default=False,
+    )
     args = parser.parse_args()
 
-    main(adv_period=args.adv_period, reboot=True)#args.reboot)
-
+    main(adv_period=args.adv_period, reboot=True)  # args.reboot)
