@@ -36,12 +36,12 @@ static void _print_usage(void)
     puts("Usage:");
     puts("\tpepper status: controller status information");
     puts("\tpepper start [-d <epoch duration s>] [-i <ms interval>] [-r <advs per slice>]"
-         "[-a (align epoch) [-c <iterations> ]");
+         " [-a (align epoch) [-c <iterations> ] [-s <win_ms,itvl_ms>]");
     puts("\tpepper stop: stop proximity tracing");
     puts("\tpepper set bn <base name>: sets base name for logging");
+#if IS_USED(MODULE_TWR)
     puts("\tpepper twr get win: returns the listen window in us");
     puts("\tpepper twr set <win_us>: sets listen window in us, win_us < UINT16_MAX");
-#if IS_USED(MODULE_TWR)
     printf("\tpepper twr set rx_off <offset ticks>: offset > -%" PRIu32 "\n",
            CONFIG_TWR_MIN_OFFSET_TICKS);
     printf("\tpepper twr set tx_off <offset ticks>: offset > -%" PRIu32 "\n",
@@ -54,6 +54,11 @@ static int _twr_handler(int argc, char **argv)
 {
     if (argc < 2) {
         _print_usage();
+        return -1;
+    }
+
+    if (!strcmp(argv[1], "reset")) {
+        twr_reset();
         return -1;
     }
 
@@ -98,6 +103,21 @@ static int _twr_handler(int argc, char **argv)
 }
 #endif
 
+static int _parse_scan_params(char *arg, uint32_t *win_ms, uint32_t *itvl_ms)
+{
+    char *value = strtok(arg, ",");
+
+    if (value) {
+        *win_ms = atoi(value);
+        value = strtok(NULL, ",");
+        if (value) {
+            *itvl_ms = atoi(value);
+            return 0;
+        }
+    }
+    return -1;
+}
+
 static int _pepper_handler(int argc, char **argv)
 {
     if (argc < 2) {
@@ -111,6 +131,8 @@ static int _pepper_handler(int argc, char **argv)
             .epoch_iterations = 0,
             .adv_itvl_ms = CONFIG_BLE_ADV_ITVL_MS,
             .advs_per_slice = CONFIG_ADV_PER_SLICE,
+            .scan_itvl_ms = CONFIG_BLE_SCAN_ITVL_MS,
+            .scan_win_ms = CONFIG_BLE_SCAN_WIN_MS,
             .align = false,
         };
         int res = 0;
@@ -151,11 +173,26 @@ static int _pepper_handler(int argc, char **argv)
                 params.align = true;
                 continue;
             /* intentionally falls through */
+            case 's':
+                if ((++i) < argc) {
+                    uint32_t scan_itvl_ms = 0;
+                    uint32_t scan_win_ms = 0;
+                    _parse_scan_params(argv[i], &scan_win_ms, &scan_itvl_ms);
+                    params.scan_itvl_ms = scan_itvl_ms;
+                    params.scan_win_ms = scan_win_ms;
+                    continue;
+                }
+            /* intentionally falls through */
             default:
                 res = 1;
                 break;
             }
         }
+
+        if (params.scan_itvl_ms < params.scan_win_ms) {
+            res = 1;
+        }
+
         if (res != 0) {
             _print_usage();
             return 1;
@@ -170,11 +207,13 @@ static int _pepper_handler(int argc, char **argv)
         }
         printf("\tadv_per_slice: %" PRIu32 "\n", params.advs_per_slice);
         printf("\tadv_itvl: %" PRIu32 "[ms]\n", params.adv_itvl_ms);
+        printf("\tscan_itvl: %" PRIu32 "[ms]\n", params.scan_itvl_ms);
+        printf("\tscan_win: %" PRIu32 "[ms]\n", params.scan_win_ms);
         pepper_start(&params);
         if (IS_ACTIVE(CONFIG_PEPPER_SHELL_BLOCKING)) {
             /* if iterations == 0 the loop will not run and this wont't block
                which is wanted */
-            for (uint32_t i = 0; i < params.epoch_iterations; i ++) {
+            for (uint32_t i = 0; i < params.epoch_iterations; i++) {
                 ztimer_sleep(ZTIMER_MSEC, params.epoch_duration_s * MS_PER_SEC);
             }
         }

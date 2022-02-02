@@ -226,6 +226,8 @@ static int _pepper_start_handler(uint16_t conn_handle, uint16_t attr_handle,
             }
             LOG_INFO("\tadv_per_slice: %" PRIu32 "\n", params.advs_per_slice);
             LOG_INFO("\tadv_itvl: %" PRIu32 " [ms]\n", params.adv_itvl_ms);
+            LOG_INFO("\tscan_itvl: %" PRIu32 " [ms]\n", params.scan_itvl_ms);
+            LOG_INFO("\tscan_win: %" PRIu32 " [ms]\n", params.scan_win_ms);
             pepper_start(&params);
         }
         break;

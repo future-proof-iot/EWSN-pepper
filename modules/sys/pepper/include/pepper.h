@@ -194,6 +194,8 @@ typedef struct __attribute__((__packed__)) {
     uint32_t epoch_iterations;      /**< the epoch iterations, 0 to run forever */
     uint32_t advs_per_slice;        /**< number of advertisements per slice */
     uint32_t adv_itvl_ms;           /**< advertisement interval in milliseconds */
+    uint32_t scan_itvl_ms;          /**< scan interval in milliseconds */
+    uint32_t scan_win_ms;           /**< scan window in milliseconds */
     bool align;                     /**< align end of epoch event with epoch_duration_s */
 } pepper_start_params_t;
 
@@ -229,6 +231,9 @@ typedef struct controller {
     epoch_params_t epoch;               /**> current epoch parameters */
 #if IS_USED(MODULE_DESIRE_ADVERTISER)
     adv_params_t adv;                   /**> configured advertisement parameters */
+#endif
+#if IS_USED(MODULE_DESIRE_SCANNER)
+    ble_scan_params_t scan;             /**> scan configuration */
 #endif
     controller_status_t status;         /**> controller status */
 } controller_t;

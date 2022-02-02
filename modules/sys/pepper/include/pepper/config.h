@@ -54,6 +54,26 @@ extern "C" {
  */
 #define RSSI_CLIPPING_THRESH    (0)
 
+/**
+ * @name    Default ble scan parameters
+ *
+ * @note    Source: https://android.googlesource.com/platform/packages/apps/Bluetooth/+/master/src/com/android/bluetooth/gatt/ScanManager.java
+ * @{
+ */
+#ifndef CONFIG_BLE_SCAN_ITVL_MS
+#define CONFIG_BLE_SCAN_ITVL_MS        (4096U)  /* 4096ms */
+#endif
+#ifndef CONFIG_BLE_SCAN_WIN_MS
+#define CONFIG_BLE_SCAN_WIN_MS         (1024U)  /* 1024ms */
+#endif
+
+#ifndef CONFIG_BLE_SCAN_PARAMS
+#define CONFIG_BLE_SCAN_PARAMS                      \
+    { .scan_itvl_ms = CONFIG_BLE_SCAN_ITVL_MS,      \
+      .scan_win_ms = CONFIG_BLE_SCAN_WIN_MS,        \
+    }
+#endif
+
 #ifdef __cplusplus
 }
 #endif

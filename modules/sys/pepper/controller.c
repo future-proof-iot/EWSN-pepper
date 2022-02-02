@@ -189,14 +189,15 @@ static void _scan_cb(uint32_t ticks, const ble_addr_t *addr, int8_t rssi,
 #endif
         }
 #endif
-        if (LOG_LEVEL == LOG_DEBUG || IS_ACTIVE(CONFIG_PEPPER_LOG_BLE) ) {
-#if IS_USED(MODULE_ED_BLE) || IS_USED(MODULE_ED_BLE_WIN)
-            /* log with a milliseconds based timestamp */
-            ed_serialize_ble_json(rssi, cid, ztimer_now(ZTIMER_MSEC),
-                                  pepper_get_serializer_bn());
-#endif
-        }
     }
+    if (LOG_LEVEL == LOG_DEBUG || IS_ACTIVE(CONFIG_PEPPER_LOG_BLE)) {
+#if IS_USED(MODULE_ED_BLE) || IS_USED(MODULE_ED_BLE_WIN)
+        /* log with a milliseconds based timestamp */
+        ed_serialize_ble_json(rssi, cid, ztimer_now(ZTIMER_MSEC),
+                              pepper_get_serializer_bn());
+#endif
+    }
+
 }
 
 /**
@@ -247,12 +248,13 @@ static void _adv_cb(uint32_t advs, void *arg)
 #endif
 }
 
-void pepper_core_enable(ebid_t *ebid, adv_params_t *params, uint32_t duration_ms)
+void pepper_core_enable(ebid_t *ebid, ble_scan_params_t *scan_params,
+                        adv_params_t *adv_params, uint32_t duration_ms)
 {
     /* start advertising */
     LOG_DEBUG("[pepper]: start adv: %" PRIu32 " times with intervals of "
-              "%" PRIu32 " ms\n", params->advs_max, params->itvl_ms);
-    desire_ble_adv_start(ebid, params);
+              "%" PRIu32 " ms\n", adv_params->advs_max, adv_params->itvl_ms);
+    desire_ble_adv_start(ebid, adv_params);
 #if IS_USED(MODULE_TWR)
     /* set new short addr */
     uint16_t short_addr = desire_ble_adv_get_cid();
@@ -262,7 +264,7 @@ void pepper_core_enable(ebid_t *ebid, adv_params_t *params, uint32_t duration_ms
 #endif
     LOG_DEBUG("[pepper]: start scanning for %" PRIu32 "ms\n", duration_ms);
     /* start scanning */
-    desire_ble_scan_start(duration_ms);
+    desire_ble_scan_start(scan_params, duration_ms);
 }
 
 void pepper_core_disable(void)
@@ -299,7 +301,7 @@ static void _epoch_start(event_t *event)
         }
     }
     LOG_INFO("\n");
-    pepper_core_enable(&_controller.ebid, &_controller.adv,
+    pepper_core_enable(&_controller.ebid, &_controller.scan, &_controller.adv,
                        _controller.epoch.duration_s * MS_PER_SEC);
 }
 
@@ -435,6 +437,9 @@ void pepper_start(pepper_start_params_t *params)
     /* set epoch params */
     _controller.epoch.duration_s = params->epoch_duration_s;
     _controller.epoch.iterations = params->epoch_iterations;
+    /* set scan params */
+    _controller.scan.itvl_ms = params->scan_itvl_ms;
+    _controller.scan.win_ms = params->scan_win_ms;
     /* set minimum duration */
     ed_list_set_min_exposure(&_controller.ed_list, _controller.epoch.duration_s / 3 );
     /* */
@@ -466,7 +471,7 @@ void pepper_resume(bool align)
             event_periodic_set_count(&_end_epoch, _end_epoch.count);
             event_periodic_start(&_end_epoch, _controller.epoch.duration_s);
             /* re-enable BLE and UWB */
-            pepper_core_enable(&_controller.ebid, &_controller.adv,
+            pepper_core_enable(&_controller.ebid, &_controller.scan, &_controller.adv,
                                _controller.epoch.duration_s * MS_PER_SEC);
         }
         _controller.status = PEPPER_RUNNING;
