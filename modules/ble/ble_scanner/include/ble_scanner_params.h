@@ -30,11 +30,11 @@ extern "C" {
  * @note    Source: https://android.googlesource.com/platform/packages/apps/Bluetooth/+/master/src/com/android/bluetooth/gatt/ScanManager.java
  * @{
  */
-#ifndef BLE_SCANNER_LOW_LATENCY_SCAN_ITVL_MS
-#define BLE_SCANNER_LOW_LATENCY_SCAN_ITVL_MS        (4096U)          /* 4096ms */
+#ifndef CONFIG_BLE_LOW_LATENCY_SCAN_ITVL_MS
+#define CONFIG_BLE_LOW_LATENCY_SCAN_ITVL_MS        (4096U)          /* 4096ms */
 #endif
-#ifndef BLE_SCANNER_LOW_LATENCY_SCAN_WIN_MS
-#define BLE_SCANNER_LOW_LATENCY_SCAN_WIN_MS         (4096U)          /* 4096ms */
+#ifndef CONFIG_BLE_LOW_LATENCY_SCAN_WIN_MS
+#define CONFIG_BLE_LOW_LATENCY_SCAN_WIN_MS         (4096U)          /* 4096ms */
 #endif
 
 /**
@@ -43,11 +43,11 @@ extern "C" {
  * @note    Source: https://android.googlesource.com/platform/packages/apps/Bluetooth/+/master/src/com/android/bluetooth/gatt/ScanManager.java
  * @{
  */
-#ifndef BLE_SCANNER_LOW_POWER_SCAN_ITVL_MS
-#define BLE_SCANNER_LOW_POWER_SCAN_ITVL_MS          (5120U)          /* 5120ms */
+#ifndef CONFIG_BLE_LOW_POWER_SCAN_ITVL_MS
+#define CONFIG_BLE_LOW_POWER_SCAN_ITVL_MS          (5120U)          /* 5120ms */
 #endif
-#ifndef BLE_SCANNER_LOW_POWER_SCAN_WIN_MS
-#define BLE_SCANNER_LOW_POWER_SCAN_WIN_MS            (512U)          /*  512ms */
+#ifndef CONFIG_BLE_LOW_POWER_SCAN_WIN_MS
+#define CONFIG_BLE_LOW_POWER_SCAN_WIN_MS            (512U)          /*  512ms */
 #endif
 
 /**
@@ -56,36 +56,36 @@ extern "C" {
  * @note    Source: https://android.googlesource.com/platform/packages/apps/Bluetooth/+/master/src/com/android/bluetooth/gatt/ScanManager.java
  * @{
  */
-#ifndef BLE_SCANNER_BALANCED_SCAN_ITVL_MS
-#define BLE_SCANNER_BALANCED_SCAN_ITVL_MS         (4096U)          /* 4096ms */
+#ifndef CONFIG_BLE_BALANCED_SCAN_ITVL_MS
+#define CONFIG_BLE_BALANCED_SCAN_ITVL_MS         (4096U)          /* 4096ms */
 #endif
-#ifndef BLE_SCANNER_BALANCED_SCAN_WIN_MS
-#define BLE_SCANNER_BALANCED_SCAN_WIN_MS          (1024U)          /* 1024ms */
+#ifndef CONFIG_BLE_BALANCED_SCAN_WIN_MS
+#define CONFIG_BLE_BALANCED_SCAN_WIN_MS          (1024U)          /* 1024ms */
 #endif
 
-#define BLE_SCANNER_LOW_LATENCY_PARAMS                       \
-    { .scan_itvl_ms = BLE_SCANNER_LOW_LATENCY_SCAN_ITVL_MS,  \
-      .scan_win_ms = BLE_SCANNER_LOW_LATENCY_SCAN_WIN_MS,    \
+#define CONFIG_BLE_LOW_LATENCY_PARAMS                     \
+    { .itvl_ms = CONFIG_BLE_LOW_LATENCY_SCAN_ITVL_MS,     \
+      .win_ms = CONFIG_BLE_LOW_LATENCY_SCAN_WIN_MS,       \
     }
 
-#define BLE_SCANNER_BALANCED_PARAMS                          \
-    { .scan_itvl_ms = BLE_SCANNER_BALANCED_SCAN_ITVL_MS,     \
-      .scan_win_ms = BLE_SCANNER_BALANCED_SCAN_WIN_MS,       \
+#define CONFIG_BLE_BALANCED_PARAMS                        \
+    { .itvl_ms = CONFIG_BLE_BALANCED_SCAN_ITVL_MS,        \
+      .win_ms = CONFIG_BLE_BALANCED_SCAN_WIN_MS,          \
     }
 
-#define BLE_SCANNER_LOW_POWER_PARAMS                        \
-    { .scan_itvl_ms = BLE_SCANNER_LOW_POWER_SCAN_ITVL_MS,   \
-      .scan_win_ms = BLE_SCANNER_LOW_POWER_SCAN_WIN_MS,     \
+#define CONFIG_BLE_LOW_POWER_PARAMS                       \
+    { .itvl_ms = CONFIG_BLE_LOW_POWER_SCAN_ITVL_MS,       \
+      .win_ms = CONFIG_BLE_LOW_POWER_SCAN_WIN_MS,         \
     }
 
 /**
- * @brief   nimble_netif_autoconn configuration
+ * @brief   default scan configurations
  */
 static const ble_scan_params_t ble_scan_params[] =
 {
-    BLE_SCANNER_LOW_LATENCY_PARAMS,
-    BLE_SCANNER_BALANCED_PARAMS,
-    BLE_SCANNER_LOW_POWER_PARAMS
+    CONFIG_BLE_LOW_LATENCY_PARAMS,
+    CONFIG_BLE_BALANCED_PARAMS,
+    CONFIG_BLE_LOW_POWER_PARAMS
 };
 
 #ifdef __cplusplus

@@ -119,8 +119,8 @@ void ble_scanner_update(const ble_scan_params_t *params)
     nimble_scanner_cfg_t scan_params;
 
     LOG_DEBUG("[ble_scanner]: update scan parmeters\n");
-    scan_params.itvl_ms = params->scan_itvl_ms;
-    scan_params.win_ms = params->scan_win_ms;
+    scan_params.itvl_ms = params->itvl_ms;
+    scan_params.win_ms = params->win_ms;
     scan_params.flags = NIMBLE_SCANNER_PHY_1M;
 
     int ret = nimble_scanner_init(&scan_params, _on_scan_evt);

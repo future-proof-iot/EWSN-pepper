@@ -66,9 +66,9 @@ typedef struct {
  */
 typedef struct {
     /** scan interval applied while in scanning state [in ms] */
-    uint32_t scan_itvl_ms;
+    uint32_t itvl_ms;
     /** scan window applied while in scanning state [in ms] */
-    uint32_t scan_win_ms;
+    uint32_t win_ms;
 } ble_scan_params_t;
 
 /**
