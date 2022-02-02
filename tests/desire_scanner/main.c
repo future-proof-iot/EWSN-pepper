@@ -5,6 +5,7 @@
 #include "shell.h"
 #include "shell_commands.h"
 
+#include "ble_scanner_params.h"
 #include "desire_ble_scan.h"
 #include "ble_pkt_dbg.h"
 
@@ -82,7 +83,8 @@ int _cmd_desire_scan(int argc, char **argv)
         duration = (uint32_t)(atoi(argv[1]));
     }
     printf("Scanning for %"PRIu32"\n", duration);
-    desire_ble_scan_start(duration);
+    ble_scan_params_t = CONFIG_BLE_LOW_LATENCY_PARAMS;
+    desire_ble_scan_start(&params, duration);
 
     return 0;
 }

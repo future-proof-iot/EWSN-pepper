@@ -21,6 +21,7 @@ int main(void)
     msg_init_queue(_main_msg_queue, MAIN_QUEUE_SIZE);
     /* start shell */
     char line_buf[SHELL_DEFAULT_BUFSIZE];
+
     shell_run(_commands, line_buf, SHELL_DEFAULT_BUFSIZE);
 
     return 0;

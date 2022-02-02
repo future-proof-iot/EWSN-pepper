@@ -37,6 +37,8 @@ static void _pepper_start_handler(event_t* event)
             .epoch_iterations = 0,
             .adv_itvl_ms = CONFIG_BLE_ADV_ITVL_MS,
             .advs_per_slice = CONFIG_ADV_PER_SLICE,
+            .scan_itvl_ms = CONFIG_BLE_SCAN_ITVL_MS,
+            .scan_win_ms = CONFIG_BLE_SCAN_WIN_MS,
             .align = false,
         };
         puts("[pepper] button: start");
