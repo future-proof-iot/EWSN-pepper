@@ -30,7 +30,7 @@
 
 uint16_t ed_ble_rssi_to_cm(float rssi)
 {
-    return (uint16_t) (0.0066256 * pow(0.8546459, rssi));
+    return (uint16_t)(0.0066256 * pow(0.8546459, rssi));
 }
 
 void ed_ble_set_obf_value(ed_t *ed, ebid_t *ebid)
@@ -81,9 +81,11 @@ ed_t *ed_list_process_scan_data(ed_list_t *list, const uint32_t cid, uint16_t ti
     return ed;
 }
 
-void ed_serialize_ble_json(int8_t rssi, uint32_t cid, uint32_t time, const char* base_name)
+void ed_serialize_ble_json(int8_t rssi, uint32_t cid, uint32_t time, const char *base_name)
 {
     turo_t ctx;
+    char cid_buff[2 * sizeof(uint32_t)];
+
     turo_init(&ctx);
     turo_dict_open(&ctx);
     if (base_name) {
@@ -93,7 +95,8 @@ void ed_serialize_ble_json(int8_t rssi, uint32_t cid, uint32_t time, const char*
     turo_dict_key(&ctx, "t");
     turo_u32(&ctx, time);
     turo_dict_key(&ctx, "n");
-    turo_u32(&ctx, cid);
+    sprintf(cid_buff, "%"PRIx32"", cid);
+    turo_string(&ctx, cid_buff);
     turo_dict_key(&ctx, "v");
     turo_s32(&ctx, (int32_t)rssi);
     turo_dict_key(&ctx, "u");

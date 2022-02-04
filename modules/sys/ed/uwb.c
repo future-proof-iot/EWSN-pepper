@@ -87,10 +87,12 @@ bool ed_uwb_finish(ed_t *ed, uint32_t min_exposure_s)
     return false;
 }
 
+/* TODO: style this more in SenML, the name should not be the cid, and the bn either */
 void ed_serialize_uwb_json(uint16_t d_cm, uint16_t los, uint32_t cid, uint32_t time,
                            const char *base_name)
 {
     turo_t ctx;
+    char cid_buff[2 * sizeof(uint32_t)];
 
     turo_init(&ctx);
     turo_dict_open(&ctx);
@@ -101,19 +103,31 @@ void ed_serialize_uwb_json(uint16_t d_cm, uint16_t los, uint32_t cid, uint32_t t
     turo_dict_key(&ctx, "t");
     turo_u32(&ctx, time);
     turo_dict_key(&ctx, "n");
-    turo_u32(&ctx, cid);
+    sprintf(cid_buff, "%"PRIx32"", cid);
+    turo_string(&ctx, cid_buff);
     turo_dict_key(&ctx, "v");
     turo_u32(&ctx, (uint32_t)d_cm);
     turo_dict_key(&ctx, "u");
     turo_string(&ctx, "cm");
+    turo_dict_close(&ctx);
 #if IS_USED(MODULE_ED_UWB_LOS)
+    turo_dict_open(&ctx);
+    if (base_name) {
+        turo_dict_key(&ctx, "bn");
+        turo_string(&ctx, base_name);
+    }
+    turo_dict_key(&ctx, "t");
+    turo_u32(&ctx, time);
+    turo_dict_key(&ctx, "n");
+    sprintf(cid_buff, "%"PRIx32"", cid);
+    turo_string(&ctx, cid_buff);
     turo_dict_key(&ctx, "v");
     turo_u32(&ctx, (uint32_t)los);
     turo_dict_key(&ctx, "u");
     turo_string(&ctx, "%");
+    turo_dict_close(&ctx);
 #else
     (void)los;
 #endif
-    turo_dict_close(&ctx);
     print_str("\n");
 }
