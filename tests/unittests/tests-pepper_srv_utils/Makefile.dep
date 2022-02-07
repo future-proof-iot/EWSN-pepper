@@ -1,0 +1,2 @@
+USEMODULE += pepper_srv
+USEMODULE += pepper_srv_utils

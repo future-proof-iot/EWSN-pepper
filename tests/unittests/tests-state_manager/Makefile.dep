@@ -1,3 +1,0 @@
-USEMODULE += state_manager
-USEMODULE += ed
-USEMODULE += ed_uwb

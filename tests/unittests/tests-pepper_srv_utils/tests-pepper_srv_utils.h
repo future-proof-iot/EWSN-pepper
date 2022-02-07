@@ -14,8 +14,8 @@
  * @brief       Unittests for the state_manager
  *
  */
-#ifndef TESTS_STATE_MANGER_H
-#define TESTS_STATE_MANGER_H
+#ifndef TESTS_PEPPER_SRV_UTILS_H
+#define TESTS_PEPPER_SRV_UTILS_H
 
 #include "embUnit/embUnit.h"
 
@@ -26,12 +26,12 @@ extern "C" {
 /**
  *  @brief   The entry point of this test suite.
  */
-void tests_state_manager(void);
+void tests_pepper_srv_utils(void);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* TESTS_STATE_MANGER_H */
+#endif /* TESTS_PEPPER_SRV_UTILS */
 /** @} */
 
