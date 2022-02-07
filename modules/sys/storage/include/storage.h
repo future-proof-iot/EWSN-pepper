@@ -40,6 +40,7 @@ extern "C" {
 #endif
 
 int storage_init(void);
+int storage_deinit(void);
 int storage_log(const char* path, uint8_t *buffer, size_t len);
 
 #ifdef __cplusplus

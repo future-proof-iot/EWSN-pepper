@@ -94,8 +94,17 @@ int storage_init(void)
             LOG_ERROR("[fs]: ERROR, failed to setup storage backends\n");
             return -1;
         }
-        storage_dirs_create_sys_hier();
-        return 0;
+        return storage_dirs_create_sys_hier();
+    }
+    else {
+        return -1;
+    }
+}
+
+int storage_deinit(void)
+{
+    if(MTD_0) {
+        return vfs_umount(&_storage_fs_mount);
     }
     else {
         return -1;
