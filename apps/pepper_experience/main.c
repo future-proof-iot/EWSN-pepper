@@ -4,6 +4,7 @@
 #include "board.h"
 #include "periph/gpio.h"
 #include "pepper.h"
+#include "pepper_srv.h"
 #include "desire_ble_adv.h"
 
 #include "event.h"
@@ -62,6 +63,7 @@ int main(void)
     /* initialize a button to stop pepper */
     gpio_init_int(BTN0_PIN, BTN0_MODE, GPIO_FALLING, _pepper_start_stop, NULL);
     pepper_init();
+    pepper_srv_init(EVENT_PRIO_MEDIUM);
     /* the shell contains commands that receive packets via GNRC and thus
        needs a msg queue */
     msg_init_queue(_main_msg_queue, MAIN_QUEUE_SIZE);

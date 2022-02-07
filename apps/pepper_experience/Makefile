@@ -23,13 +23,14 @@ USEMODULE += pepper_controller
 USEMODULE += pepper_current_time
 USEMODULE += pepper_shell
 USEMODULE += pepper_util
+## Include pepper server
+USEMODULE += pepper_srv
+USEMODULE += pepper_srv_storage
 USEMODULE += ed_uwb
 USEMODULE += ed_uwb_stats
 # USEMODULE += ed_uwb_los
 USEMODULE += ed_ble
 USEMODULE += ed_leds
-USEMODULE += storage
-USEMODULE += mtd_sdcard
 FEATURES_REQUIED += periph_gpio_irq
 USEMODULE += twr_shell
 
