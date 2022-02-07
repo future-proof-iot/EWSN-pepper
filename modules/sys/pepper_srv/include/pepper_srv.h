@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 Inria
+ * Copyright (C) 2022 Inria
  *
  * This file is subject to the terms and conditions of the GNU Lesser
  * General Public License v2.1. See the file LICENSE in the top level
@@ -21,14 +21,12 @@
 #ifndef PEPPER_SERVER_H
 #define PEPPER_SERVER_H
 
-#include "xfa.h"
 #include "epoch.h"
 #include "event.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
 
 /**
  * @brief   Initialize the pepper server inteface
@@ -40,6 +38,14 @@ extern "C" {
 int pepper_srv_init(event_queue_t *evt_queue);
 
 /**
+ * @brief   Submit new epoch_data_t to the server broker
+ *
+ * @param[in]       epoch_data           Epoch data to offload to server
+ *
+ */
+void pepper_srv_data_submit(epoch_data_t*);
+
+/**
  * @brief   Notify end of epoch for offloading the encounter data
  *
  * @param[in]       epoch_data           Epoch data to offload to server
@@ -47,7 +53,6 @@ int pepper_srv_init(event_queue_t *evt_queue);
  * @return  a status flag equal 0 if all went fine and a bitmap indicating the plugin endpoint init flags.
  */
 int pepper_srv_notify_epoch_data(epoch_data_t *epoch_data);
-
 
 /**
  * @brief   Notify the notification status update
@@ -65,8 +70,7 @@ int pepper_srv_notify_infection(bool infected);
  *
  * @return  a status flag equal 0 if all went fine and a bitmap indicating the plugin endpoint init flags.
  */
-int pepper_srv_esr(int *esr /*out*/);
-
+int pepper_srv_esr(int *esr);
 
 /**
  * @brief   Endpoint plugin interface for bridging the client with a local/remote server instance.

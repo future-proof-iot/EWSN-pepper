@@ -1,17 +1,23 @@
 USEMODULE += epoch
+USEMODULE += pepper_util
 
 ifneq (,$(filter pepper_srv_shell,$(USEMODULE)))
-USEMODULE += shell
-USEMODULE += shell_commands
-USEMODULE += pepper
-USEMODULE += pepper_util
+  USEMODULE += shell
+  USEMODULE += shell_commands
+  USEMODULE += pepper
+  USEMODULE += pepper_util
 endif
 
 ifneq (,$(filter pepper_srv_storage,$(USEMODULE)))
+  USEMODULE += storage
+  USEMODULE += mtd_sdcard
+  USEMODULE += ztimer_msec
 endif
 
 ifneq (,$(filter pepper_srv_coap,$(USEMODULE)))
+
 endif
 
 ifneq (,$(filter pepper_srv_coaps,$(USEMODULE)))
+
 endif

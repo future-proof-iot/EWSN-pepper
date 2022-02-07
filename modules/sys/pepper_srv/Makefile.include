@@ -3,4 +3,5 @@ USEMODULE_INCLUDES += $(USEMODULE_INCLUDES_pepper_srv)
 
 PSEUDOMODULES += pepper_srv_shell
 PSEUDOMODULES += pepper_srv_coap
+PSEUDOMODULES += pepper_srv_storage
 

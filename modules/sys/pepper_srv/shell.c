@@ -20,6 +20,7 @@
 #include "pepper_srv.h"
 #include "pepper.h"
 
+#include "xfa.h"
 #include "shell_commands.h"
 #include "strings.h"
 
@@ -34,7 +35,7 @@ static struct {
 
 int _shell_srv_init(event_queue_t *evt_queue)
 {
-    evt_queue = evt_queue;
+    (void)evt_queue;
     printf(">--< End point Shell : init !\n");
     return 0;
 }
