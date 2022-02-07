@@ -40,14 +40,14 @@
 #include "ebid.h"
 #include "desire_ble_adv.h"
 #include "desire_ble_scan.h"
-#if IS_USED(MODULE_STORAGE)
-#include "storage.h"
-#endif
-
 #ifndef LOG_LEVEL
 #define LOG_LEVEL   LOG_DEBUG
 #endif
 #include "log.h"
+
+#if IS_USED(MODULE_PEPPER_SRV)
+#include "pepper_srv.h"
+#endif
 
 static controller_t _controller = {
     .lock = MUTEX_INIT,
@@ -305,35 +305,6 @@ static void _epoch_start(event_t *event)
                        _controller.epoch.duration_s * MS_PER_SEC);
 }
 
-typedef struct {
-    event_t super;
-    epoch_data_t *data;
-} epoch_data_event_t;
-static uint8_t sd_buffer[IS_ACTIVE(MODULE_STORAGE) * 2048];
-static void _serialize_epoch_handler(event_t *event)
-{
-    epoch_data_event_t *d_event = (epoch_data_event_t *)event;
-
-    LOG_INFO("[pepper]: dumping epoch data\n");
-    if (IS_USED(MODULE_STORAGE)) {
-        size_t len = contact_data_serialize_all_json(d_event->data,
-                                                     sd_buffer, sizeof(sd_buffer),
-                                                     pepper_get_serializer_bn());
-        (void)len;
-#if IS_USED(MODULE_STORAGE)
-        storage_log(CONFIG_PEPPER_LOGFILE, sd_buffer, len - 1 );
-#endif
-    }
-    if (IS_USED(MODULE_PEPPER_GATT)) {
-        /* TODO: either notify serialized data in JSON or CBOR or packed data */
-    }
-    if (!IS_USED(MODULE_PEPPER_STDIO_NIMBLE) || !IS_USED(MODULE_STORAGE)) {
-        contact_data_serialize_all_printf(d_event->data, pepper_get_serializer_bn());
-    }
-}
-static epoch_data_event_t _serialize_epoch = { .super.handler = _serialize_epoch_handler };
-
-
 static event_periodic_t _end_epoch;
 static event_t _start_epoch = { .handler = _epoch_start };
 static void _epoch_end(void *arg)
@@ -354,9 +325,11 @@ static void _epoch_end(void *arg)
     ed_list_finish(&_controller.ed_list);
     epoch_finish(&_controller.data, &_controller.ed_list);
     /* post serializing/offloading event */
-    memcpy(&_controller.data_serialize, &_controller.data, sizeof(epoch_data_t));
-    _serialize_epoch.data = &_controller.data_serialize;
-    event_post(CONFIG_PEPPER_LOW_EVENT_PRIO, &_serialize_epoch.super);
+#if IS_USED(MODULE_PEPPER_SRV)
+    pepper_srv_data_submit(&_controller.data);
+#else
+    contact_data_serialize_all_printf(&_controller.data, pepper_get_serializer_bn());
+#endif
     /* bootstrap new epoch if required */
     if (pepper_is_active()) {
         /* by posting an event we allowed all other queued events to be handled */
@@ -397,9 +370,6 @@ void pepper_init(void)
     if (IS_USED(MODULE_PEPPER_CURRENT_TIME)) {
         pepper_current_time_init();
     }
-#if IS_USED(MODULE_STORAGE)
-    storage_init();
-#endif
     /* init ble advertiser */
     desire_ble_adv_init(CONFIG_UWB_BLE_EVENT_PRIO);
     desire_ble_adv_set_cb(_adv_cb);

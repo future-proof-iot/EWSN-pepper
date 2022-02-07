@@ -224,8 +224,6 @@ typedef struct controller {
                                              start time taken from ZTIMER_SEC */
     epoch_data_t data;                  /**> epoch_data structure to populate at
                                              the end of an epoch */
-    epoch_data_t data_serialize;        /**> copy of epoch data for serialization
-                                             TODO: should be removed*/
     mutex_t lock;                       /**> lock to prevent multiple calls to
                                              pepper_start */
     epoch_params_t epoch;               /**> current epoch parameters */
