@@ -15,6 +15,9 @@ ifneq (,$(filter pepper_controller,$(USEMODULE)))
   USEMODULE += ztimer_epoch
   USEMODULE += ztimer_msec
   USEMODULE += ztimer_sec
+  ifneq (,$(filter ed_uwb,$(USEMODULE)))
+    USEMODULE += twr
+  endif
 endif
 
 ifneq (,$(filter pepper_gatt,$(USEMODULE)))
@@ -37,8 +40,4 @@ endif
 ifneq (,$(filter pepper_current_time,$(USEMODULE)))
   USEMODULE += current_time
   USEMODULE += current_time_ble_scanner
-endif
-
-ifneq (,$(filter ed_uwb,$(USEMODULE)))
-  USEMODULE += twr
 endif
