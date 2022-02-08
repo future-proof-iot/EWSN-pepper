@@ -10,14 +10,29 @@ USEMODULE += netdev_default
 USEMODULE += auto_init_gnrc_netif
 USEMODULE += gnrc_sixlowpan_border_router_default
 USEMODULE += gnrc_icmpv6_echo
+USEMODULE += gnrc_icmpv6_error
+
 # Add also the shell, some shell commands
 USEMODULE += shell
 USEMODULE += shell_commands
 USEMODULE += ps
+
 # BLE modules
-USEMODULE += nimble_netif
 USEMODULE += nimble_autoconn_ipsp
+USEMODULE += nimble_netif
 NIMBLE_MAX_CONN ?= 10
+
+# Better debugging
+USEMODULE += netstats_l2
+USEMODULE += netstats_ipv6
+USEMODULE += netstats_rpl
+
+USEMODULE += netstats_neighbor_etx
+USEMODULE += netstats_neighbor_count
+USEMODULE += netstats_neighbor_rssi
+USEMODULE += netstats_neighbor_lqi
+USEMODULE += netstats_neighbor_tx_time
+
 # GNRC configurations
 CFLAGS +=-DMYNEWT_VAL_BLE_LL_TX_PWR_DBM=4
 CFLAGS += -DCONFIG_GNRC_NETIF_IPV6_ADDRS_NUMOF=3
