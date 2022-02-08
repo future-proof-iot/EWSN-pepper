@@ -27,11 +27,6 @@
 #endif
 #include "log.h"
 
-/**
- * @brief   Token ID length in bytes
- */
-#define PEPPER_UID_LEN          (2)
-
 static char _uid[sizeof("DW") + PEPPER_UID_LEN * 2 + 1];
 
 static char _base_name[CONFIG_PEPPER_BASE_NAME_BUFFER] = "pepper";

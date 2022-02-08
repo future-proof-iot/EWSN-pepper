@@ -171,6 +171,11 @@ extern "C" {
 #endif
 
 /**
+ * @brief   Token ID length in bytes
+ */
+#define PEPPER_UID_LEN          (2)
+
+/**
  * @brief   TWR correction offsets
  */
 typedef struct twr_params {
