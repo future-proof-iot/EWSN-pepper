@@ -120,7 +120,7 @@ int coap_init_remote(sock_udp_ep_t *remote, char *addr_str, uint16_t port);
  *
  * @return length of sent packet on success, <0 on error
  */
-size_t coap_post(sock_udp_ep_t *remote, coap_req_ctx_t *ctx,
+int coap_post(sock_udp_ep_t *remote, coap_req_ctx_t *ctx,
                  void *data, size_t data_len,
                  const char *uri, uint8_t format, uint8_t type);
 
@@ -136,7 +136,7 @@ size_t coap_post(sock_udp_ep_t *remote, coap_req_ctx_t *ctx,
  *
  * @return length of sent packet on success, <0 on error
  */
-size_t coap_get(sock_udp_ep_t *remote, coap_req_ctx_t *ctx,
+int coap_get(sock_udp_ep_t *remote, coap_req_ctx_t *ctx,
                 const char *uri, uint8_t format, uint8_t type);
 
 /**

@@ -152,7 +152,7 @@ int coap_init_remote(sock_udp_ep_t *remote, char *addr_str, uint16_t port)
     return 0;
 }
 
-size_t coap_get(sock_udp_ep_t *remote, coap_req_ctx_t *ctx,
+int coap_get(sock_udp_ep_t *remote, coap_req_ctx_t *ctx,
                 const char *uri, uint8_t format, uint8_t type)
 {
     uint8_t buf[CONFIG_GCOAP_PDU_BUF_SIZE];
@@ -167,14 +167,14 @@ size_t coap_get(sock_udp_ep_t *remote, coap_req_ctx_t *ctx,
 
     if (ctx) {
         if (!mutex_trylock(&ctx->resp_wait)) {
-            LOG_ERROR("[coap/utils]: ERROR context is locked\n");
+            LOG_ERROR("[coap/utils]: ERROR get context is locked\n");
             return -1;
         }
     }
     return gcoap_req_send(buf, msg_len, remote, _resp_handler, ctx);
 }
 
-size_t coap_post(sock_udp_ep_t *remote, coap_req_ctx_t *ctx,
+int coap_post(sock_udp_ep_t *remote, coap_req_ctx_t *ctx,
                  void *data, size_t data_len,
                  const char *uri, uint8_t format, uint8_t type)
 {
@@ -198,7 +198,7 @@ size_t coap_post(sock_udp_ep_t *remote, coap_req_ctx_t *ctx,
     }
     if (ctx) {
         if (!mutex_trylock(&ctx->resp_wait)) {
-            LOG_ERROR("[coap/utils]: ERROR context is locked\n");
+            LOG_ERROR("[coap/utils]: ERROR post context is locked\n");
             return -1;
         }
     }
@@ -249,7 +249,7 @@ int coap_block_post(sock_udp_ep_t *remote, coap_block_ctx_t *ctx,
     assert(ctx);
 
     if (!mutex_trylock(&ctx->req_ctx.resp_wait)) {
-        LOG_ERROR("[coap/utils]: ERROR context is locked\n");
+        LOG_ERROR("[coap/utils]: ERROR block context is locked\n");
         return -1;
     }
 
