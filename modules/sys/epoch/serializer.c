@@ -22,7 +22,6 @@
 #include <string.h>
 #include <assert.h>
 
-#include "stdio.h"
 #include "irq.h"
 #include "fmt.h"
 #include "test_utils/result_output.h"
@@ -249,7 +248,9 @@ size_t contact_data_serialize_all_cbor(epoch_data_t *epoch, uint8_t *buf,
 
     nanocbor_fmt_array(&enc, contacts);
     for (uint8_t i = 0; i < contacts; i++) {
-        nanocbor_fmt_array(&enc, 2 + IS_USED(MODULE_ED_UWB) + IS_USED(MODULE_ED_BLE));
+        nanocbor_fmt_array(&enc,
+                           2 + IS_USED(MODULE_ED_UWB) + IS_USED(MODULE_ED_BLE) * IS_ACTIVE(
+                               CONFIG_CONTACT_DATA_SERIALIZE_CBOR_BLE));
         nanocbor_put_bstr(&enc, epoch->contacts[i].pet.et, PET_SIZE);
         nanocbor_put_bstr(&enc, epoch->contacts[i].pet.rt, PET_SIZE);
 #if IS_USED(MODULE_ED_UWB)
@@ -260,12 +261,14 @@ size_t contact_data_serialize_all_cbor(epoch_data_t *epoch, uint8_t *buf,
         nanocbor_fmt_uint(&enc, epoch->contacts[i].uwb.avg_d_cm);
 #endif
 #if IS_USED(MODULE_ED_BLE)
-        nanocbor_fmt_tag(&enc, ED_BLE_CBOR_TAG);
-        nanocbor_fmt_array(&enc, 4);
-        nanocbor_fmt_uint(&enc, epoch->contacts[i].ble.exposure_s);
-        nanocbor_fmt_uint(&enc, epoch->contacts[i].ble.scan_count);
-        nanocbor_fmt_uint(&enc, epoch->contacts[i].ble.avg_d_cm);
-        nanocbor_fmt_float(&enc, epoch->contacts[i].ble.avg_rssi);
+        if (IS_ACTIVE(CONFIG_CONTACT_DATA_SERIALIZE_CBOR_BLE)) {
+            nanocbor_fmt_tag(&enc, ED_BLE_CBOR_TAG);
+            nanocbor_fmt_array(&enc, 4);
+            nanocbor_fmt_uint(&enc, epoch->contacts[i].ble.exposure_s);
+            nanocbor_fmt_uint(&enc, epoch->contacts[i].ble.scan_count);
+            nanocbor_fmt_uint(&enc, epoch->contacts[i].ble.avg_d_cm);
+            nanocbor_fmt_float(&enc, epoch->contacts[i].ble.avg_rssi);
+        }
 #endif
     }
     return nanocbor_encoded_len(&enc);
@@ -315,15 +318,18 @@ int contact_data_load_all_cbor(uint8_t *buf, size_t len, epoch_data_t *epoch)
             }
 #endif
 #if IS_USED(MODULE_ED_BLE)
-            if (tag == ED_BLE_CBOR_TAG) {
-                nanocbor_enter_array(&arr3, &arr4);
-                nanocbor_get_uint16(&arr4, &epoch->contacts[i].ble.exposure_s);
-                nanocbor_get_uint16(&arr4, &epoch->contacts[i].ble.scan_count);
-                nanocbor_get_uint16(&arr4, &epoch->contacts[i].ble.avg_d_cm);
-                /* no get float in nanocbor */
-                // nanocbor_get_float(&arr4, &epoch->contacts[i].ble.avg_rssi);
-                nanocbor_skip_simple(&arr4);
-                nanocbor_leave_container(&arr3, &arr4);
+            if (IS_ACTIVE(CONFIG_CONTACT_DATA_SERIALIZE_CBOR_BLE)) {
+                if (tag == ED_BLE_CBOR_TAG) {
+                    nanocbor_enter_array(&arr3, &arr4);
+
+                    nanocbor_get_uint16(&arr4, &epoch->contacts[i].ble.exposure_s);
+                    nanocbor_get_uint16(&arr4, &epoch->contacts[i].ble.scan_count);
+                    nanocbor_get_uint16(&arr4, &epoch->contacts[i].ble.avg_d_cm);
+                    /* no get float in nanocbor */
+                    // nanocbor_get_float(&arr4, &epoch->contacts[i].ble.avg_rssi);
+                    nanocbor_skip_simple(&arr4);
+                    nanocbor_leave_container(&arr3, &arr4);
+                }
             }
 #endif
         }
@@ -341,7 +347,9 @@ size_t contact_data_serialize_cbor(contact_data_t *contact, uint32_t timestamp,
 
     nanocbor_encoder_init(&enc, buf, len);
     nanocbor_fmt_tag(&enc, EPOCH_CBOR_TAG);
-    nanocbor_fmt_array(&enc, 3 + IS_USED(MODULE_ED_UWB) + IS_USED(MODULE_ED_BLE));
+    nanocbor_fmt_array(&enc,
+                       3 + IS_USED(MODULE_ED_UWB) + IS_USED(MODULE_ED_BLE) * IS_ACTIVE(
+                           CONFIG_CONTACT_DATA_SERIALIZE_CBOR_BLE));
     nanocbor_fmt_uint(&enc, timestamp);
     nanocbor_put_bstr(&enc, contact->pet.et, PET_SIZE);
     nanocbor_put_bstr(&enc, contact->pet.rt, PET_SIZE);
@@ -353,12 +361,14 @@ size_t contact_data_serialize_cbor(contact_data_t *contact, uint32_t timestamp,
     nanocbor_fmt_uint(&enc, contact->uwb.avg_d_cm);
 #endif
 #if IS_USED(MODULE_ED_BLE)
-    nanocbor_fmt_tag(&enc, ED_BLE_CBOR_TAG);
-    nanocbor_fmt_array(&enc, 4);
-    nanocbor_fmt_uint(&enc, contact->ble.exposure_s);
-    nanocbor_fmt_uint(&enc, contact->ble.scan_count);
-    nanocbor_fmt_uint(&enc, contact->ble.avg_d_cm);
-    nanocbor_fmt_float(&enc, contact->ble.avg_rssi);
+    if (IS_ACTIVE(CONFIG_CONTACT_DATA_SERIALIZE_CBOR_BLE)) {
+        nanocbor_fmt_tag(&enc, ED_BLE_CBOR_TAG);
+        nanocbor_fmt_array(&enc, 4);
+        nanocbor_fmt_uint(&enc, contact->ble.exposure_s);
+        nanocbor_fmt_uint(&enc, contact->ble.scan_count);
+        nanocbor_fmt_uint(&enc, contact->ble.avg_d_cm);
+        nanocbor_fmt_float(&enc, contact->ble.avg_rssi);
+    }
 #endif
     return nanocbor_encoded_len(&enc);
 }
@@ -401,15 +411,17 @@ int contact_data_load_cbor(uint8_t *buf, size_t len,
         }
 #endif
 #if IS_USED(MODULE_ED_BLE)
-        if (tag == ED_BLE_CBOR_TAG) {
-            nanocbor_enter_array(&arr1, &arr2);
-            nanocbor_get_uint16(&arr2, &contact->ble.exposure_s);
-            nanocbor_get_uint16(&arr2, &contact->ble.scan_count);
-            nanocbor_get_uint16(&arr2, &contact->ble.avg_d_cm);
-            /* no get_float in nanocbor */
-            // nanocbor_get_float(&arr3, &epoch->contacts[i].ble.avg_rssi);
-            nanocbor_skip_simple(&arr2);
-            nanocbor_leave_container(&arr1, &arr2);
+        if (IS_ACTIVE(CONFIG_CONTACT_DATA_SERIALIZE_CBOR_BLE)) {
+            if (tag == ED_BLE_CBOR_TAG) {
+                nanocbor_enter_array(&arr1, &arr2);
+                nanocbor_get_uint16(&arr2, &contact->ble.exposure_s);
+                nanocbor_get_uint16(&arr2, &contact->ble.scan_count);
+                nanocbor_get_uint16(&arr2, &contact->ble.avg_d_cm);
+                /* no get_float in nanocbor */
+                // nanocbor_get_float(&arr3, &epoch->contacts[i].ble.avg_rssi);
+                nanocbor_skip_simple(&arr2);
+                nanocbor_leave_container(&arr1, &arr2);
+            }
         }
 #endif
     }

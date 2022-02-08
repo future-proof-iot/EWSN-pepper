@@ -42,6 +42,8 @@ static uint16_t ed_max_exposure_time(ed_t *ed)
 {
     uint16_t exposure = 0;
     uint16_t tmp_exposure = 0;
+    (void)tmp_exposure;
+    (void)ed;
 
 #if IS_USED(MODULE_ED_BLE)
     tmp_exposure = ed->ble.seen_last_s - ed->ble.seen_first_s;
@@ -153,6 +155,7 @@ void epoch_finish(epoch_data_t *epoch, ed_list_t *list)
 bool epoch_valid_contact(contact_data_t *data)
 {
     bool valid = false;
+    (void)data;
 
 #if IS_USED(MODULE_ED_BLE)
     valid |= (data->ble.exposure_s != 0);

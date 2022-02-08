@@ -42,14 +42,23 @@ extern "C" {
  * @brief   Step between windows in seconds
  */
 #ifndef CONFIF_EPOCH_MAX_ENOCUNTERS
-#define CONFIG_EPOCH_MAX_ENCOUNTERS         8
+#define CONFIG_EPOCH_MAX_ENCOUNTERS                     8
 #endif
 
 /**
  * @brief   Size of the uwb epoch data memory buffer
  */
 #ifndef CONFIG_EPOCH_DATA_BUF_SIZE
-#define CONFIG_EPOCH_DATA_BUF_SIZE          2
+#define CONFIG_EPOCH_DATA_BUF_SIZE                      2
+#endif
+
+/**
+ * @brief   Set to one to also serialize BLE data when using CBOR
+ *
+ * @note    This is set to 0 by default since its not supported by the coap-server
+ */
+#ifndef CONFIG_CONTACT_DATA_SERIALIZE_CBOR_BLE
+#define CONFIG_CONTACT_DATA_SERIALIZE_CBOR_BLE          0
 #endif
 
 #if IS_USED(MODULE_ED_UWB)
