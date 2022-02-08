@@ -180,6 +180,7 @@ bool ed_finish(ed_t *ed, uint32_t min_exposure_s)
     bool valid = false;
 
     (void)ed;
+    (void)min_exposure_s;
 #if IS_USED(MODULE_ED_BLE_COMMON)
     bool valid_ble = false;
 #endif
