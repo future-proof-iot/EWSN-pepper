@@ -48,6 +48,7 @@ int _shell_srv_notify_epoch_data(epoch_data_t *epoch_data)
     printf(">--< End point shell : notify epoch_data, contacts = %d, ts = %ld\n",
            epoch_contacts(epoch_data), epoch_data->timestamp);
 
+    contact_data_serialize_all_printf(epoch_data, NULL);
     return 0;
 }
 

@@ -6,3 +6,7 @@ PSEUDOMODULES += pepper_srv_coap
 PSEUDOMODULES += pepper_srv_storage
 PSEUDOMODULES += pepper_srv_utils
 
+ifneq (,$(filter pepper_srv_coap,$(USEMODULE)))
+  # Increase resend buffer to be able to handle GET and BLOCK requests simultaneously
+  CFLAGS += -DCONFIG_GCOAP_RESEND_BUFS_MAX=4
+endif

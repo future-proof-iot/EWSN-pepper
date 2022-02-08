@@ -13,7 +13,7 @@
 XFA_INIT_CONST(pepper_srv_endpoint_t, pepper_srv_endpoints);
 
 static uint8_t number_endpoints = 0;
-static epoch_data_t *_epoch_data;
+static epoch_data_t _epoch_data;
 static mutex_t _lock = MUTEX_INIT;
 static event_queue_t *_evt_queue = NULL;
 
@@ -30,7 +30,7 @@ void pepper_srv_data_submit(epoch_data_t *data)
 {
     /* try to acquire the lock, if failed, just drop the data */
     if (mutex_trylock(&_lock)) {
-        memcpy(_epoch_data, data, sizeof(epoch_data_t));
+        memcpy(&_epoch_data, data, sizeof(epoch_data_t));
         event_post(_evt_queue, &_data_submit_event.super);
     }
     else {
@@ -100,7 +100,7 @@ int pepper_srv_notify_infection(bool infected)
 /* Blocking call (?) : iterate on all endpoints for quering infection, retrun 0
    if none of endpoints returns true, otherwise a bitmap with an exposure flag
    per endpoint */
-int pepper_srv_esr(int *esr /*out*/)
+int pepper_srv_esr(bool *esr /*out*/)
 {
     int ret = 0;
     bool _esr = 0;

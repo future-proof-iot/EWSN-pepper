@@ -11,8 +11,8 @@
  * 1) Periodical epoch behaviour :
  *    - generate random epoch data and notify server
  *    - query exposure from server : blue led is on if exposed, off otherwise
- * 2) Aperiodical bhaviour :
- *    - upon press on button : toogle infection status and red led. Notify serverimmediately.
+ * 2) Aperiodicall behaviour :
+ *    - upon press on button : toggle infection status and red led. Notify serverimmediately.
  *
  * Purpose :
  *    - validate pepper_srv inteface behaviour
@@ -23,7 +23,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "net/sock/udp.h"
+
 #include "pepper_srv.h"
+#include "pepper_srv_coap.h"
 #include "epoch.h"
 
 #include "event/thread.h"
@@ -42,13 +45,36 @@
 #endif
 #include "log.h"
 
+#if IS_USED(MODULE_BLE_SCANNER_NETIF)
+#include "ble_scanner.h"
+#include "ble_scanner_params.h"
+#include "ble_scanner_netif_params.h"
+#endif
+
+#ifndef CONFIG_PEPPER_SERVER_ADDR
+#define CONFIG_PEPPER_SERVER_ADDR               "fd00:dead:beef::1"
+#endif
+
+/* dummy define to get rid of editor higliting */
+#ifndef BOARD_NATIVE
+#define BOARD_NATIVE    0
+#endif
+
 /* Epoch PoV of covid state */
 struct {
     bool exposed;
     bool infected;
 } _pepper_state = { false, false };
 
-// Button press handling : notify upon press, with 2 sec debouncing
+/* Event Loop Q qnd thread stack */
+static event_queue_t evt_queue;
+static char _stack[THREAD_STACKSIZE_DEFAULT];
+static event_periodic_t event_periodic;
+
+/* epoch data pointer */
+static epoch_data_t _epoch_data;
+
+/* Button press handling : notify upon press, with 2 sec debouncing */
 static void _debounce_cb(void *arg)
 {
     (void)arg;
@@ -76,21 +102,17 @@ static void _handle_btn_press(void *arg)
     ztimer_set(ZTIMER_MSEC, &debounce, 2 * MS_PER_SEC);
 }
 
-
-// Epoch event handling
-static epoch_data_t _epoch_data;
+/* Epoch event handling */
 static void handle_epoch_end(event_t *event)
 {
+    (void)event;
     int ret, esr = 0;
 
     LOG_DEBUG("Tick EPOCH start: (exposed = %d, infected=%d)\n", _pepper_state.exposed,
-           _pepper_state.infected);
+              _pepper_state.infected);
     random_epoch(&_epoch_data);
 
-    ret = pepper_srv_notify_epoch_data(&_epoch_data);
-    if (ret) {
-        LOG_ERROR("Internal error during notif epoch data : %d", ret);
-    }
+    pepper_srv_data_submit(&_epoch_data);
 
     if (!(ret = pepper_srv_esr(&esr))) {
         if (esr) {
@@ -107,20 +129,47 @@ static void handle_epoch_end(event_t *event)
     }
 
     LOG_DEBUG("Tick EPOCH end: (exposed = %d, infected=%d)\n", _pepper_state.exposed,
-           _pepper_state.infected);
-    event = event;
+              _pepper_state.infected);
 }
 static event_t event_epoch_end = { .handler = handle_epoch_end };
 
+int _cmd_coap_srv(int argc, char **argv)
+{
+    if (argc < 3) {
+        printf("usage: %s ip_addr port\n", argv[0]);
+        return -1;
+    }
 
-/* Event Loop Q qnd thread stack */
-static event_queue_t evt_queue;
-static char _stack[THREAD_STACKSIZE_DEFAULT];
-static event_periodic_t event_periodic;
+    pepper_srv_coap_init_remote(argv[1], atoi(argv[2]));
+    return 0;
+}
+
+static const shell_command_t _commands[] = {
+    { "server", "get/sets the coap server host and port", _cmd_coap_srv },
+    { NULL, NULL, NULL }
+};
 
 int main(void)
 {
     puts("Pepper Server interface Test Application");
+
+    /* initialize the uid module since the main pepper module is not used */
+    pepper_uid_init();
+
+#if IS_USED(MODULE_BLE_SCANNER_NETIF)
+    /* initialize the desire scanner */
+    ble_scanner_init(&ble_scan_params[1]);
+    /* initializer netif scanner */
+    ble_scanner_netif_init();
+#endif
+
+    if (BOARD_NATIVE) {
+        ipv6_addr_t addr;
+        const char addr_str[] = "2001:db8::2";
+        ipv6_addr_from_str(&addr, addr_str);
+        gnrc_netif_ipv6_addr_add(gnrc_netif_iter(NULL), &addr, 64, 0);
+        pepper_srv_coap_init_remote("2001:db8::1", 5683);
+    }
 
     /* gpio init */
     gpio_init_int(BTN0_PIN, BTN0_MODE, GPIO_FALLING, _handle_btn_press, NULL);
@@ -136,7 +185,6 @@ int main(void)
     /* Periodic event for epoch start */
     event_periodic_init(&event_periodic, ZTIMER_MSEC, &evt_queue, &event_epoch_end);
 
-
     /* Pepper server init¨*/
     pepper_srv_init(&evt_queue);
 
@@ -145,7 +193,7 @@ int main(void)
     /* run shell on the main thread */
     char line_buf[SHELL_DEFAULT_BUFSIZE];
 
-    shell_run(NULL, line_buf, SHELL_DEFAULT_BUFSIZE);
+    shell_run(_commands, line_buf, SHELL_DEFAULT_BUFSIZE);
 
     return 0;
 }

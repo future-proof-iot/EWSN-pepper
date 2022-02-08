@@ -29,7 +29,7 @@ extern "C" {
 #endif
 
 /**
- * @brief   Initialize the pepper server inteface
+ * @brief   Initialize the pepper server interface
  *
  * @param[in]       evt_queue           A shared event queue for firing events
  *
@@ -70,7 +70,7 @@ int pepper_srv_notify_infection(bool infected);
  *
  * @return  a status flag equal 0 if all went fine and a bitmap indicating the plugin endpoint init flags.
  */
-int pepper_srv_esr(int *esr);
+int pepper_srv_esr(bool *esr);
 
 /**
  * @brief   Endpoint plugin interface for bridging the client with a local/remote server instance.
@@ -83,7 +83,6 @@ typedef struct pepper_srv_endpoint {
     /* core <-- endpoint */
     int (*request_exposure)(bool *esr /*out*/);     /**< Handler to query the exposure status */
 } pepper_srv_endpoint_t;
-
 
 #ifdef __cplusplus
 }

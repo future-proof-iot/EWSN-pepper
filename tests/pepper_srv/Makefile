@@ -27,17 +27,20 @@ USEMODULE += ztimer_msec
 
 FEATURES_OPTIONAL += periph_gpio_irq
 
-
 # pepper server
 USEMODULE += pepper_srv
 USEMODULE += pepper_srv_shell
 USEMODULE += pepper_srv_coap
 
-# Epoch data generation : include basic uwb and ble 
+# Epoch data generation : include basic uwb and ble
 USEMODULE += epoch_random
 USEMODULE += ed_uwb
 USEMODULE += ed_ble
-#USEMODULE += ed_ble_win
+
+ifneq (native,$(BOARD))
+  USEMODULE += ble_scanner
+  USEMODULE += ble_scanner_netif
+endif
 
 DEVELHELP ?= 1
 
