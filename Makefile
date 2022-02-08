@@ -1,7 +1,7 @@
 .PHONY: all clean build test init-submodules static-checks
 
-# Missing tools in the docker image
-IGNORE_APPS ?=
+# These applications do not currently build since they still depend on state_manager
+IGNORE_APPS ?= apps/pepper_riotfp tests/pepper_mock
 APPLICATIONS = $(wildcard $(filter-out $(IGNORE_APPS),$(CURDIR)/tests/* $(CURDIR)/apps/*))
 TEST_APPLICATIONS = $(wildcard $(CURDIR)/tests/unittests)
 
