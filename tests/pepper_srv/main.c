@@ -25,6 +25,7 @@
 
 #include "net/sock/udp.h"
 
+#include "pepper.h"
 #include "pepper_srv.h"
 #include "pepper_srv_coap.h"
 #include "epoch.h"
@@ -67,8 +68,6 @@ struct {
 } _pepper_state = { false, false };
 
 /* Event Loop Q qnd thread stack */
-static event_queue_t evt_queue;
-static char _stack[THREAD_STACKSIZE_DEFAULT];
 static event_periodic_t event_periodic;
 
 /* epoch data pointer */
@@ -106,7 +105,8 @@ static void _handle_btn_press(void *arg)
 static void handle_epoch_end(event_t *event)
 {
     (void)event;
-    int ret, esr = 0;
+    int ret = 0;
+    bool esr = false;
 
     LOG_DEBUG("Tick EPOCH start: (exposed = %d, infected=%d)\n", _pepper_state.exposed,
               _pepper_state.infected);
@@ -125,7 +125,7 @@ static void handle_epoch_end(event_t *event)
         }
     }
     else {
-        LOG_ERROR("Internal error during esr : %d", ret);
+        LOG_ERROR("Internal error during esr : %d\n", ret);
     }
 
     LOG_DEBUG("Tick EPOCH end: (exposed = %d, infected=%d)\n", _pepper_state.exposed,
@@ -176,19 +176,13 @@ int main(void)
     LED1_OFF;
     LED3_OFF;
 
-    /* Event loop thread init */
-    event_queue_init(&evt_queue);
-    event_thread_init(&evt_queue, _stack, sizeof(_stack),
-                      THREAD_PRIORITY_MAIN - 1);
-
-
     /* Periodic event for epoch start */
-    event_periodic_init(&event_periodic, ZTIMER_MSEC, &evt_queue, &event_epoch_end);
+    event_periodic_init(&event_periodic, ZTIMER_MSEC, EVENT_PRIO_MEDIUM, &event_epoch_end);
 
     /* Pepper server init¨*/
-    pepper_srv_init(&evt_queue);
+    pepper_srv_init(EVENT_PRIO_MEDIUM);
 
-    event_periodic_start(&event_periodic, 5 * MS_PER_SEC);
+    event_periodic_start(&event_periodic, 10 * MS_PER_SEC);
 
     /* run shell on the main thread */
     char line_buf[SHELL_DEFAULT_BUFSIZE];

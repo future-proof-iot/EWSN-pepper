@@ -24,19 +24,18 @@ USEMODULE += event_thread
 USEMODULE += event_periodic
 USEMODULE += event_callback
 USEMODULE += ztimer_msec
-CFLAGS += -DEVENT_THREAD_MEDIUM_STACKSIZE=THREAD_STACKSIZE_LARGE
 
 FEATURES_OPTIONAL += periph_gpio_irq
 
 # pepper server
 USEMODULE += pepper_srv
-USEMODULE += pepper_srv_shell
-USEMODULE += pepper_srv_coap
+USEMODULE += pepper_srv_coaps
+# EDHOC requires a big stack
+CFLAGS += -DEVENT_THREAD_MEDIUM_STACKSIZE=3*THREAD_STACKSIZE_LARGE
 
 # Epoch data generation : include basic uwb and ble
 USEMODULE += epoch_random
 USEMODULE += ed_uwb
-USEMODULE += ed_ble
 
 ifneq (native,$(BOARD))
   USEMODULE += ble_scanner
