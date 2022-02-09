@@ -1,7 +1,7 @@
 .PHONY: all clean build test init-submodules static-checks
 
 # These applications do not currently build since they still depend on state_manager
-IGNORE_APPS ?= apps/pepper_riotfp tests/pepper_mock
+IGNORE_APPS ?= apps/pepper_riotfp
 APPLICATIONS = $(wildcard $(filter-out $(IGNORE_APPS),$(CURDIR)/tests/* $(CURDIR)/apps/*))
 TEST_APPLICATIONS = $(wildcard $(CURDIR)/tests/unittests)
 
