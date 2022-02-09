@@ -30,5 +30,13 @@ ifneq (,$(filter pepper_srv_coap,$(USEMODULE)))
 endif
 
 ifneq (,$(filter pepper_srv_coaps,$(USEMODULE)))
+  USEMODULE += pepper_srv_utils
+  USEMODULE += coap_utils
+  USEMODULE += netdev_default
+  USEMODULE += auto_init_gnrc_netif
+  USEMODULE += gnrc_ipv6_default
+  USEMODULE += gnrc_icmpv6_echo
 
+  USEMODULE += edhoc_coap
+  USEMODULE += security_ctx
 endif

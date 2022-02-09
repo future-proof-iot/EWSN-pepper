@@ -38,6 +38,14 @@ extern "C" {
 
 void pepper_srv_coap_init_remote(char *addr_str, uint16_t port);
 
+/**
+ * @brief   PEPPER server CTX id 'PEPPER'
+ */
+static const uint8_t pepper_server_id[] =
+{
+    0x50, 0x45, 0x50, 0x50, 0x45, 0x52
+};
+
 #ifdef __cplusplus
 }
 #endif
