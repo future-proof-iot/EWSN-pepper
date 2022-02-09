@@ -87,7 +87,6 @@ void desire_ble_scan_start(const ble_scan_params_t *params, int32_t scan_duratio
 
     ble_scanner_register(&_desire_listener);
     ble_scanner_update(params);
-    ble_scanner_start(BLE_HS_FOREVER);
 }
 
 void desire_ble_scan_stop(void)
