@@ -1,6 +1,8 @@
 USEMODULE += epoch
 USEMODULE += pepper
 USEMODULE += pepper_util
+USEMODULE += ztimer_msec
+USEMODULE += random
 
 ifneq (,$(filter pepper_srv_shell,$(USEMODULE)))
   USEMODULE += shell

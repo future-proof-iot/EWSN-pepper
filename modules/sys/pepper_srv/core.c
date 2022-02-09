@@ -2,8 +2,12 @@
 #include "event.h"
 #include "event/callback.h"
 #include "event/thread.h"
+#include "event/timeout.h"
 #include "mutex.h"
 #include "xfa.h"
+#include "ztimer.h"
+#include "timex.h"
+#include "random.h"
 
 #ifndef LOG_LEVEL
 #define LOG_LEVEL   LOG_WARNING
@@ -16,6 +20,7 @@ static uint8_t number_endpoints = 0;
 static epoch_data_t _epoch_data;
 static mutex_t _lock = MUTEX_INIT;
 static event_queue_t *_evt_queue = NULL;
+static event_timeout_t _notify_epoch_timeout;
 
 /* callback to notify new epoch_data */
 static void _notify_epoch_data(void *arg)
@@ -31,7 +36,7 @@ void pepper_srv_data_submit(epoch_data_t *data)
     /* try to acquire the lock, if failed, just drop the data */
     if (mutex_trylock(&_lock)) {
         memcpy(&_epoch_data, data, sizeof(epoch_data_t));
-        event_post(_evt_queue, &_data_submit_event.super);
+        event_timeout_set(&_notify_epoch_timeout, MS_PER_SEC * random_uint32_range(5, 10));
     }
     else {
         LOG_WARNING("[pepper_srv]: dropped epoch data\n");
@@ -47,6 +52,7 @@ int pepper_srv_init(event_queue_t *evt_queue)
     number_endpoints = XFA_LEN(pepper_srv_endpoint_t, pepper_srv_endpoints);
 
     _evt_queue = evt_queue; /* keep for internal event handling */
+    event_timeout_ztimer_init(&_notify_epoch_timeout, ZTIMER_MSEC, _evt_queue, &_data_submit_event.super);
 
     LOG_INFO("[pepper_srv]: number_endpoints %d\n", number_endpoints);
     for (uint8_t i = 0; i < number_endpoints; i++) {
