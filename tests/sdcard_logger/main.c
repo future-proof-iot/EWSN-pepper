@@ -21,7 +21,7 @@ int main(void)
     len = contact_data_serialize_all_json(&_epoch_data, buffer, sizeof(buffer), "toto");
     uint32_t start = ztimer_now(ZTIMER_MSEC);
 
-    if (storage_log("sys/log/epoch.txt", buffer, len - 1 )) {
+    if (storage_log("/sda/log/epoch.txt", buffer, len - 1 )) {
         puts("[FAILED]");
         puts("ERROR, failed to log to storage");
         return -1;

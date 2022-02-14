@@ -33,7 +33,7 @@
 extern "C" {
 #endif
 
-#define STORAGE_FS_MOUNT_POINT              "/sys"
+#define STORAGE_FS_MOUNT_POINT              "/sda"
 
 #ifndef CONFIG_STORAGE_FS_FORCE_FORMAT
 #define CONFIG_STORAGE_FS_FORCE_FORMAT      0

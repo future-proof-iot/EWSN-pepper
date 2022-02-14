@@ -11,6 +11,7 @@ ifneq (,$(filter pepper_srv_shell,$(USEMODULE)))
 endif
 
 ifneq (,$(filter pepper_srv_storage,$(USEMODULE)))
+  USEMODULE += pepper_util
   USEMODULE += storage
   USEMODULE += mtd_sdcard
   USEMODULE += ztimer_msec

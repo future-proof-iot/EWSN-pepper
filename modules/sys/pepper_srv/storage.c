@@ -136,9 +136,17 @@ int _storage_srv_notify_epoch_data(epoch_data_t *epoch_data)
         size_t len = contact_data_serialize_all_json(
             epoch_data, _buffer, sizeof(_buffer), pepper_get_serializer_bn()
             );
-        if (storage_log(CONFIG_PEPPER_LOGFILE, _buffer, len - 1)) {
-            LOG_DEBUG("[pepper_srv] storage: ERROR, failed to log\n");
+        char logfile[CONFIG_PEPPER_BASE_NAME_BUFFER + sizeof(CONFIG_PEPPER_LOGS_DIR) +
+                     sizeof(CONFIG_PEPPER_LOG_EXT)];
+        // TODO: I wanted to use pepper_get_serializer_bn() but for some reason
+        // it fails two often, need to investigate..
+        sprintf(logfile, "%s%s%s", CONFIG_PEPPER_LOGS_DIR,
+                "pepper", CONFIG_PEPPER_LOG_EXT);
+        if (storage_log(logfile, _buffer, len - 1)) {
+            LOG_DEBUG("[pepper_srv] storage: ERROR, failed to log to %s\n", logfile);
+            return -1;
         }
+        LOG_DEBUG("[pepper_srv] storage: logged to %s\n", logfile);
     }
 
     return 0;

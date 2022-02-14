@@ -20,13 +20,7 @@
 
 static const storage_dir_t sys_hier[] = {
     {
-        .name = "/sys",
-        .subdirs = (storage_dir_t[]) {
-            {
-                .name = "/log",
-            },
-            { NULL, NULL},
-        }
+        .name = "/log",
     },
     { NULL, NULL },
 };
@@ -83,5 +77,5 @@ int storage_dirs_create_hier(const storage_dir_t *hierarchy, const char *prefix)
 
 int storage_dirs_create_sys_hier(void)
 {
-    return storage_dirs_create_hier(sys_hier, "/sys");
+    return storage_dirs_create_hier(sys_hier, STORAGE_FS_MOUNT_POINT);
 }

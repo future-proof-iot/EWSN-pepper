@@ -152,8 +152,15 @@ extern "C" {
 /**
  * @brief   Default pepper logfile name
  */
-#ifndef CONFIG_PEPPER_LOGFILE
-#define CONFIG_PEPPER_LOGFILE           "sys/log/pepper.txt"
+#ifndef CONFIG_PEPPER_LOGS_DIR
+#define CONFIG_PEPPER_LOGS_DIR           "/sda/log/"
+#endif
+
+/**
+ * @brief   Default pepper logfile extension
+ */
+#ifndef CONFIG_PEPPER_LOG_EXT
+#define CONFIG_PEPPER_LOG_EXT           ".txt"
 #endif
 
 /**

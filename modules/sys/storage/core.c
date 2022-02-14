@@ -114,13 +114,10 @@ int storage_deinit(void)
 int storage_log(const char* path, uint8_t *buffer, size_t len)
 {
     if(MTD_0) {
-        char fullpath[VFS_NAME_MAX + 1];
-        snprintf(fullpath, sizeof(fullpath), "%s/%s", STORAGE_FS_MOUNT_POINT, path);
-
-        int fd = vfs_open(fullpath, O_WRONLY | O_APPEND | O_CREAT, 0);
+        int fd = vfs_open(path, O_WRONLY | O_APPEND | O_CREAT, 0);
 
         if (fd < 0) {
-            LOG_ERROR("[fs]: error while trying to create %s\n", fullpath);
+            LOG_ERROR("[fs]: error while trying to create %s\n", path);
             return 1;
         }
         if (vfs_write(fd, buffer, len) != (ssize_t)len) {
@@ -129,7 +126,6 @@ int storage_log(const char* path, uint8_t *buffer, size_t len)
         vfs_close(fd);
         return 0;
     }
-    (void)path;
     (void)buffer;
     (void)len;
     return -1;
