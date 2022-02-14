@@ -37,6 +37,12 @@ CFLAGS += -DEVENT_THREAD_MEDIUM_STACKSIZE=3*THREAD_STACKSIZE_LARGE
 USEMODULE += epoch_random
 USEMODULE += ed_uwb
 
+# SUIT configuration
+# If following the README this will be the SUIT_COAP server configuration
+SUIT_COAP_SERVER ?= [fd00:dead:beef::1]
+SUIT_CLIENT ?= [2001:db8::d359:5dff:fe10:4cf8]
+SUIT_COAP_FSROOT ?= $(CURDIR)/coaproot
+
 ifneq (native,$(BOARD))
   USEMODULE += ble_scanner
   USEMODULE += ble_scanner_netif

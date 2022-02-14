@@ -20,9 +20,11 @@ import argparse
 from ble_iface import BLEScanner, PEPPERConfig, PEPPERNode
 from ble_iface import PEPPERStart
 
-CONFIG_EPOCH_DURATION_SEC = 5 * 60
+CONFIG_EPOCH_DURATION_SEC = 2.5 * 60
 CONFIG_BLE_ADV_ITVL_MS = 1000
-CONFIG_ADV_PER_SLICE = 20
+CONFIG_BLE_SCAN_ITVL_MS = 1024
+CONFIG_BLE_SCAN_WIN_MS = 1024
+CONFIG_ADV_PER_SLICE = 5
 
 # decorator to ease documenting CLI commands with f-strings
 def add_doc(value):
@@ -103,9 +105,10 @@ class BLEPrompt(Cmd):
         out = None
         try:
             for node in self.ble_nodes:
-                print(f"Disconnecting from node: {node.name}")
-                self.loop.run_until_complete(node.disconnect())
-                print(f"\tDisconnected from node: {node.name}")
+                if node.is_connected:
+                    print(f"Disconnecting from node: {node.name}")
+                    self.loop.run_until_complete(node.disconnect())
+                    print(f"\tDisconnected from node: {node.name}")
         except Exception as e:
             print(f"[Error] BLE failure: {e}")
             print(traceback.format_exc())
@@ -277,6 +280,20 @@ class BLEPrompt(Cmd):
                 help="Advertisement interval in milliseconds",
             )
             parser.add_argument(
+                "--scan-window",
+                "-sw",
+                type=int,
+                default=CONFIG_BLE_SCAN_WIN_MS,
+                help="Scan Window in milliseconds",
+            )
+            parser.add_argument(
+                "--scan-interval",
+                "-si",
+                type=int,
+                default=CONFIG_BLE_SCAN_ITVL_MS,
+                help="Scan interval in milliseconds",
+            )
+            parser.add_argument(
                 "--adv-rotation",
                 "-r",
                 type=int,
@@ -306,6 +323,8 @@ class BLEPrompt(Cmd):
         epoch_duration_s = parsed.duration
         epoch_iterations = parsed.counts
         adv_itvl_ms = parsed.adv_interval
+        scan_itvl_ms = parsed.scan_interval
+        scan_win_ms = parsed.scan_window
         advs_per_slice = parsed.adv_rotation
         align = parsed.align
         try:
@@ -313,6 +332,8 @@ class BLEPrompt(Cmd):
                 epoch_duration_s=epoch_duration_s,
                 epoch_iterations=epoch_iterations,
                 adv_itvl_ms=adv_itvl_ms,
+                scan_itvl_ms=scan_itvl_ms,
+                scan_win_ms=scan_win_ms,
                 advs_per_slice=advs_per_slice,
                 align=align,
             )

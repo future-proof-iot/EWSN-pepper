@@ -25,7 +25,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 # Define BLE objects: Service, characteristics and data structs
-PEPPER_SERVICE = "09f5a45e-da78-9d49-931d-cfbd25ed365b"
+PEPPER_SERVICE = "5ea4f59a-78da-499d-931d-cfbd25ed365b"
 
 
 class PEPPERCharacteristics:
@@ -53,12 +53,14 @@ class PEPPERConfig:
 @dataclass(repr=False)
 class PEPPERStart:
     SIZE = 17
-    BINARY_REPR = "<" + "I" + "I" + "I" + "I" + "?"
+    BINARY_REPR = "<" + "I" + "I" + "I" + "I" + "I" + "I" + "?"
 
     epoch_duration_s: int
     epoch_iterations: int
     advs_per_slice: int
     adv_itvl_ms: int
+    scan_itvl_ms: int
+    scan_win_ms: int
     align: bool
 
     def to_bytes(self) -> bytearray:
@@ -69,6 +71,8 @@ class PEPPERStart:
                 self.epoch_iterations,
                 self.advs_per_slice,
                 self.adv_itvl_ms,
+                self.scan_itvl_ms,
+                self.scan_win_ms,
                 self.align,
             )
         )
@@ -81,11 +85,19 @@ class PEPPERStart:
             epoch_iterations,
             advs_per_slice,
             adv_itvl_ms,
+            scan_itvl_ms,
+            scan_win_ms,
             align,
         ) = struct.unpack(PEPPERStart.BINARY_REPR, tlv_bytes)
 
         return PEPPERStart(
-            epoch_duration_s, epoch_iterations, advs_per_slice, adv_itvl_ms, align
+            epoch_duration_s,
+            epoch_iterations,
+            advs_per_slice,
+            adv_itvl_ms,
+            scan_itvl_ms,
+            scan_win_ms,
+            align,
         )
 
 
