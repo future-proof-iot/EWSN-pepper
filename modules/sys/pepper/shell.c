@@ -39,6 +39,8 @@ static void _print_usage(void)
          " [-a (align epoch) [-c <iterations> ] [-s <win_ms,itvl_ms>]");
     puts("\tpepper stop: stop proximity tracing");
     puts("\tpepper set bn <base name>: sets base name for logging");
+    puts("\tpepper get bn: returns base name for logging");
+    puts("\tpepper get uid: returns unique identifier");
 #if IS_USED(MODULE_TWR)
     puts("\tpepper twr get win: returns the listen window in us");
     puts("\tpepper twr set <win_us>: sets listen window in us, win_us < UINT16_MAX");
@@ -230,6 +232,10 @@ static int _pepper_handler(int argc, char **argv)
             if (IS_USED(MODULE_PEPPER_UTIL)) {
                 if (!strcmp(argv[2], "uid")) {
                     printf("[pepper]: uid %s\n", pepper_get_uid());
+                    return 0;
+                }
+                if (!strcmp(argv[2], "bn")) {
+                    printf("[pepper]: base name %s\n", pepper_get_serializer_bn());
                     return 0;
                 }
             }
