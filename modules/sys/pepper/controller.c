@@ -97,13 +97,14 @@ static void _twr_cb(twr_event_data_t *data, twr_status_t status)
 
     ed_t *ed = ed_list_process_rng_data(&_controller.ed_list, data->addr,
                                         pepper_sec_since_start(), data->range,
-                                        data->los);
+                                        data->los, data->rssi);
 
     (void)ed;
 
     if (LOG_LEVEL == LOG_DEBUG || IS_ACTIVE(CONFIG_PEPPER_LOG_UWB)) {
         /* log with a milliseconds based timestamp */
-        ed_serialize_uwb_json(data->range, data->los, ed->cid, ztimer_now(ZTIMER_MSEC),
+        ed_serialize_uwb_json(data->range, data->los, data->rssi,
+                              ed->cid, ztimer_now(ZTIMER_MSEC),
                               pepper_get_serializer_bn());
     }
 }

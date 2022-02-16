@@ -4,6 +4,7 @@ USEMODULE_INCLUDES += $(USEMODULE_INCLUDES_ed)
 
 PSEUDOMODULES += ed_uwb
 PSEUDOMODULES += ed_uwb_los
+PSEUDOMODULES += ed_uwb_rssi
 PSEUDOMODULES += ed_uwb_stats
 PSEUDOMODULES += ed_ble_common
 PSEUDOMODULES += ed_ble
@@ -23,7 +24,7 @@ OUTPUT_FORMAT ?= json
 USEMODULE += test_utils_result_output
 USEMODULE += test_utils_result_output_${OUTPUT_FORMAT}
 
-ifneq (,$(filter ed_uwb_los,$(USEMODULE)))
+ifneq (,$(filter ed_uwb_los ed_uwb_rssi,$(USEMODULE)))
   # Enable RX diagnostics to get rssi and los
   CFLAGS += -DDW1000_RX_DIAGNOSTIC=1
 endif

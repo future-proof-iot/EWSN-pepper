@@ -240,10 +240,10 @@ static void test_ed_uwb_process_data(void)
     ed_t ed;
 
     ed_init(&ed, 0x01);
-    ed_uwb_process_data(&ed, 10, 200, 0);
-    ed_uwb_process_data(&ed, 40, 100, 0);
-    ed_uwb_process_data(&ed, 300, 50, 0);
-    ed_uwb_process_data(&ed, MIN_EXPOSURE_TIME_S, 50, 0);
+    ed_uwb_process_data(&ed, 10, 200, 0, 0);
+    ed_uwb_process_data(&ed, 40, 100, 0, 0);
+    ed_uwb_process_data(&ed, 300, 50, 0, 0);
+    ed_uwb_process_data(&ed, MIN_EXPOSURE_TIME_S, 50, 0, 0);
     TEST_ASSERT_EQUAL_INT(400, ed.uwb.cumulative_d_cm);
     TEST_ASSERT_EQUAL_INT(MIN_EXPOSURE_TIME_S, ed.uwb.seen_last_s);
     TEST_ASSERT_EQUAL_INT(4, ed.uwb.req_count);
@@ -271,9 +271,9 @@ static void test_ed_list_process_rng_data(void)
 {
     ed_t *ed;
 
-    TEST_ASSERT(!ed_list_process_rng_data(&list, 0x00, 0, 100, 0));
+    TEST_ASSERT(!ed_list_process_rng_data(&list, 0x00, 0, 100, 0, 0));
     ed = ed_list_process_slice(&list, 0x00, 0, ebid_slice[2], EBID_SLICE_3);
-    TEST_ASSERT(ed_list_process_rng_data(&list, 0x00, 0, 100, 0) == ed);
+    TEST_ASSERT(ed_list_process_rng_data(&list, 0x00, 0, 100, 0, 0) == ed);
 }
 #endif
 

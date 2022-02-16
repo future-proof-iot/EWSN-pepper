@@ -95,6 +95,10 @@ size_t contact_data_serialize_all_json(epoch_data_t *epoch, uint8_t *buf,
             json_dict_key(&ctx, "avg_los");
             json_u32(&ctx, epoch->contacts[i].uwb.avg_los);
 #endif
+#if IS_USED(MODULE_ED_UWB_RSSI)
+            json_dict_key(&ctx, "avg_rssi");
+            json_float(&ctx, epoch->contacts[i].uwb.avg_rssi);
+#endif
             json_dict_close(&ctx);
 #endif
 #if IS_USED(MODULE_ED_BLE)
@@ -191,6 +195,10 @@ void contact_data_serialize_all_printf(epoch_data_t *epoch, const char *prefix)
 #if IS_USED(MODULE_ED_UWB_LOS)
             turo_dict_key(&ctx, "avg_los");
             turo_u32(&ctx, epoch->contacts[i].uwb.avg_los);
+#endif
+#if IS_USED(MODULE_ED_UWB_RSSI)
+            turo_dict_key(&ctx, "avg_rssi");
+            turo_float(&ctx, epoch->contacts[i].uwb.avg_rssi);
 #endif
             turo_dict_close(&ctx);
 #endif

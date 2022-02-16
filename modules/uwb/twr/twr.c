@@ -126,6 +126,7 @@ static bool _complete_cb(struct uwb_dev *inst, struct uwb_mac_interface *cbs)
         float los = DPL_FLOAT64_FROM_F32(
             uwb_estimate_los(rng->dev_inst, rssi, fppl));
         data.los = ((uint16_t)(los * 100));
+        data.rssi = rssi;
     }
     /* TODO: can this be negative sometimes? */
     data.range = ((uint16_t)(range_f * 100));

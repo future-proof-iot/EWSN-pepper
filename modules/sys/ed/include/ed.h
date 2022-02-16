@@ -110,6 +110,9 @@ typedef struct ed_uwb {
 #if IS_USED(MODULE_ED_UWB_LOS)
     uint32_t cumulative_los;    /**< cumulative line of sight value  */
 #endif
+#if IS_USED(MODULE_ED_UWB_RSSI)
+    float cumulative_rssi;      /**< cumulative rssi value  */
+#endif
     uint16_t req_count;         /**< request message count */
 #if IS_USED(MODULE_ED_UWB_STATS)
     ed_uwb_stats_t stats;
@@ -324,8 +327,10 @@ int ed_add_slice(ed_t *ed, uint16_t time, const uint8_t *slice, uint8_t part);
  *                           the epoch
  * @param[in]       d_cm     the distance of the device
  * @param[in]       los      the los value
+ * @param[in]       rssi     the rssi value
  */
-void ed_uwb_process_data(ed_t *ed, uint16_t time, uint16_t d_cm, uint16_t los);
+void ed_uwb_process_data(ed_t *ed, uint16_t time, uint16_t d_cm, uint16_t los,
+                         float rssi);
 #endif
 
 #if IS_USED(MODULE_ED_BLE)
@@ -400,11 +405,12 @@ ed_t *ed_list_process_slice(ed_list_t *list, const uint32_t cid, uint16_t time,
  *                           the epoch
  * @param[in]       d_cm     the measured distance in cm
  * @param[in]       los      the estimated los
+ * @param[in]       rssi     the estimated rssi
  *
  * @return the found ed, NULL if no match
  */
 ed_t *ed_list_process_rng_data(ed_list_t *list, const uint16_t addr, uint16_t time,
-                               uint16_t d_cm, uint16_t los);
+                               uint16_t d_cm, uint16_t los, float rssi);
 
 /**
  * @brief   Serializes UWB encounter data over stdio
@@ -414,11 +420,12 @@ ed_t *ed_list_process_rng_data(ed_list_t *list, const uint16_t addr, uint16_t ti
  *                           the epoch
  * @param[in]       d_cm     the measured distance in cm
  * @param[in]       los      the estimated los
+ * @param[in]       rssi     the estimated rssi
  * @param[in]       bn       optional base name tag
  *
  */
-void ed_serialize_uwb_json(uint16_t d_cm, uint16_t los, uint32_t cid, uint32_t time,
-                           const char *base_name);
+void ed_serialize_uwb_json(uint16_t d_cm, uint16_t los, float rssi, uint32_t cid,
+                           uint32_t time, const char *base_name);
 #endif
 
 #if IS_USED(MODULE_ED_BLE) || IS_USED(MODULE_ED_BLE_WIN)

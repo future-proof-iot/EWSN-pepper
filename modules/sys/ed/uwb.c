@@ -17,6 +17,8 @@
  *
  * @}
  */
+
+#include <math.h>
 #include "ed.h"
 #include "ed_shared.h"
 #include "fmt.h"
@@ -27,7 +29,7 @@
 #endif
 #include "log.h"
 
-void ed_uwb_process_data(ed_t *ed, uint16_t time, uint16_t d_cm, uint16_t los)
+void ed_uwb_process_data(ed_t *ed, uint16_t time, uint16_t d_cm, uint16_t los, float rssi)
 {
     ed->uwb.seen_last_s = time;
     ed->uwb.req_count++;
@@ -37,10 +39,16 @@ void ed_uwb_process_data(ed_t *ed, uint16_t time, uint16_t d_cm, uint16_t los)
 #else
     (void)los;
 #endif
+#if IS_USED(MODULE_ED_UWB_RSSI)
+    float value = pow(10.0, rssi / 10.0);
+    ed->uwb.cumulative_rssi += value;
+#else
+    (void)rssi;
+#endif
 }
 
 ed_t *ed_list_process_rng_data(ed_list_t *list, const uint16_t addr, uint16_t time,
-                               uint16_t d_cm, uint16_t los)
+                               uint16_t d_cm, uint16_t los, float rssi)
 {
     ed_t *ed = ed_list_get_by_short_addr(list, addr);
 
@@ -48,7 +56,7 @@ ed_t *ed_list_process_rng_data(ed_list_t *list, const uint16_t addr, uint16_t ti
         LOG_WARNING("[ed]: could not find by addr\n");
     }
     else {
-        ed_uwb_process_data(ed, time, d_cm, los);
+        ed_uwb_process_data(ed, time, d_cm, los, rssi);
     }
     return ed;
 }
@@ -63,6 +71,11 @@ bool ed_uwb_finish(ed_t *ed, uint32_t min_exposure_s)
         ed->uwb.cumulative_d_cm = ed->uwb.cumulative_d_cm / ed->uwb.req_count;
 #if IS_USED(MODULE_ED_UWB_LOS)
         ed->uwb.cumulative_los = ed->uwb.cumulative_los / ed->uwb.req_count;
+#endif
+#if IS_USED(MODULE_ED_UWB_RSSI)
+        float n_avg = ed->uwb.cumulative_rssi / ed->uwb.req_count;
+        /* set the cummulative_rssi to the rssi average */
+        ed->uwb.cumulative_rssi = 10 * log10f(n_avg);
 #endif
         if (ed->uwb.cumulative_d_cm <= MAX_DISTANCE_CM) {
             if (exposure >= min_exposure_s) {
@@ -88,23 +101,32 @@ bool ed_uwb_finish(ed_t *ed, uint32_t min_exposure_s)
 }
 
 /* TODO: style this more in SenML, the name should not be the cid, and the bn either */
-void ed_serialize_uwb_json(uint16_t d_cm, uint16_t los, uint32_t cid, uint32_t time,
-                           const char *base_name)
+void ed_serialize_uwb_json(uint16_t d_cm, uint16_t los, float rssi, uint32_t cid,
+                           uint32_t time, const char *base_name)
 {
     turo_t ctx;
-    char cid_buff[2 * sizeof(uint32_t)];
+    char bn_buff[32 + sizeof(":uwb:") + 2 * sizeof(uint32_t)];
+
+    /* "pepper_tag:cid_string" */
+    if (strlen(base_name) > 32) {
+        return;
+    }
 
     turo_init(&ctx);
+    turo_array_open(&ctx);
     turo_dict_open(&ctx);
+    turo_dict_key(&ctx, "bn");
     if (base_name) {
-        turo_dict_key(&ctx, "bn");
-        turo_string(&ctx, base_name);
+        sprintf(bn_buff, "%s:uwb:%" PRIx32 "", base_name, cid);
     }
-    turo_dict_key(&ctx, "t");
+    else {
+        sprintf(bn_buff, "uwb:%" PRIx32 "", cid);
+    }
+    turo_string(&ctx, bn_buff);
+    turo_dict_key(&ctx, "bt");
     turo_u32(&ctx, time);
     turo_dict_key(&ctx, "n");
-    sprintf(cid_buff, "%"PRIx32"", cid);
-    turo_string(&ctx, cid_buff);
+    turo_string(&ctx, "d_cm");
     turo_dict_key(&ctx, "v");
     turo_u32(&ctx, (uint32_t)d_cm);
     turo_dict_key(&ctx, "u");
@@ -112,15 +134,8 @@ void ed_serialize_uwb_json(uint16_t d_cm, uint16_t los, uint32_t cid, uint32_t t
     turo_dict_close(&ctx);
 #if IS_USED(MODULE_ED_UWB_LOS)
     turo_dict_open(&ctx);
-    if (base_name) {
-        turo_dict_key(&ctx, "bn");
-        turo_string(&ctx, base_name);
-    }
-    turo_dict_key(&ctx, "t");
-    turo_u32(&ctx, time);
     turo_dict_key(&ctx, "n");
-    sprintf(cid_buff, "%"PRIx32"", cid);
-    turo_string(&ctx, cid_buff);
+    turo_string(&ctx, "los");
     turo_dict_key(&ctx, "v");
     turo_u32(&ctx, (uint32_t)los);
     turo_dict_key(&ctx, "u");
@@ -129,5 +144,18 @@ void ed_serialize_uwb_json(uint16_t d_cm, uint16_t los, uint32_t cid, uint32_t t
 #else
     (void)los;
 #endif
+#if IS_USED(MODULE_ED_UWB_RSSI)
+    turo_dict_open(&ctx);
+    turo_dict_key(&ctx, "n");
+    turo_string(&ctx, "rssi");
+    turo_dict_key(&ctx, "v");
+    turo_float(&ctx, rssi);
+    turo_dict_key(&ctx, "u");
+    turo_string(&ctx, "dBm");
+    turo_dict_close(&ctx);
+#else
+    (void)los;
+#endif
+    turo_array_close(&ctx);
     print_str("\n");
 }

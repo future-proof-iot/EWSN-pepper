@@ -125,6 +125,9 @@ void epoch_finish(epoch_data_t *epoch, ed_list_t *list)
 #if IS_USED(MODULE_ED_UWB_LOS)
             epoch->contacts[i].uwb.avg_los = top.top[i].ed->uwb.cumulative_los;
 #endif
+#if IS_USED(MODULE_ED_UWB_RSSI)
+            epoch->contacts[i].uwb.avg_rssi = top.top[i].ed->uwb.cumulative_rssi;
+#endif
             epoch->contacts[i].uwb.req_count = top.top[i].ed->uwb.req_count;
 
 #if IS_USED(MODULE_ED_UWB_STATS)

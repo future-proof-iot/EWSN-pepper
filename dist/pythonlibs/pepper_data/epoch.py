@@ -34,6 +34,8 @@ class Uwb:
     req_count: int
     avg_d_cm: int
     avg_los: Optional[int]
+    avg_rssi: Optional[int]
+
 
 @dataclass
 class PetPet:
@@ -41,6 +43,7 @@ class PetPet:
     rtl: str
     uwb: Uwb
     ble: Ble
+
 
 @dataclass
 class PetElement:
@@ -65,6 +68,7 @@ class EpochData:
         json_dict = asdict(self)
         return json.dumps(json_dict, indent=indent)
 
+
 @dataclass
 class NamedEpochData:
     data: EpochData
@@ -81,6 +85,3 @@ class NamedEpochData:
     def to_json_str(self, indent=None) -> str:
         json_dict = asdict(self)
         return json.dumps(json_dict, indent=indent)
-
-
-
