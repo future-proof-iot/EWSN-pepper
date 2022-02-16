@@ -1,2 +1,3 @@
 USEMODULE += current_time
-USEMODULE += ztimer_auto_init
+USEMODULE += ztimer_mock
+DISABLE_MODULE += ztimer_init

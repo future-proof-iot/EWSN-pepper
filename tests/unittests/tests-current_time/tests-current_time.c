@@ -3,11 +3,15 @@
 
 #include "embUnit.h"
 #include "ztimer.h"
+#include "ztimer/mock.h"
 #include "current_time.h"
 
 static current_time_hook_t _post_hook;
 static current_time_hook_t _pre_hook;
 static volatile uint8_t calls = 0;
+
+static ztimer_mock_t zmock;
+ztimer_clock_t *const ZTIMER_EPOCH = &zmock.super;
 
 static void _should_be_called(int32_t offset, void *arg)
 {
@@ -26,8 +30,9 @@ static void _should_not_be_called(int32_t offset, void *arg)
 
 static void setUp(void)
 {
+    memset(&zmock, '\0', sizeof(ztimer_mock_t));
+    ztimer_mock_init(&zmock, 32);
     /* setup */
-    ztimer_init();
     current_time_init();
     calls = 0;
 }
@@ -42,7 +47,7 @@ static void tests_current_time_early(void)
     current_time_hook_init(&_pre_hook, _should_be_called, NULL);
     current_time_hook_init(&_post_hook, _should_be_called, NULL);
     current_time_add_pre_cb(&_pre_hook);
-    current_time_add_pre_cb(&_post_hook);
+    current_time_add_post_cb(&_post_hook);
     TEST_ASSERT_EQUAL_INT(0, calls);
     current_time_update(ztimer_now(ZTIMER_EPOCH) - 2 * CONFIG_CURRENT_TIME_RANGE_S);
     TEST_ASSERT_EQUAL_INT(2, calls);
@@ -53,7 +58,7 @@ static void tests_current_time_late(void)
     current_time_hook_init(&_pre_hook, _should_be_called, NULL);
     current_time_hook_init(&_post_hook, _should_be_called, NULL);
     current_time_add_pre_cb(&_pre_hook);
-    current_time_add_pre_cb(&_post_hook);
+    current_time_add_post_cb(&_post_hook);
     TEST_ASSERT_EQUAL_INT(0, calls);
     current_time_update(ztimer_now(ZTIMER_EPOCH) + 2 * CONFIG_CURRENT_TIME_RANGE_S);
     TEST_ASSERT_EQUAL_INT(2, calls);
@@ -64,7 +69,7 @@ static void tests_current_time_in_range(void)
     current_time_hook_init(&_pre_hook, _should_not_be_called, NULL);
     current_time_hook_init(&_post_hook, _should_not_be_called, NULL);
     current_time_add_pre_cb(&_pre_hook);
-    current_time_add_pre_cb(&_post_hook);
+    current_time_add_post_cb(&_post_hook);
     TEST_ASSERT_EQUAL_INT(0, calls);
     current_time_update(ztimer_now(ZTIMER_EPOCH) + CONFIG_CURRENT_TIME_RANGE_S / 2);
     TEST_ASSERT_EQUAL_INT(0, calls);

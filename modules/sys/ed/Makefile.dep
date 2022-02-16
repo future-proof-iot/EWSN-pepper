@@ -1,6 +1,8 @@
 USEMODULE += ebid
 USEMODULE += memarray
 
+USEMODULE += test_utils_result_output
+
 ifneq (,$(filter ed_uwb_bpf,$(USEMODULE)))
   USEMODULE += bpf
   ifneq (,$(filter ed_uwb_bpf_suit,$(USEMODULE)))

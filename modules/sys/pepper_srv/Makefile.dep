@@ -3,6 +3,7 @@ USEMODULE += pepper
 USEMODULE += pepper_util
 USEMODULE += ztimer_msec
 USEMODULE += random
+USEMODULE += event_timeout_ztimer
 
 ifneq (,$(filter pepper_srv_shell,$(USEMODULE)))
   USEMODULE += shell

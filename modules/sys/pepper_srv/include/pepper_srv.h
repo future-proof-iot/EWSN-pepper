@@ -34,7 +34,11 @@ extern "C" {
  *
  */
 #ifndef CONFIG_PEPPER_SRV_INF_LED
+#ifdef LED1_PIN
 #define CONFIG_PEPPER_SRV_INF_LED          LED1_PIN   /* dwm1001 red led */
+#else
+#define CONFIG_PEPPER_SRV_INF_LED          GPIO_UNDEF
+#endif
 #endif
 
 /**
@@ -42,7 +46,11 @@ extern "C" {
  *
  */
 #ifndef CONFIG_PEPPER_SRV_ESR_LED
+#ifdef LED3_PIN
 #define CONFIG_PEPPER_SRV_ESR_LED          LED3_PIN   /* dwm1001 blue led */
+#else
+#define CONFIG_PEPPER_SRV_ESR_LED          GPIO_UNDEF
+#endif
 #endif
 
 /**
