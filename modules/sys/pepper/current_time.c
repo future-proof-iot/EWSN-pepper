@@ -21,8 +21,6 @@
 #include "pepper.h"
 #include "current_time.h"
 
-#include "board.h"
-
 #ifndef LOG_LEVEL
 #define LOG_LEVEL   LOG_WARNING
 #endif
@@ -45,7 +43,6 @@ static bool _time_is_in_range(int32_t diff, int32_t range)
 static void _pre_cb(int32_t offset, void *arg)
 {
     (void)arg;
-    LED0_OFF;
     if (!_time_is_in_range(offset, (int32_t)CONFIG_EPOCH_MAX_TIME_OFFSET)) {
         LOG_WARNING("[pepper] current_time: pause, time diff is too high\n");
         pepper_pause();
@@ -60,7 +57,6 @@ static void _post_cb(int32_t offset, void *arg)
         LOG_WARNING("[pepper] current_time: resume\n");
         pepper_resume(true);
     }
-    LED0_ON;
 }
 
 void pepper_current_time_init(void)
