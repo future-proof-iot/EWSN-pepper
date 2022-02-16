@@ -23,7 +23,8 @@ optional arguments:
 import argparse
 import logging
 from typing import Dict
-from pepper.epoch_data import *
+from pepper_data.datum import Datum
+from pepper_data.epoch import EpochData, NamedEpochData
 
 import matplotlib.pyplot as plt
 
