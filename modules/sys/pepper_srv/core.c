@@ -22,6 +22,15 @@ static mutex_t _lock = MUTEX_INIT;
 static event_queue_t *_evt_queue = NULL;
 static event_timeout_t _notify_epoch_timeout;
 
+static void _set_status_led(gpio_t pin, uint8_t state)
+{
+    if (IS_USED(MODULE_PEPPER_SRV_LEDS)) {
+        if (gpio_is_valid(pin)) {
+            gpio_write(pin, state);
+        }
+    }
+}
+
 /* callback to notify new epoch_data */
 static void _notify_epoch_data(void *arg)
 {
@@ -90,6 +99,13 @@ int pepper_srv_notify_infection(bool infected)
 {
     int ret = 0;
 
+    if (infected) {
+        _set_status_led(CONFIG_PEPPER_SRV_INF_LED, 0);
+    }
+    else {
+        _set_status_led(CONFIG_PEPPER_SRV_INF_LED, 1);
+    }
+
     /* Blocking calls : TODO check if useful to do it in async way by posting
        event handler(s) */
     for (uint8_t i = 0; i <  number_endpoints; i++) {
@@ -124,5 +140,13 @@ int pepper_srv_esr(bool *esr /*out*/)
             }
         }
     }
+
+    if (*esr) {
+        _set_status_led(CONFIG_PEPPER_SRV_ESR_LED, 0);
+    }
+    else {
+        _set_status_led(CONFIG_PEPPER_SRV_ESR_LED, 1);
+    }
+
     return ret;
 }

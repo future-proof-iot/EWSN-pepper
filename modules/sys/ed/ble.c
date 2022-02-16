@@ -23,7 +23,7 @@
 #include "ed_shared.h"
 
 #ifndef LOG_LEVEL
-#define LOG_LEVEL   LOG_ERROR
+#define LOG_LEVEL   LOG_WARNING
 #endif
 #include "log.h"
 

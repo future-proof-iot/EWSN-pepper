@@ -32,6 +32,7 @@ FEATURES_OPTIONAL += periph_gpio_irq
 USEMODULE += pepper_srv
 USEMODULE += pepper_srv_shell
 USEMODULE += pepper_srv_coap
+# USEMODULE += pepper_srv_leds
 
 # Epoch data generation : include basic uwb and ble
 USEMODULE += epoch_random

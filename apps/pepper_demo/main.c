@@ -45,7 +45,6 @@ static void _update_infected_status(void *arg)
 {
     (void)arg;
     pepper_srv_notify_infection(_state.infected);
-    LED1_TOGGLE;
     if (_state.infected) {
         printf("[infected_declaration]: COVID positive!\n");
     }

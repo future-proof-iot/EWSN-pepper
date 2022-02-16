@@ -30,6 +30,7 @@ FEATURES_OPTIONAL += periph_gpio_irq
 # pepper server
 USEMODULE += pepper_srv
 USEMODULE += pepper_srv_coaps
+USEMODULE += pepper_srv_leds
 # EDHOC requires a big stack
 CFLAGS += -DEVENT_THREAD_MEDIUM_STACKSIZE=3*THREAD_STACKSIZE_LARGE
 

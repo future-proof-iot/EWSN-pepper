@@ -28,6 +28,7 @@ USEMODULE += ed_uwb
 ## Include pepper server
 USEMODULE += pepper_srv
 USEMODULE += pepper_srv_coap
+USEMODULE += pepper_srv_leds
 ## Include to declare infections, and schedule esr updates
 FEATURES_REQUIED += periph_gpio_irq
 USEMODULE += event_periodic
@@ -45,11 +46,11 @@ USEMODULE += ble_scanner_netif
 # Change default timings for faster demo behaviout
 ADV_PER_SLICE ?= 10           # 10 advertisements per slice
 CFLAGS += -DCONFIG_ADV_PER_SLICE=$(ADV_PER_SLICE)
-EPOCH_DURATION_SEC ?= 300     # 5min
+EPOCH_DURATION_SEC ?= 120     # 5min
 CFLAGS += -DCONFIG_EPOCH_DURATION_SEC=$(EPOCH_DURATION_SEC)
 MAX_DISTANCE_CM ?= 200       # 10m so everything is logged
 CFLAGS += -DMAX_DISTANCE_CM=$(MAX_DISTANCE_CM)
-MIN_EXPOSURE_TIME_S ?= 150
+MIN_EXPOSURE_TIME_S ?= 30
 CFLAGS+=-DMIN_EXPOSURE_TIME_S=$(MIN_EXPOSURE_TIME_S)
 TWR_LISTEN_WINDOW_US ?= 2000  # 2ms listen windows
 CFLAGS += -DCONFIG_TWR_LISTEN_WINDOW_US=$(TWR_LISTEN_WINDOW_US)

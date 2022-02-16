@@ -95,7 +95,6 @@ static void _handle_btn_press(void *arg)
 
     gpio_irq_disable(BTN0_PIN);
     _pepper_state.infected = !_pepper_state.infected;
-    LED1_TOGGLE;
     event_post(EVENT_PRIO_MEDIUM, &_infected_event.super);
     debounce.callback = _debounce_cb;
     ztimer_set(ZTIMER_MSEC, &debounce, 2 * MS_PER_SEC);
@@ -117,11 +116,9 @@ static void handle_epoch_end(event_t *event)
     if (!(ret = pepper_srv_esr(&esr))) {
         if (esr) {
             LOG_INFO("[exposure_status]: COVID contact!\n");
-            LED3_ON;
         }
         else {
             LOG_INFO("[exposure_status]: No exposure!\n");
-            LED3_OFF;
         }
     }
     else {
@@ -173,8 +170,6 @@ int main(void)
 
     /* gpio init */
     gpio_init_int(BTN0_PIN, BTN0_MODE, GPIO_FALLING, _handle_btn_press, NULL);
-    LED1_OFF;
-    LED3_OFF;
 
     /* Periodic event for epoch start */
     event_periodic_init(&event_periodic, ZTIMER_MSEC, EVENT_PRIO_MEDIUM, &event_epoch_end);

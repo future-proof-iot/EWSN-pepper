@@ -41,7 +41,7 @@
 #include "desire_ble_adv.h"
 #include "desire_ble_scan.h"
 #ifndef LOG_LEVEL
-#define LOG_LEVEL   LOG_DEBUG
+#define LOG_LEVEL   LOG_INFO
 #endif
 #include "log.h"
 
@@ -315,8 +315,7 @@ static void _epoch_end(void *arg)
     LOG_INFO("[pepper]: end of uwb_epoch\n");
     if (!ztimer_is_set(ZTIMER_EPOCH, &_end_epoch.timer.timer) && \
         _controller.status != PEPPER_PAUSED) {
-        _controller.status = PEPPER_STOPPED;
-        LED3_OFF;
+        pepper_controller_set_status(PEPPER_STOPPED);
     }
     mutex_unlock(&_controller.lock);
     pepper_core_disable();
@@ -356,7 +355,7 @@ static void _align_end_of_epoch(uint32_t epoch_duration_s)
 void pepper_init(void)
 {
     /* set initial status to STOPPED */
-    _controller.status = PEPPER_STOPPED;
+    pepper_controller_set_status(PEPPER_STOPPED);
     if (IS_USED(MODULE_PEPPER_UTIL)) {
         pepper_uid_init();
     }
@@ -399,7 +398,7 @@ void pepper_start(pepper_start_params_t *params)
     /* stop previous advertisements */
     pepper_stop();
     mutex_lock(&_controller.lock);
-    _controller.status = PEPPER_RUNNING;
+    pepper_controller_set_status(PEPPER_RUNNING);
     /* set advertisement parameters */
     _controller.adv.itvl_ms = params->adv_itvl_ms;
     _controller.adv.advs_slice = params->advs_per_slice;
@@ -422,7 +421,6 @@ void pepper_start(pepper_start_params_t *params)
         event_periodic_set_count(&_end_epoch, _controller.epoch.iterations);
         event_periodic_start(&_end_epoch, _controller.epoch.duration_s);
     }
-    LED3_ON;
     mutex_unlock(&_controller.lock);
     /* bootstrap first epoch */
     event_post(CONFIG_UWB_BLE_EVENT_PRIO, &_start_epoch);
@@ -444,7 +442,7 @@ void pepper_resume(bool align)
             pepper_core_enable(&_controller.ebid, &_controller.scan, &_controller.adv,
                                _controller.epoch.duration_s * MS_PER_SEC);
         }
-        _controller.status = PEPPER_RUNNING;
+        pepper_controller_set_status(PEPPER_RUNNING);
     }
     mutex_unlock(&_controller.lock);
 }
@@ -452,8 +450,7 @@ void pepper_resume(bool align)
 void pepper_stop(void)
 {
     mutex_lock(&_controller.lock);
-    LED3_OFF;
-    _controller.status = PEPPER_STOPPED;
+    pepper_controller_set_status(PEPPER_STOPPED);
     event_periodic_stop(&_end_epoch);
     pepper_core_disable();
     ed_list_clear(&_controller.ed_list);
@@ -466,12 +463,37 @@ void pepper_pause(void)
     pepper_core_disable();
     event_periodic_stop(&_end_epoch);
     if (pepper_is_active()) {
-        _controller.status = PEPPER_PAUSED;
+        pepper_controller_set_status(PEPPER_PAUSED);
     }
     else {
-        _controller.status = PEPPER_STOPPED;
+        pepper_controller_set_status(PEPPER_STOPPED);
     }
     mutex_unlock(&_controller.lock);
+}
+
+static void _set_status_led(uint8_t state)
+{
+    if (IS_USED(MODULE_PEPPER_STATUS_LED)) {
+        if (gpio_is_valid(CONFIG_PEPPER_STATUS_LED)) {
+            gpio_write(CONFIG_PEPPER_STATUS_LED, state);
+        }
+    }
+}
+
+controller_status_t pepper_controller_get_status(void)
+{
+    return _controller.status;
+}
+
+void pepper_controller_set_status(controller_status_t status)
+{
+    _controller.status = status;
+    if (_controller.status != PEPPER_STOPPED) {
+        _set_status_led(0);
+    }
+    else {
+        _set_status_led(1);
+    }
 }
 
 bool pepper_is_active(void)

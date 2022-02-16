@@ -45,7 +45,7 @@ extern "C" {
  *
  */
 #ifndef CONFIG_CURRENT_TIME_SYNC_LED
-#define CONFIG_CURRENT_TIME_SYNC_LED         LED0   /* dwm1001 green led */
+#define CONFIG_CURRENT_TIME_SYNC_LED         LED0_PIN   /* dwm1001 green led */
 #endif
 
 /* TODO: this could probably be an event */

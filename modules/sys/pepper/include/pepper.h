@@ -183,6 +183,14 @@ extern "C" {
 #define PEPPER_UID_LEN          (2)
 
 /**
+ * @brief   LED to toggle when pepper is running
+ *
+ */
+#ifndef CONFIG_PEPPER_STATUS_LED
+#define CONFIG_PEPPER_STATUS_LED         LED3_PIN   /* dwm1001 blue led */
+#endif
+
+/**
  * @brief   TWR correction offsets
  */
 typedef struct twr_params {
@@ -287,6 +295,22 @@ void pepper_resume(bool align);
  * @return false    if pepper is stopped
  */
 bool pepper_is_active(void);
+
+/**
+ * @brief   Sets Pepper Controller status
+ * @internal
+ *
+ * @param[in]   status  Status value to set
+ */
+void pepper_controller_set_status(controller_status_t status);
+
+/**
+ * @brief   Returns Pepper Controller status
+ * @internal
+ *
+ * @return the status
+ */
+controller_status_t pepper_controller_get_status(void);
 
 /**
  * @brief   Returns pointer to internal controller descriptor

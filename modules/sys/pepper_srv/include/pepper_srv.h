@@ -23,9 +23,26 @@
 
 #include "epoch.h"
 #include "event.h"
+#include "board.h"
 
 #ifdef __cplusplus
 extern "C" {
+#endif
+
+/**
+ * @brief   LED to toggle when device is COVID-19 positive
+ *
+ */
+#ifndef CONFIG_PEPPER_SRV_INF_LED
+#define CONFIG_PEPPER_SRV_INF_LED          LED1_PIN   /* dwm1001 red led */
+#endif
+
+/**
+ * @brief   LED to toggle when device is COVID-19 positive
+ *
+ */
+#ifndef CONFIG_PEPPER_SRV_ESR_LED
+#define CONFIG_PEPPER_SRV_ESR_LED          LED3_PIN   /* dwm1001 blue led */
 #endif
 
 /**
