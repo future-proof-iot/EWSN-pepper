@@ -24,6 +24,7 @@
 #include <string.h>
 #include <inttypes.h>
 #include "clist.h"
+#include "board.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -37,6 +38,14 @@ extern "C" {
  */
 #ifndef CONFIG_CURRENT_TIME_RANGE_S
 #define CONFIG_CURRENT_TIME_RANGE_S         (5U)
+#endif
+
+/**
+ * @brief   LED to toggle when a new time is set
+ *
+ */
+#ifndef CONFIG_CURRENT_TIME_SYNC_LED
+#define CONFIG_CURRENT_TIME_SYNC_LED         LED0   /* dwm1001 green led */
 #endif
 
 /* TODO: this could probably be an event */
@@ -129,6 +138,13 @@ static inline void current_time_hook_init(current_time_hook_t *hook,
  * @param[in]       time   epoch in seconds since RIOT_EPOCH
  */
 void current_time_update(uint32_t time);
+
+/**
+ * @brief   Update current time
+ *
+ * @return  epoch in seconds since RIOT_EPOCH
+ */
+uint32_t current_time_get(void);
 
 /**
  * @brief   Returns if current time has been set

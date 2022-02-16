@@ -2,3 +2,5 @@ USEMODULE_INCLUDES_current_time := $(LAST_MAKEFILEDIR)/include
 USEMODULE_INCLUDES += $(USEMODULE_INCLUDES_current_time)
 
 PSEUDOMODULES += current_time_ble_scanner
+PSEUDOMODULES += current_time_shell
+PSEUDOMODULES += current_time_led

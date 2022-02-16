@@ -3,3 +3,7 @@ USEMODULE += ztimer_epoch
 ifneq (,$(filter current_time_ble_scanner,$(USEMODULE)))
   USEMODULE += ble_scanner
 endif
+
+ifneq (,$(filter current_time_shell,$(USEMODULE)))
+  USEMODULE += rtc_utils
+endif

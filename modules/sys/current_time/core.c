@@ -25,6 +25,7 @@
 #include "clist.h"
 #include "ztimer.h"
 #include "current_time.h"
+#include "periph/gpio.h"
 
 #ifndef LOG_LEVEL
 #define LOG_LEVEL   LOG_WARNING
@@ -34,6 +35,15 @@
 static current_time_hook_t _pre;
 static current_time_hook_t _post;
 static bool _sync = false;
+
+static void _toggle_sync_led(void)
+{
+    if (IS_USED(MODULE_CURRENT_TIME_LED)) {
+        if (gpio_is_valid(CONFIG_CURRENT_TIME_SYNC_LED)) {
+            gpio_toggle(CONFIG_CURRENT_TIME_SYNC_LED);
+        }
+    }
+}
 
 static bool _time_is_in_range(int32_t diff, int32_t range)
 {
@@ -49,6 +59,11 @@ static int _hook_cb(clist_node_t *node, void *arg)
     return 0;
 }
 
+uint32_t current_time_get(void)
+{
+    return ztimer_now(ZTIMER_EPOCH);
+}
+
 void current_time_update(uint32_t epoch)
 {
     uint32_t sys_epoch = ztimer_now(ZTIMER_EPOCH);
@@ -60,6 +75,7 @@ void current_time_update(uint32_t epoch)
 
     /* adjust time only if out of CONFIG_CURRENT_TIME_RANGE_S */
     if (!_time_is_in_range(diff, CONFIG_CURRENT_TIME_RANGE_S)) {
+        _toggle_sync_led();
         _sync = false;
         clist_foreach(&_pre.list_node, _hook_cb, &diff);
         uint32_t elapsed = ztimer_now(ZTIMER_EPOCH) - sys_epoch;
@@ -67,6 +83,7 @@ void current_time_update(uint32_t epoch)
         LOG_DEBUG("\tnew-current: %" PRIu32 "\n", ztimer_now(ZTIMER_EPOCH));
         clist_foreach(&_post.list_node, _hook_cb, &diff);
         _sync = true;
+        _toggle_sync_led();
     }
 }
 
