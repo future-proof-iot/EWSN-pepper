@@ -8,6 +8,8 @@ import asyncio
 
 from contextlib import ExitStack
 from typing import List
+
+from pepper_data.datum import NamedDebugDatums
 from riotctrl_shell.sys import Reboot
 
 from pepper_data.epoch import NamedEpochData
@@ -159,9 +161,11 @@ def create_and_dump(data, directory, file_name):
 async def finish_epoch(uid, exp_data: ExperimentData, logs: List, future):
     res = await future
     parser = PepperStartParser()
-    epoch_data, _ = parser.parse(res)
+    epoch_data, debug_data = parser.parse(res)
     named_epoch_data = NamedEpochData(epoch_data, uid)
+    named_debug_data = NamedDebugDatums(debug_data, uid)
     exp_data.epoch_data.append(named_epoch_data)
+    exp_data.debug_data.append(named_debug_data)
     for line in res.splitlines():
         logs.append(line)
 
@@ -169,7 +173,6 @@ async def finish_epoch(uid, exp_data: ExperimentData, logs: List, future):
 def run(devices, app_dir, params: PepperParams):
     """ """
     exp_data = ExperimentData(list(), list())
-    print(exp_data.epoch_data)
     logs = list()
     # start iotlab experiment and recover list of nodes
     with ExitStack() as es:
