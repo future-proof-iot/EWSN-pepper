@@ -6,7 +6,7 @@ Dataclass definitions matchings pepper JSON formatted end of epoch logs
 
 import json
 from dataclasses import dataclass, asdict
-from typing import List, Optional
+from typing import List, Optional, Union
 from dacite import from_dict
 
 
@@ -34,7 +34,7 @@ class Uwb:
     req_count: int
     avg_d_cm: int
     avg_los: Optional[int]
-    avg_rssi: Optional[int]
+    avg_rssi: Optional[Union[int, float]]
 
 
 @dataclass

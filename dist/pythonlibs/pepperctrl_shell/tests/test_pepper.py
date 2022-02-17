@@ -3,6 +3,8 @@
 # General Public License v2.1. See the file LICENSE in the top level
 # directory for more details.
 
+from dataclasses import asdict
+from pepper_data.datum import NamedDebugDatums
 import pytest
 import pepperctrl_shell.pepper_shell as pepper_shell
 
@@ -24,49 +26,33 @@ def test_pepper_start():
     assert len(epoch_data) == 2
     assert epoch_data[0].tag == "door-50"
     assert epoch_data[1].tag == None
-    assert len(uwb_ble_data) == 0
 
 
 def test_pepper_start_with_ble_uwb():
     rc = init_ctrl(
         output="""
-{"bn":"pepper","t":34169,"n":"9a87236","v":-60,"u":"dBm"}
-{"bn":"pepper","t":34176,"n":"9a87236","v":9,"u":"cm"}
-{"bn":"pepper","t":34971,"n":"9a87236","v":-59,"u":"dBm"}
-{"bn":"pepper","t":35170,"n":"9a87236","v":-59,"u":"dBm"}
+[{"bn":"pepper:ble:2ede8fd6","bt":83782,"n":"rssi","v":-52,"u":"dBm"}]
+[{"bn":"pepper:uwb:2ede8fd6","bt":84060,"n":"d_cm","v":218,"u":"cm"},{"n":"los","v":100,"u":"%"},{"n":"rssi","v":0,"u":"dBm"}]
+[{"bn":"pepper:ble:2ede8fd6","bt":84783,"n":"rssi","v":-62,"u":"dBm"}]
+[{"bn":"pepper:uwb:2ede8fd6","bt":85063,"n":"d_cm","v":221,"u":"cm"},{"n":"los","v":100,"u":"%"},{"n":"rssi","v":0,"u":"dBm"}]
+[{"bn":"pepper:ble:2ede8fd6","bt":85783,"n":"rssi","v":-73,"u":"dBm"}]
+[{"bn":"pepper:uwb:2ede8fd6","bt":86067,"n":"d_cm","v":215,"u":"cm"},{"n":"los","v":100,"u":"%"},{"n":"rssi","v":0,"u":"dBm"}]
 {"tag":"glass-120","epoch":951,"pets":[{"pet":{"etl":"754DAC9DDD6C1C494A28094208C45D7C32572535BB56792E78B4C072A3A5AA92","rtl":"AE1930495EF9A0119387E879E00C3325D9AB5B92BCFC7FC94322549E4DCAF2A4","uwb":{"exposure":265,"req_count":51,"avg_d_cm":104},"ble":{"exposure":269,"scan_count":63,"avg_rssi":-63.1740112,"avg_d_cm":135}}}]}
-{"bn":"pepper","t":32361,"n":"9a87236","v":-57,"u":"dBm"}
-{"bn":"pepper","t":32376,"n":"9a87236","v":13,"u":"cm"}
-{"bn":"pepper","t":32463,"n":"9a87236","v":-58,"u":"dBm"}
-{"bn":"pepper","t":32668,"n":"9a87236","v":-54,"u":"dBm"}
+[{"bn":"pepper:ble:2ede8fd6","bt":83782,"n":"rssi","v":-52,"u":"dBm"}]
+[{"bn":"pepper:uwb:2ede8fd6","bt":84060,"n":"d_cm","v":218,"u":"cm"},{"n":"los","v":100,"u":"%"},{"n":"rssi","v":0,"u":"dBm"}]
+[{"bn":"pepper:ble:2ede8fd6","bt":84783,"n":"rssi","v":-62,"u":"dBm"}]
+[{"bn":"pepper:uwb:2ede8fd6","bt":85063,"n":"d_cm","v":221,"u":"cm"},{"n":"los","v":100,"u":"%"},{"n":"rssi","v":0,"u":"dBm"}]
+[{"bn":"pepper:ble:2ede8fd6","bt":85783,"n":"rssi","v":-73,"u":"dBm"}]
+[{"bn":"pepper:uwb:2ede8fd6","bt":86067,"n":"d_cm","v":215,"u":"cm"},{"n":"los","v":100,"u":"%"},{"n":"rssi","v":0,"u":"dBm"}]
 {"tag":"los-120","epoch":61064179,"pets":[{"pet":{"etl":"94069309857C25F8922F764A65BC7E305EC08EF7A01860B4AFBF614E75423F57","rtl":"A6260674EC59943E52729D056EB37878E8E8E4B3FE1BCA8A6EE8599467D8CA54","uwb":{"exposure":268,"req_count":51,"avg_d_cm":90},"ble":{"exposure":276,"scan_count":67,"avg_rssi":-58.3306350,"avg_d_cm":63}}}]}
-{"bn":"pepper","t":32069,"n":"9a87236","v":-58,"u":"dBm"}
-{"bn":"pepper","t":32079,"n":"9a87236","v":10,"u":"cm"}
-{"bn":"pepper","t":32165,"n":"9a87236","v":-59,"u":"dBm"}
-{"bn":"pepper","t":32262,"n":"9a87236","v":-58,"u":"dBm"}
-{"tag":"los-120","epoch":61064481,"pets":[{"pet":{"etl":"9DF3506F1F0EFD2AFDD78FA1D21A5ED52D9DB0A20D164FB2D2A7B889AB707307","rtl":"3560A58CE8DA807C2A148DE4A3C4CB9962E1FE76074E176249091E4979EFA9E2","uwb":{"exposure":269,"req_count":55,"avg_d_cm":91},"ble":{"exposure":275,"scan_count":66,"avg_rssi":-60.0559806,"avg_d_cm":82}}}]}
+{"tag":"los-120","epoch":30000000,"pets":[{"pet":{"etl":"A64C359A30BE9C042EB6E455123B6A49621D50B4EDD7A8B7CCD6E0C1408B8472","rtl":"9EBD01E8CF8ED79772207942FE7EFDB675532158658EBC624B0C8B3223E1EF03","uwb":{"exposure":53,"lst_scheduled":45,"lst_aborted":0,"lst_timeout":3,"req_scheduled":55,"req_aborted":0,"req_timeout":11,"req_count":43,"avg_d_cm":218,"avg_los":100,"avg_rssi":-82.0859527},"ble":{"exposure":53,"scan_count":45,"avg_rssi":-56.8697281,"avg_d_cm":34}}}]}
 """
     )
     shell = pepper_shell.PepperCmd(rc)
     params = pepper_shell.PepperParams()
     out = shell.pepper_start(params)
     parser = pepper_shell.PepperStartParser()
-    epoch_data, uwb_ble_data = parser.parse(out)
+    epoch_data, debug_data = parser.parse(out)
     assert len(epoch_data) == 3
-    assert len(uwb_ble_data) == 12
-
-
-def test_pepper_start_with_debug():
-    rc = init_ctrl(
-        output="""
-{"tag":"pepper","epoch":20,"pets":[{"pet":{"etl":"221FCDA1EDC3873DBA1CA68853B3D99BD128D8BFB58AFAE855E4EDAF3AD012A0","rtl":"DD7DD44FA1094731199AC17A02D3298BE63FC13F243BF7C75DB343DD5BAC23BE","uwb":{"exposure":55,"lst_scheduled":54,"lst_aborted":0,"lst_timeout":24,"req_scheduled":56,"req_aborted":0,"req_timeout":18,"req_count":37,"avg_d_cm":10,"avg_los":100},"ble":{"exposure":55,"scan_count":54,"avg_rssi":-58.9687424,"avg_d_cm":69}}}]}
-"""
-    )
-    shell = pepper_shell.PepperCmd(rc)
-    params = pepper_shell.PepperParams()
-    out = shell.pepper_start(params)
-    parser = pepper_shell.PepperStartParser()
-    epoch_data, uwb_ble_data = parser.parse(out)
-    assert len(epoch_data) == 1
-    assert len(uwb_ble_data) == 0
-    assert epoch_data[0].pets[0].pet.uwb.avg_los != 0
+    assert len(debug_data.ble) == 6
+    assert len(debug_data.uwb) == 6

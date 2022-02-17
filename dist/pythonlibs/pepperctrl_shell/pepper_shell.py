@@ -12,7 +12,7 @@ from dataclasses import dataclass
 import logging
 import re
 
-from pepper_data.datum import Datum
+from pepper_data.datum import Datums, DebugDatums
 from pepper_data.epoch import EpochData
 
 from riotctrl.shell import ShellInteraction, ShellInteractionParser
@@ -51,13 +51,13 @@ class PepperStatusParser(ShellInteractionParser):
 
 class PepperStartParser(ShellInteractionParser):
     def parse(self, cmd_output):
-        uwb_ble_data = list()
+        datums = list()
         epoch_data = list()
         for line in cmd_output.splitlines():
             LOGGER.debug(f"Parsing line: {line}")
             try:
-                data = Datum.from_json_str(line)
-                uwb_ble_data.append(data)
+                data = Datums.from_json_str(line)
+                datums.append(data)
             except:
                 LOGGER.debug(f"JSONDecodeError on: '{line}'")
             try:
@@ -65,7 +65,7 @@ class PepperStartParser(ShellInteractionParser):
                 epoch_data.append(data)
             except:
                 LOGGER.debug(f"JSONDecodeError on: '{line}'")
-        return epoch_data, uwb_ble_data
+        return epoch_data, DebugDatums.from_datums(datums)
 
 
 class PepperCmd(ShellInteraction):
