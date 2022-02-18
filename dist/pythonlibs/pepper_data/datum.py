@@ -141,21 +141,3 @@ class DebugDatums:
                     ble.rssi = datum.value(idx) if datum.name(idx) == "rssi" else None
                 ble_list.append(ble)
         return DebugDatums(uwb=uwb_list, ble=ble_list)
-
-
-@dataclass
-class NamedDebugDatums:
-    data: DebugDatums
-    uid: str
-
-    @staticmethod
-    def from_json_str(json_string: str):
-        json_dict = json.loads(json_string)
-        return from_dict(data_class=NamedDebugDatums, data=json_dict)
-
-    def clone(self):
-        return from_dict(data_class=NamedDebugDatums, data=asdict(self))
-
-    def to_json_str(self, indent=None) -> str:
-        json_dict = asdict(self)
-        return json.dumps(json_dict, indent=indent)

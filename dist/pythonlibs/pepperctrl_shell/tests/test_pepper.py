@@ -3,8 +3,6 @@
 # General Public License v2.1. See the file LICENSE in the top level
 # directory for more details.
 
-from dataclasses import asdict
-from pepper_data.datum import NamedDebugDatums
 import pytest
 import pepperctrl_shell.pepper_shell as pepper_shell
 
