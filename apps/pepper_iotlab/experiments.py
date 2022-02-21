@@ -7,20 +7,20 @@ import shutil
 import asyncio
 
 from contextlib import ExitStack
-from typing import List
+from typing import Dict, List
+from dacite import from_dict
 
-from pepper_data.datum import NamedDebugDatums
 from riotctrl_shell.sys import Reboot
 
 from pepper_data.epoch import NamedEpochData
-from pepper_data.experiment_data import ExperimentData
+from pepper_data.experiment_data import ExperimentData, ExperimentNode
 from pepperctrl_shell.pepper_shell import PepperCmd, PepperStartParser, PepperParams
 from pepperctrl_shell.current_time_shell import CurrentTimeCmd
 from factories import RIOTCtrlAppFactory, IoTLABExperimentsFactory
 
-DEFAULT_DIRECTORY = "testlogs"
-DEFAULT_LOGFILE = "logs"
-DEFAULT_DATAFILE = "out.log"
+DEFAULT_DIRECTORY = "exp"
+DEFAULT_LOGDUMP_FILE = "dump.log"
+DEFAULT_DATAFILE = "exp_data.log"
 DEVNULL = open(os.devnull, "w")
 
 LOG_HANDLER = logging.StreamHandler()
@@ -45,7 +45,6 @@ PARSER.add_argument("app_dir", help="applications directory")
 PARSER.add_argument(
     "--log-directory", "-ld", default=DEFAULT_DIRECTORY, help="Logs directory"
 )
-PARSER.add_argument("--logall", "-la", action="store_true", help="Log all data")
 PARSER.add_argument("--datafile", "-df", default=DEFAULT_DATAFILE, help="Datafile name")
 PARSER.add_argument(
     "--num-devices", "-n", type=int, default=5, help="dwm1001 devices to use"
@@ -158,44 +157,57 @@ def create_and_dump(data, directory, file_name):
     return file_path
 
 
-async def finish_epoch(uid, exp_data: ExperimentData, logs: List, future):
+async def finish_epoch(node, exp_data: ExperimentData, logs: Dict, future):
     res = await future
     parser = PepperStartParser()
     epoch_data, debug_data = parser.parse(res)
-    named_epoch_data = NamedEpochData(epoch_data, uid)
-    named_debug_data = NamedDebugDatums(debug_data, uid)
-    exp_data.epoch_data.append(named_epoch_data)
-    exp_data.debug_data.append(named_debug_data)
+    node.update({"debug_data": debug_data, "epoch_data": epoch_data})
+    experiment_node = from_dict(data_class=ExperimentNode, data=node)
+    exp_data.nodes.append(experiment_node)
+    dump = list()
     for line in res.splitlines():
-        logs.append(line)
+        dump.append(line)
+    logs.update({experiment_node.uid: dump})
 
 
-def run(devices, app_dir, params: PepperParams):
+def run(devices, app_dir, log_dir, params: PepperParams):
     """ """
-    exp_data = ExperimentData(list(), list())
-    logs = list()
+    exp_data = ExperimentData(list())
+    logs = dict()
     # start iotlab experiment and recover list of nodes
     with ExitStack() as es:
-        iotlab_factory = es.enter_context(IoTLABExperimentsFactory())
         LOGGER.info("SetUp IotLab Experiment")
-        _, exp_envs = iotlab_factory.get_iotlab_experiment_nodes(devices)
+        # create factories for IoT-LAB experiments and RIOT nodes
+        iotlab_factory = es.enter_context(IoTLABExperimentsFactory())
         factory = es.enter_context(RIOTCtrlAppFactory())
+        # start experience, recover environments
+        exp, exp_envs = iotlab_factory.get_iotlab_experiment_nodes(devices)
+        # get nodes positions and network addresses
+        nodes = exp.get_nodes_position()
+        LOGGER.info((f"Experiment nodes:\n {nodes}"))
         peppers = list()
-        for i, _ in enumerate(devices):
+        for i, node in enumerate(nodes):
             LOGGER.info(f"SetUp device {i + 1}/{len(devices)}")
-            ctrl = factory.get_ctrl(
-                application_directory=app_dir, env=exp_envs[i], cflags=CFLAGS_DEFAULT
-            )
-            shell = PepperShell(ctrl)
-            shell.parse_uid()
-            peppers.append(shell)
-            LOGGER.info(f"Device: {shell.uid()} OK")
+            for env in exp_envs:
+                if node["network_address"] == env["IOTLAB_NODE"]:
+                    env["TERMLOG"] = os.path.join(log_dir, f"{env['IOTLAB_NODE']}.log")
+                    ctrl = factory.get_ctrl(
+                        application_directory=app_dir, env=env, cflags=CFLAGS_DEFAULT
+                    )
+                    shell = PepperShell(ctrl)
+                    shell.parse_uid()
+                    node.update({"uid": shell.uid()})
+                    peppers.append((shell, node))
+                    LOGGER.info(f"Device: {shell.uid()} OK")
+                    break
 
         futures = list()
         for pepper in peppers:
-            LOGGER.info(f"Start pepper for {pepper.uid()}")
-            out = pepper.pepper_start(params=params, async_=True)
-            futures.append(finish_epoch(pepper.uid(), exp_data, logs, out))
+            shell = pepper[0]
+            node = pepper[1]
+            LOGGER.info(f"Start pepper for {shell.uid()}")
+            out = shell.pepper_start(params=params, async_=True)
+            futures.append(finish_epoch(node, exp_data, logs, out))
 
         LOGGER.info("Wait for pepper to finish...")
         loop = asyncio.get_event_loop()
@@ -217,11 +229,11 @@ def main(args=None):
 
     # parse args
     app_dir = args.app_dir
-    log_directory = args.log_directory
+    log_directory = f"logs/{args.log_directory}"
     num_devices = args.num_devices
     iotlab_nodes = args.iotlab_nodes
     datafile = args.datafile
-    logall = args.logall
+    # logall = args.logall
     # parse pepper params
     params = PepperParams(
         iterations=args.counts,
@@ -239,13 +251,10 @@ def main(args=None):
         devices = iotlab_nodes
     else:
         devices = ["dwm1001"] * num_devices
-    exp_data, logs = run(devices, app_dir, params)
+    exp_data, logs = run(devices, app_dir, log_directory, params)
 
     # dump json
     create_and_dump([exp_data.to_json_str()], log_directory, datafile)
-    if logall:
-        logfile = f"{datafile.split('.')[0]}_{DEFAULT_LOGFILE}.{datafile.split('.')[1]}"
-        create_and_dump(logs, log_directory, logfile)
 
 
 if __name__ == "__main__":
