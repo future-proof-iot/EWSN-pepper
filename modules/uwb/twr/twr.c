@@ -256,7 +256,7 @@ static void _twr_rng_listen(void *arg)
             }
             _status = TWR_RNG_RESPONDER;
             _other_short_addr = event->addr;
-            uwb_rng_listen(_rng, listen_window_us, UWB_NONBLOCKING);
+            uwb_rng_listen(_rng, listen_window_us, UWB_BLOCKING);
             return;
         }
         else {
