@@ -196,6 +196,7 @@ def run(devices, app_dir, log_dir, params: PepperParams):
                     )
                     shell = PepperShell(ctrl)
                     shell.parse_uid()
+                    shell.current_time_set_now()
                     node.update({"uid": shell.uid()})
                     peppers.append((shell, node))
                     LOGGER.info(f"Device: {shell.uid()} OK")
@@ -242,6 +243,7 @@ def main(args=None):
         advs_slice=args.adv_rotation,
         scan_itvl=args.scan_interval,
         scan_win=args.scan_window,
+        align=True
     )
     # create directory if non existant
     create_directory(log_directory)
