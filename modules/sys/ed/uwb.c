@@ -154,7 +154,7 @@ void ed_serialize_uwb_json(uint16_t d_cm, uint16_t los, float rssi, uint32_t cid
     turo_string(&ctx, "dBm");
     turo_dict_close(&ctx);
 #else
-    (void)los;
+    (void)rssi;
 #endif
     turo_array_close(&ctx);
     print_str("\n");

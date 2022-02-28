@@ -123,6 +123,7 @@ typedef struct ed_uwb {
 } ed_uwb_t;
 #endif
 
+
 #if IS_USED(MODULE_ED_BLE)
 /**
  * @brief   BLE encounter data, structure to track encounters per epoch
@@ -166,13 +167,14 @@ typedef struct ed {
 #endif
 #if IS_USED(MODULE_ED_UWB)
     ed_uwb_t uwb;               /**< uwb encounter data */
-#endif
+ #endif
     uint32_t cid;               /**< the cid */
-#if IS_USED(MODULE_ED_UWB) || IS_USED(MODULE_ED_BLE_WIN)
+#if IS_USED(MODULE_ED_BLE) || IS_USED(MODULE_ED_BLE_WIN)
     int16_t obf;                /**< obfuscation value or calibrated noise (CN) in DESIRE */
 #endif
     uint16_t seen_last_s;       /**< time of last message, relative to start of epoch [s] */
 } ed_t;
+
 
 /**
  * @brief   UWB Encounter data memory manager structure
