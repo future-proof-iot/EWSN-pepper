@@ -111,7 +111,11 @@ extern "C" {
  * @note    This wants to account for OS delays
  */
 #ifndef CONFIG_TWR_RX_OFFSET_TICKS
-#define CONFIG_TWR_RX_OFFSET_TICKS      (-20)
+#if IS_USED(MODULE_TWR_SLEEP)
+#define CONFIG_TWR_RX_OFFSET_TICKS      (0)
+#else
+#define CONFIG_TWR_RX_OFFSET_TICKS      (0)
+#endif
 #endif
 
 /**
@@ -120,7 +124,11 @@ extern "C" {
  * @note    This wants to account for OS delays and others
  */
 #ifndef CONFIG_TWR_TX_OFFSET_TICKS
+#if IS_USED(MODULE_TWR_SLEEP)
 #define CONFIG_TWR_TX_OFFSET_TICKS      (0)
+#else
+#define CONFIG_TWR_TX_OFFSET_TICKS      (0)
+#endif
 #endif
 
 /**
