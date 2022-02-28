@@ -31,6 +31,31 @@ USEMODULE += shell
 USEMODULE += shell_commands
 USEMODULE += ps
 
+# Change default timings for faster demo behaviout
+ADV_PER_SLICE ?= 5           # 10 advertisements per slice
+CFLAGS += -DCONFIG_ADV_PER_SLICE=$(ADV_PER_SLICE)
+EPOCH_DURATION_SEC ?= 300     # 5min
+CFLAGS += -DCONFIG_EPOCH_DURATION_SEC=$(EPOCH_DURATION_SEC)
+MIN_EXPOSURE_TIME_S ?= 100
+CFLAGS+=-DMIN_EXPOSURE_TIME_S=$(MIN_EXPOSURE_TIME_S)
+MAX_DISTANCE_CM ?= 1000       # 10m so everything is logged
+CFLAGS += -DMAX_DISTANCE_CM=$(MAX_DISTANCE_CM)
+TWR_LISTEN_WINDOW_US ?= 2000  # 2ms listen windows
+CFLAGS += -DCONFIG_TWR_LISTEN_WINDOW_US=$(TWR_LISTEN_WINDOW_US)
+ADV_ITVL_MS ?= 1000           # 1 adv per second
+CFLAGS += -DCONFIG_BLE_ADV_ITVL_MS=$(ADV_ITVL_MS)
+SCAN_ITVL_MS ?= 4096
+CFLAGS += -DCONFIG_BLE_SCAN_ITVL_MS=$(SCAN_ITVL_MS)
+SCAN_WIN_MS ?= 1024
+CFLAGS += -DCONFIG_BLE_SCAN_WIN_MS=$(SCAN_WIN_MS)
+
+# Log BLE scan information over serial
+PEPPER_LOG_BLE ?= 0
+CFLAGS += -DCONFIG_PEPPER_LOG_BLE=$(PEPPER_LOG_BLE)
+# Log UWB scan information over serial
+PEPPER_LOG_UWB ?= 1
+CFLAGS += -DCONFIG_PEPPER_LOG_UWB=$(PEPPER_LOG_UWB)
+
 # The event thread will handle:
 # * advertisement
 # * twr
