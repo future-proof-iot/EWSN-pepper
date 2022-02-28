@@ -22,6 +22,8 @@
 #include "ztimer.h"
 
 #include "desire_ble_scan.h"
+#include "ble_scanner.h"
+#include "ble_scanner_params.h"
 #include "net/bluetil/ad.h"
 #include "net/bluetil/addr.h"
 
@@ -79,12 +81,13 @@ static ble_scan_listener_t _desire_listener = {
 void desire_ble_scan_init(detection_cb_t cb)
 {
     desire_ble_set_detection_cb(cb);
+    ble_scanner_init(&ble_scan_params[2]);
 }
 
 void desire_ble_scan_start(const ble_scan_params_t *params, int32_t scan_duration_ms)
 {
     ztimer_set(ZTIMER_MSEC, &_timeout, scan_duration_ms);
-
+    DEBUG_PUTS("[desire_scanner]: start");
     ble_scanner_register(&_desire_listener);
     ble_scanner_update(params);
 }
