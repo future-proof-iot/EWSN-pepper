@@ -3,3 +3,8 @@ USEMODULE_INCLUDES += $(USEMODULE_INCLUDES_twr)
 
 PSEUDOMODULES += twr_shell
 PSEUDOMODULES += twr_sleep
+
+ifneq (,$(filter twr_sleep,$(USEMODULE)))
+  CFLAGS += -DCONFIG_DW1000_WAKEUP_RX_ENABLE=false
+  CFLAGS += -DCONFIG_DW1000_RX_AUTO_ENABLE=false
+endif

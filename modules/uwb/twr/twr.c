@@ -66,7 +66,7 @@ static void _sleep_handler(event_t *event)
     /* TODO: somehow save the offset of the next to be called scheduled event and
              only go to sleep if the next event is not close */
     if (IS_USED(MODULE_TWR_SLEEP)) {
-        if (!_udev->status.sleeping && _status == TWR_RNG_IDLE) {
+        if (!_udev->status.sleeping) {
             uwb_sleep_config(_udev);
             uwb_enter_sleep(_udev);
         }
@@ -144,9 +144,7 @@ static bool _complete_cb(struct uwb_dev *inst, struct uwb_mac_interface *cbs)
         LOG_DEBUG("[twr]: %" PRIu32 ", calling usr callback\n", data.time);
         _usr_complete_cb(&data, _status);
     }
-
     _status = TWR_RNG_IDLE;
-    event_post(_twr_queue, &_sleep_event);
     return true;
 }
 
@@ -245,6 +243,7 @@ void twr_set_pan_id(uint16_t pan_id)
 
 static void _twr_rng_listen(void *arg)
 {
+    (void)arg;
     twr_event_t *event = (twr_event_t *)arg;
 
     if (_enabled) {
@@ -252,11 +251,11 @@ static void _twr_rng_listen(void *arg)
             LOG_DEBUG("[twr]: rng listen start\n");
             if (IS_USED(MODULE_TWR_SLEEP) && _udev->status.sleeping) {
                 uwb_wakeup(_udev);
-                uwb_phy_forcetrxoff(_udev);
             }
             _status = TWR_RNG_RESPONDER;
             _other_short_addr = event->addr;
             uwb_rng_listen(_rng, listen_window_us, UWB_BLOCKING);
+            event_post(_twr_queue, &_sleep_event);
             return;
         }
         else {
@@ -310,6 +309,7 @@ int twr_schedule_listen_managed(uint16_t addr, uint16_t offset)
 
 static void _twr_rng_request(void *arg)
 {
+    (void) arg;
     twr_event_t *event = (twr_event_t *)arg;
 
     if (_enabled) {
@@ -319,10 +319,10 @@ static void _twr_rng_request(void *arg)
             /* wake up if needed */
             if (IS_USED(MODULE_TWR_SLEEP) && _udev->status.sleeping) {
                 uwb_wakeup(_udev);
-                uwb_phy_forcetrxoff(_udev);
             }
             _status = TWR_RNG_INITIATOR;
             uwb_rng_request(_rng, event->addr, CONFIG_TWR_EVENT_ALGO_DEFAULT);
+            event_post(_twr_queue, &_sleep_event);
             return;
         }
         else {
