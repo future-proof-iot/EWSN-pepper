@@ -26,5 +26,5 @@ USEMODULE += test_utils_result_output_${OUTPUT_FORMAT}
 
 ifneq (,$(filter ed_uwb_los ed_uwb_rssi,$(USEMODULE)))
   # Enable RX diagnostics to get rssi and los
-  CFLAGS += -DDW1000_RX_DIAGNOSTIC=1
+  CFLAGS += -DCONFIG_DW1000_RX_DIAGNOSTIC=1
 endif
