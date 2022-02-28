@@ -52,8 +52,35 @@
 #include "event/callback.h"
 #include "uwb/uwb_ftypes.h"
 
+#include "board.h"
+#include "periph/gpio.h"
+
 #ifdef __cplusplus
 extern "C" {
+#endif
+
+/**
+ * @brief   LED to toggle when device is COVID-19 positive
+ *
+ */
+#ifndef CONFIG_TWR_RESPONDER_PIN
+#ifdef BOARD_DWM1001
+#define CONFIG_TWR_RESPONDER_PIN          GPIO_PIN(0,15)
+#else
+#define CONFIG_TWR_RESPONDER_PIN          GPIO_UNDEF
+#endif
+#endif
+
+/**
+ * @brief   LED to toggle when device is COVID-19 positive
+ *
+ */
+#ifndef CONFIG_TWR_INITIATOR_PIN
+#ifdef BOARD_DWM1001
+#define CONFIG_TWR_INITIATOR_PIN          GPIO_PIN(0,8)
+#else
+#define CONFIG_TWR_INITIATOR_PIN          GPIO_UNDEF
+#endif
 #endif
 
 /**

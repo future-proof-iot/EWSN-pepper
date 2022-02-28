@@ -59,6 +59,15 @@ static uint16_t _other_short_addr;
 /* memory manager pointer if any */
 static twr_event_mem_manager_t *_manager = NULL;
 
+static void _set_status_led(gpio_t pin, uint8_t state)
+{
+    if (IS_USED(MODULE_TWR_GPIO)) {
+        if (gpio_is_valid(pin)) {
+            gpio_write(pin, state);
+        }
+    }
+}
+
 /* */
 static void _sleep_handler(event_t *event)
 {
@@ -197,6 +206,16 @@ void twr_init(event_queue_t *queue)
 
     /* set state idle */
     _status = TWR_RNG_IDLE;
+    if (IS_USED(MODULE_TWR_GPIO)) {
+        if (gpio_is_valid(CONFIG_TWR_RESPONDER_PIN)) {
+            gpio_init(CONFIG_TWR_RESPONDER_PIN, GPIO_OUT);
+            gpio_set(CONFIG_TWR_RESPONDER_PIN);
+        }
+        if (gpio_is_valid(CONFIG_TWR_INITIATOR_PIN)) {
+            gpio_init(CONFIG_TWR_INITIATOR_PIN, GPIO_OUT);
+            gpio_set(CONFIG_TWR_INITIATOR_PIN);
+        }
+    }
     /* set event queue */
     _twr_queue = queue;
     /* enable by default */
@@ -249,12 +268,14 @@ static void _twr_rng_listen(void *arg)
     if (_enabled) {
         if (dpl_sem_get_count(&_rng->sem) == 1) {
             LOG_DEBUG("[twr]: rng listen start\n");
+            _set_status_led(CONFIG_TWR_RESPONDER_PIN, 1);
             if (IS_USED(MODULE_TWR_SLEEP) && _udev->status.sleeping) {
                 uwb_wakeup(_udev);
             }
             _status = TWR_RNG_RESPONDER;
             _other_short_addr = event->addr;
             uwb_rng_listen(_rng, listen_window_us, UWB_BLOCKING);
+            _set_status_led(CONFIG_TWR_RESPONDER_PIN, 0);
             event_post(_twr_queue, &_sleep_event);
             return;
         }
@@ -317,11 +338,13 @@ static void _twr_rng_request(void *arg)
             LOG_DEBUG("[twr]: rng request to %4" PRIx16 "\n", event->addr);
             _other_short_addr = event->addr;
             /* wake up if needed */
+            _set_status_led(CONFIG_TWR_INITIATOR_PIN, 1);
             if (IS_USED(MODULE_TWR_SLEEP) && _udev->status.sleeping) {
                 uwb_wakeup(_udev);
             }
             _status = TWR_RNG_INITIATOR;
             uwb_rng_request(_rng, event->addr, CONFIG_TWR_EVENT_ALGO_DEFAULT);
+            _set_status_led(CONFIG_TWR_INITIATOR_PIN, 0);
             event_post(_twr_queue, &_sleep_event);
             return;
         }
