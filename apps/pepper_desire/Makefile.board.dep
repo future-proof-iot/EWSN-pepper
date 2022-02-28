@@ -1,0 +1,5 @@
+ifneq (,$(filter dwm1001,$(BOARD)))
+  USEPKG += uwb-core
+  USEPKG += uwb-dw1000
+  DISABLE_MODULE += auto_init_uwb-core
+endif
