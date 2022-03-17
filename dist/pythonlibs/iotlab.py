@@ -150,6 +150,7 @@ class IoTLABExperiment:
                     'network_address': item['network_address'],
                     'position': (float(item['x']), float(item['y']), float(item['z'])),
                 })
+        info = sorted(info, key=lambda d: d['network_address'])
         return info
 
     def _wait(self):
