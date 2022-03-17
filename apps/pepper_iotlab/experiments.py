@@ -5,6 +5,7 @@ import sys
 import re
 import shutil
 import asyncio
+import time
 
 from contextlib import ExitStack
 from typing import Dict, List
@@ -157,23 +158,31 @@ def create_and_dump(data, directory, file_name):
     return file_path
 
 
-async def finish_epoch(node, exp_data: ExperimentData, logs: Dict, future):
+def cleanup_termlog(node, dir):
+    """Removes non utf-8 characters that show up when connecting to node
+    over IoT-LAB"""
+    filename = os.path.join(dir, f"{node.network_address}.log")
+    with open(filename, "r+", encoding="utf-8", errors="ignore") as fp:
+        lines = fp.readlines()
+        m = re.search(r".*(>.*$)", lines[0])
+        if m:
+            fp.seek(0)
+            fp.truncate()
+            fp.write(m.group(1) + "\n")
+            fp.writelines(lines[1:])
+
+
+async def finish_epoch(node:ExperimentNode, future):
     res = await future
     parser = PepperStartParser()
     epoch_data, debug_data = parser.parse(res)
-    node.update({"debug_data": debug_data, "epoch_data": epoch_data})
-    experiment_node = from_dict(data_class=ExperimentNode, data=node)
-    exp_data.nodes.append(experiment_node)
-    dump = list()
-    for line in res.splitlines():
-        dump.append(line)
-    logs.update({experiment_node.uid: dump})
+    node.debug_data = debug_data
+    node.epoch_data = epoch_data
 
 
 def run(devices, app_dir, log_dir, params: PepperParams):
     """ """
-    exp_data = ExperimentData(list())
-    logs = dict()
+    exp_data = ExperimentData([])
     # start iotlab experiment and recover list of nodes
     with ExitStack() as es:
         LOGGER.info("SetUp IotLab Experiment")
@@ -183,38 +192,43 @@ def run(devices, app_dir, log_dir, params: PepperParams):
         # start experience, recover environments
         exp, exp_envs = iotlab_factory.get_iotlab_experiment_nodes(devices)
         # get nodes positions and network addresses
-        nodes = exp.get_nodes_position()
-        LOGGER.info((f"Experiment nodes:\n {nodes}"))
-        peppers = list()
-        for i, node in enumerate(nodes):
-            LOGGER.info(f"SetUp device {i + 1}/{len(devices)}")
+        for node in exp.get_nodes_position():
+            exp_data.nodes.append(from_dict(data_class=ExperimentNode, data=node))
+
+        for i, node in enumerate(exp_data.nodes):
+            LOGGER.info(f"Flash device {i + 1}/{len(devices)} : {node.node_id} ...")
             for env in exp_envs:
-                if node["network_address"] == env["IOTLAB_NODE"]:
+                if node.network_address == env["IOTLAB_NODE"]:
                     env["TERMLOG"] = os.path.join(log_dir, f"{env['IOTLAB_NODE']}.log")
                     ctrl = factory.get_ctrl(
                         application_directory=app_dir, env=env, cflags=CFLAGS_DEFAULT
                     )
                     shell = PepperShell(ctrl)
-                    shell.parse_uid()
-                    shell.current_time_set_now()
-                    node.update({"uid": shell.uid()})
-                    peppers.append((shell, node))
-                    LOGGER.info(f"Device: {shell.uid()} OK")
-                    break
+                    node.shell = shell
+
+        # give some time for all terminals to start
+        time.sleep(3)
+
+        for node in exp_data.nodes:
+            node.shell.parse_uid()
+            node.uid = node.shell.uid()
+            node.shell.current_time_set_now()
+            LOGGER.info(f"{node.node_id} [{node.uid}] OK")
 
         futures = list()
-        for pepper in peppers:
-            shell = pepper[0]
-            node = pepper[1]
-            LOGGER.info(f"Start pepper for {shell.uid()}")
-            out = shell.pepper_start(params=params, async_=True)
-            futures.append(finish_epoch(node, exp_data, logs, out))
+        for node in exp_data.nodes:
+            LOGGER.info(f"start pepper for {node.node_id} [{node.uid}]")
+            out = node.shell.pepper_start(params=params, async_=True)
+            futures.append(finish_epoch(node, out))
 
-        LOGGER.info("Wait for pepper to finish...")
+        LOGGER.info("wait for pepper to finish...")
         loop = asyncio.get_event_loop()
         loop.run_until_complete(asyncio.gather(*futures))
 
-    return exp_data, logs
+    for node in exp_data.nodes:
+        cleanup_termlog(node, log_dir)
+
+    return exp_data
 
 
 def main(args=None):
@@ -234,7 +248,6 @@ def main(args=None):
     num_devices = args.num_devices
     iotlab_nodes = args.iotlab_nodes
     datafile = args.datafile
-    # logall = args.logall
     # parse pepper params
     params = PepperParams(
         iterations=args.counts,
@@ -243,7 +256,7 @@ def main(args=None):
         advs_slice=args.adv_rotation,
         scan_itvl=args.scan_interval,
         scan_win=args.scan_window,
-        align=True
+        align=True,
     )
     # create directory if non existant
     create_directory(log_directory)
@@ -253,7 +266,9 @@ def main(args=None):
         devices = iotlab_nodes
     else:
         devices = ["dwm1001"] * num_devices
-    exp_data, logs = run(devices, app_dir, log_directory, params)
+    exp_data = run(devices, app_dir, log_directory, params)
+    for node in exp_data.nodes:
+        node.shell = None  # not JSON serializable
 
     # dump json
     create_and_dump([exp_data.to_json_str()], log_directory, datafile)
