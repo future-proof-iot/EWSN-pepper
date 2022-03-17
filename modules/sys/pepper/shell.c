@@ -36,7 +36,7 @@ static void _print_usage(void)
     puts("Usage:");
     puts("\tpepper status: controller status information");
     puts("\tpepper start [-d <epoch duration s>] [-i <ms interval>] [-r <advs per slice>]"
-         " [-a (align epoch) [-c <iterations> ] [-s <win_ms,itvl_ms>]");
+         " [-a (align epoch)] [-c <iterations> ] [-s <win_ms,itvl_ms>]");
     puts("\tpepper stop: stop proximity tracing");
     puts("\tpepper set bn <base name>: sets base name for logging");
     puts("\tpepper get bn: returns base name for logging");
