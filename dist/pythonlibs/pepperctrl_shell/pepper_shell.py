@@ -32,7 +32,8 @@ class PepperParams:
     advs_slice: int = 20
     scan_itvl: int = 4096
     scan_win: int = 1024
-    align: bool = False
+    align_start: bool = False
+    align_end: bool = False
 
 
 class PepperStatusParser(ShellInteractionParser):
@@ -99,7 +100,8 @@ class PepperCmd(ShellInteraction):
                 f"-r {params.advs_slice}",
                 f"-c {params.iterations}",
                 f"-s {params.scan_win},{params.scan_itvl}",
-                f"-a" if params.align else "",
+                f"-e" if params.align_end else "",
+                f"-a" if params.align_start else "",
             ),
             timeout=timeout,
             async_=async_,

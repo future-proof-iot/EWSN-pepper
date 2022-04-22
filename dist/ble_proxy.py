@@ -308,7 +308,7 @@ class BLEPrompt(Cmd):
                 help="Epoch duration in seconds",
             )
             parser.add_argument(
-                "--align", "-a", action="store_true", default=False, help="Align Epoch"
+                "--align", "-e", action="store_true", default=False, help="Align end of Epoch"
             )
             return parser
 
