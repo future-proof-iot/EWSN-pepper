@@ -173,6 +173,13 @@ void twr_set_complete_cb(twr_callback_t callback);
 void twr_set_rx_timeout_cb(twr_callback_t callback);
 
 /**
+ * @brief   Register a callback to be called on RX callback (no errors)
+ *
+ * @param[in]   callback    the callback
+ */
+void twr_set_rx_cb(twr_callback_t callback);
+
+/**
  * @brief   Register a callback to be called when failed to schedule an event
  *
  * @param[in]   callback    the callback

@@ -38,6 +38,7 @@
 /* pointer to user set callback */
 static twr_callback_t _usr_complete_cb = NULL;
 static twr_callback_t _usr_rx_timeout_cb = NULL;
+static twr_callback_t _usr_rx_cb = NULL;
 static twr_callback_t _usr_busy_cb = NULL;
 /* the event queue to offload to */
 static event_queue_t *_twr_queue = NULL;
@@ -232,6 +233,11 @@ void twr_set_rx_timeout_cb(twr_callback_t callback)
     _usr_rx_timeout_cb = callback;
 }
 
+void twr_set_rx_cb(twr_callback_t callback)
+{
+    _usr_rx_cb = callback;
+}
+
 void twr_set_busy_cb(twr_callback_t callback)
 {
     _usr_busy_cb = callback;
@@ -274,7 +280,12 @@ static void _twr_rng_listen(void *arg)
             }
             _status = TWR_RNG_RESPONDER;
             _other_short_addr = event->addr;
-            uwb_rng_listen(_rng, listen_window_us, UWB_BLOCKING);
+            struct uwb_dev_status status = uwb_rng_listen(_rng, listen_window_us, UWB_BLOCKING);
+            if (!status.rx_error && !status.rx_timeout_error && !status.start_rx_error) {
+                LOG_DEBUG("[twr]: rng listen OK\n");
+                twr_event_data_t data = { .addr = event->addr };
+                _usr_rx_cb(&data, TWR_RNG_RESPONDER);
+            }
             _set_status_led(CONFIG_TWR_RESPONDER_PIN, 0);
             event_post(_twr_queue, &_sleep_event);
             return;
