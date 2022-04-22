@@ -65,6 +65,37 @@ static uint32_t pepper_sec_since_start(void)
 }
 
 #if IS_USED(MODULE_TWR)
+static bool _twr_should_listen(uint32_t timestamp, ed_t *ed)
+{
+    if (ed->uwb.seen_last_rx_s + CONFIG_ED_UWB_BACK_OFF_S <= timestamp) {
+        LOG_DEBUG("[ble/uwb]: skip, successfull twr < %" PRIu32 "s\n",
+                  CONFIG_ED_UWB_BACK_OFF_S);
+        return true;
+    }
+    return false;
+}
+
+static bool _twr_should_request(uint32_t timestamp, ed_t *ed)
+{
+    if (ed->ebid.status.status == EBID_HAS_ALL) {
+        /* 1. check if advertisement where received from neighbor in last CONFIG_MIA_TIME_S */
+        if (ed->seen_last_s + CONFIG_MIA_TIME_S > timestamp) {
+            /* 1.1 check if no successfull TWR exchange in last CONFIG_ED_UWB_BACK_OFF_S */
+            if (ed->uwb.seen_last_s + CONFIG_ED_UWB_BACK_OFF_S <= timestamp) {
+                return true;
+            }
+            else {
+                LOG_DEBUG("[ble/uwb]: skip, successfull twr < %" PRIu32 "s\n",
+                          CONFIG_ED_UWB_BACK_OFF_S);
+            }
+        }
+        else {
+            LOG_DEBUG("[ble/uwb]: skip encounter, missing over BLE\n");
+        }
+    }
+    return false;
+}
+
 static uint16_t _get_twr_offset(ebid_t *ebid)
 {
     /* last two bytes of the EBID */
@@ -127,6 +158,20 @@ static void _twr_timeout_cb(twr_event_data_t *data, twr_status_t status)
 #endif
 }
 
+/**
+ * @brief Called when a TWR exchange timeouts
+ */
+static void _twr_rx_cb(twr_event_data_t *data, twr_status_t status)
+{
+    (void)data;
+    (void)status;
+    ed_t *ed = ed_list_get_by_short_addr(&_controller.ed_list, data->addr);
+    /* timestamp relative to beginning of epoch */
+    uint32_t timestamp = pepper_sec_since_start();
+
+    ed->uwb.seen_last_rx_s = timestamp;
+}
+
 static void _twr_busy_cb(twr_event_data_t *data, twr_status_t status)
 {
     (void)data;
@@ -179,15 +224,18 @@ static void _scan_cb(uint32_t ticks, const ble_addr_t *addr, int8_t rssi,
         ed_list_process_scan_data(&_controller.ed_list, cid, timestamp, rssi);
 #endif
 #if IS_USED(MODULE_TWR)
+        /* 3.2 check if should listen */
+        if (_twr_should_listen(timestamp, ed)) {
 #if IS_USED(MODULE_ED_UWB_STATS)
-        ed->uwb.stats.lst.scheduled++;
+            ed->uwb.stats.lst.scheduled++;
 #endif
-        /* 3.2 schedule a twr listen event at an EBID based offset */
-        if (twr_schedule_listen_managed(ed_get_short_addr(ed),
-                                        _get_twr_rx_offset(&_controller.ebid))) {
+            /* 3.3 schedule a twr listen event at an EBID based offset */
+            if (twr_schedule_listen_managed(ed_get_short_addr(ed),
+                                            _get_twr_rx_offset(&_controller.ebid))) {
 #if IS_USED(MODULE_ED_UWB_STATS)
-            ed->uwb.stats.lst.aborted++;
+                ed->uwb.stats.lst.aborted++;
 #endif
+            }
         }
 #endif
     }
@@ -225,24 +273,20 @@ static void _adv_cb(uint32_t advs, void *arg)
     }
     do {
         next = (ed_t *)next->list_node.next;
-        if (next->ebid.status.status == EBID_HAS_ALL) {
-            /* 1. check if advertisement where received from neighbor in last CONFIG_MIA_TIME_S */
-            if (next->seen_last_s + CONFIG_MIA_TIME_S > timestamp) {
-                /* compensate for delay in scheduling requests */
-                uint16_t delay = ztimer_now(ZTIMER_MSEC_BASE) - now_ticks;
-                /* 2. schedule the request at the EBID based offset */
+        /* 1. check if it should send a request */
+        if (_twr_should_request(timestamp, next)) {
+            /* compensate for delay in scheduling requests */
+            uint16_t delay = ztimer_now(ZTIMER_MSEC_BASE) - now_ticks;
+            /* 2. schedule the request at the EBID based offset */
 #if IS_USED(MODULE_ED_UWB_STATS)
-                next->uwb.stats.req.scheduled++;
+            next->uwb.stats.req.scheduled++;
 #endif
-                if (twr_schedule_request_managed(
-                        ed_get_short_addr(next), _get_twr_tx_offset(&next->ebid) - delay)) {
+            if (twr_schedule_request_managed(
+                    ed_get_short_addr(next), _get_twr_tx_offset(
+                        &next->ebid) - delay)) {
 #if IS_USED(MODULE_ED_UWB_STATS)
-                    next->uwb.stats.req.aborted++;
+                next->uwb.stats.req.aborted++;
 #endif
-                }
-            }
-            else {
-                LOG_DEBUG("[ble/uwb]: skip encounter, missing over BLE\n");
             }
         }
     } while (next != (ed_t *)_controller.ed_list.list.next);
@@ -384,6 +428,7 @@ void pepper_init(void)
     twr_set_complete_cb(_twr_cb);
     twr_set_busy_cb(_twr_busy_cb);
     twr_set_rx_timeout_cb(_twr_timeout_cb);
+    twr_set_rx_cb(_twr_rx_cb);
 #endif
     /* init ed management */
     ed_memory_manager_init(&_controller.ed_mem);
