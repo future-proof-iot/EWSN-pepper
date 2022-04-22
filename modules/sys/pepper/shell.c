@@ -36,7 +36,7 @@ static void _print_usage(void)
     puts("Usage:");
     puts("\tpepper status: controller status information");
     puts("\tpepper start [-d <epoch duration s>] [-i <ms interval>] [-r <advs per slice>]"
-         " [-a (align epoch)] [-c <iterations> ] [-s <win_ms,itvl_ms>]");
+         " [-e (align end epoch)] [-a (align start epoch)] [-c <iterations> ] [-s <win_ms,itvl_ms>]");
     puts("\tpepper stop: stop proximity tracing");
     puts("\tpepper set bn <base name>: sets base name for logging");
     puts("\tpepper get bn: returns base name for logging");
@@ -138,6 +138,7 @@ static int _pepper_handler(int argc, char **argv)
             .align = false,
         };
         int res = 0;
+        bool align_start = false;
 
         /* parse command line arguments */
         for (int i = 2; i < argc; i++) {
@@ -171,8 +172,12 @@ static int _pepper_handler(int argc, char **argv)
                     continue;
                 }
             /* intentionally falls through */
-            case 'a':
+            case 'e':
                 params.align = true;
+                continue;
+            /* intentionally falls through */
+            case 'a':
+                align_start = true;
                 continue;
             /* intentionally falls through */
             case 's':
@@ -198,6 +203,11 @@ static int _pepper_handler(int argc, char **argv)
         if (res != 0) {
             _print_usage();
             return 1;
+        }
+        if (align_start) {
+            uint32_t delay = ztimer_now(ZTIMER_EPOCH) % params.epoch_duration_s;
+            printf("[pepper] shell: align start of epoch, delay for %"PRIu32"\n", delay);
+            ztimer_sleep(ZTIMER_EPOCH, delay);
         }
         puts("[pepper] shell: start proximity tracing");
         printf("\tepoch_duration: %" PRIu32 "[s]\n", params.epoch_duration_s);
