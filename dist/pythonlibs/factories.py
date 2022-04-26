@@ -1,8 +1,15 @@
+from abc import ABC, abstractmethod
 from contextlib import ContextDecorator
+from turtle import position
 from riotctrl.ctrl import RIOTCtrlBoardFactory
 from iotlab import IoTLABExperiment
 
-from typing import Tuple, List, Dict
+from typing import Tuple, List, Dict, Union
+
+import yaml
+
+
+Position = Union[List[float], Tuple[float, ...]]  # (x, y, z)
 
 
 class RIOTCtrlAppFactory(RIOTCtrlBoardFactory, ContextDecorator):
@@ -20,19 +27,21 @@ class RIOTCtrlAppFactory(RIOTCtrlBoardFactory, ContextDecorator):
 
     def get_ctrl(
         self,
-        application_directory=".",
+        app_dir=".",
         modules=None,
         cflags=None,
         env=None,
+        flash=True,
     ):
         """Returns a RIOTCtrl with its terminal started, if no envs are
         available ot if no env matches the specified 'BOARD' nothing is
         returned
 
-        :param board: riot 'BOARD' type to match in the class 'envs'
         :param app_dir: the application directory
         :param modules: extra modules to add to 'USEMODULE'
         :param cflags: optional 'CFLAGS'
+        :param flash: flash the node before starting the terminal
+        :param termargs: additional arguments for 'start_term'
         """
         the_env = dict()
         if env:
@@ -43,19 +52,43 @@ class RIOTCtrlAppFactory(RIOTCtrlBoardFactory, ContextDecorator):
         if modules:
             the_env["USEMODULE"] = modules
         # retrieve a RIOTCtrl Object
-        ctrl = super().get_ctrl(
-            env=the_env, application_directory=application_directory
-        )
+        ctrl = super().get_ctrl(env=the_env, application_directory=app_dir)
         # append ctrl to list
         self.ctrl_list.append(ctrl)
         # flash and start terminal
-        ctrl.flash()
+        if flash:
+            ctrl.flash()
+        ctrl.reset()
         ctrl.start_term()
         # return ctrl with started terminal
         return ctrl
 
 
-class IoTLABExperimentsFactory(ContextDecorator):
+class FileCtrlEnvFactory(ContextDecorator):
+    def get_envs(self, boards_file, **_ignored) -> List[Dict]:
+        """
+        :params boards_file: a yaml or json file
+        """
+        envs = []
+        with open(boards_file, "r") as stream:
+            envs = yaml.safe_load(stream)
+        return envs
+
+    def cleanup(self):
+        pass
+
+
+class RIOTCtrlEnvFactory(ABC, ContextDecorator):
+    @abstractmethod
+    def cleanup(self):
+        pass
+
+    @abstractmethod
+    def get_envs(self, **kwargs) -> List[Dict]:
+        pass
+
+
+class IoTLABCtrlEnvFactory(ContextDecorator):
     def __init__(self) -> None:
         super().__init__()
         self.exps = list()
@@ -64,17 +97,29 @@ class IoTLABExperimentsFactory(ContextDecorator):
         return self
 
     def __exit__(self, *exc):
-        for exp in self.exps:
-            exp.stop()
+        self.cleanup()
         return False
 
-    def get_iotlab_experiment_nodes(
+    def cleanup(self):
+        for exp in self.exps:
+            exp.stop()
+
+    def _map_envs_positions(self, envs, positions) -> List[Dict]:
+        res = []
+        for env in envs:
+            for position in positions:
+                if env["IOTLAB_NODE"] == position["network_address"]:
+                    res.append({"env": env, "position": position["position"]})
+        return res
+
+    def get_envs(
         self,
         boards: List[str],
         name: str = "dwm1001-pepper",
         site: str = "lille",
         duration: int = 120,
-    ) -> Tuple[IoTLABExperiment, List[Dict]]:
+        **_ignored,
+    ) -> List[Dict]:
         """Start an experiment on IoT-LAB with boards
 
         :param boards: list of boards to book for experiment
@@ -96,4 +141,5 @@ class IoTLABExperimentsFactory(ContextDecorator):
         exp = IoTLABExperiment(name=name, envs=envs, site=site)
         exp.start(duration=duration)
         self.exps.append(exp)
-        return exp, envs
+        positions = exp.get_nodes_position()
+        return self._map_envs_positions(envs, positions)
