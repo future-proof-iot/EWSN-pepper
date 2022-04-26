@@ -5,7 +5,6 @@ Dataclass definitions matchings pepper JSON formatted end of epoch logs
 """
 
 import json
-import math
 from dataclasses import dataclass, asdict
 from dacite import from_dict
 from typing import List, Optional, Tuple, Union
@@ -16,17 +15,12 @@ from riotctrl.shell import ShellInteraction
 
 @dataclass
 class ExperimentNode:
-    network_address: str  # iot-lab format, example: dwm1001-5.saclay.iot-lab.info
+    node_id: str
     position: Union[List[float], Tuple[float, ...]]  # (x, y, z)
     uid: Optional[str]  # DWCAFE
     debug_data: Optional[DebugDatums]
     epoch_data: Optional[List[EpochData]]
     shell: Optional[Union[ShellInteraction, str]]
-
-    @property
-    def node_id(self) -> str:
-        # iot-lab node id, example: dwm1001-5
-        return self.network_address.split(".")[0]
 
     @staticmethod
     def from_json_str(json_string: str):

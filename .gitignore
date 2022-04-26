@@ -66,3 +66,6 @@ modules/sys/edhoc_coap/*_keys.c
 
 # Ignore experimentation test logs
 */testlogs/*
+
+# Ignore boards configurations
+.boards.yaml
