@@ -108,6 +108,12 @@ PARSER.add_argument(
     default=DEFAULT_BLE_SCAN_WIN_MS,
     help="Epoch duration in seconds",
 )
+PARSER.add_argument(
+    "--flashfile",
+    "-fw",
+    default=None,
+    help="FLASHFILE to set",
+)
 
 
 APPLICATION = "."
@@ -192,7 +198,7 @@ def get_env_factory(**config):
         raise ValueError("Wrong Environment Factory")
 
 
-def run(config, app_dir, log_dir, params: PepperParams):
+def run(config, flashfile, app_dir, log_dir, params: PepperParams):
     """ """
     exp_data = ExperimentData([])
     # start iotlab experiment and recover list of nodes
@@ -218,10 +224,11 @@ def run(config, app_dir, log_dir, params: PepperParams):
                 node_id = f"{env['BOARD']}_{env['DEBUG_ADAPTER_ID']}"
             else:
                 raise ValueError("Cant construct node_id")
-
             env["TERMLOG"] = os.path.join(log_dir, f"{node_id}.log")
             LOGGER.info(f"Flash device {i + 1}/{len(envs_poss)} : {node_id} ...")
-            ctrl = factory.get_ctrl(app_dir=app_dir, env=env, cflags=CFLAGS_DEFAULT)
+            ctrl = factory.get_ctrl(
+                app_dir=app_dir, env=env, cflags=CFLAGS_DEFAULT, flashfile=flashfile
+            )
             shell = PepperShell(ctrl)
             # add ExperimentNode
             exp_data.nodes.append(
@@ -275,7 +282,7 @@ def main(args=None):
     app_dir = args.app_dir
     log_directory = f"logs/{args.log_directory}"
     data_file = args.data_file
-
+    flashfile = args.flashfile
     iotlab_nodes_num = args.iotlab_nodes_num
     iotlab_nodes = args.iotlab_nodes
     # parse pepper params
@@ -300,7 +307,7 @@ def main(args=None):
         config = {"boards_file": args.boards_file}
 
     # setup experiments and run
-    exp_data = run(config, app_dir, log_directory, params)
+    exp_data = run(config, flashfile, app_dir, log_directory, params)
     for node in exp_data.nodes:
         node.shell = None  # not JSON serializable
 

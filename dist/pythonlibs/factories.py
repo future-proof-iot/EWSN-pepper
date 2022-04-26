@@ -26,12 +26,7 @@ class RIOTCtrlAppFactory(RIOTCtrlBoardFactory, ContextDecorator):
         return False
 
     def get_ctrl(
-        self,
-        app_dir=".",
-        modules=None,
-        cflags=None,
-        env=None,
-        flash=True,
+        self, app_dir=".", modules=None, cflags=None, env=None, flashfile=None
     ):
         """Returns a RIOTCtrl with its terminal started, if no envs are
         available ot if no env matches the specified 'BOARD' nothing is
@@ -40,8 +35,7 @@ class RIOTCtrlAppFactory(RIOTCtrlBoardFactory, ContextDecorator):
         :param app_dir: the application directory
         :param modules: extra modules to add to 'USEMODULE'
         :param cflags: optional 'CFLAGS'
-        :param flash: flash the node before starting the terminal
-        :param termargs: additional arguments for 'start_term'
+        :param flashfile: FLASHFILE to use, will use 'flash-only' to flash if set
         """
         the_env = dict()
         if env:
@@ -51,17 +45,28 @@ class RIOTCtrlAppFactory(RIOTCtrlBoardFactory, ContextDecorator):
             the_env["CFLAGS"] = cflags
         if modules:
             the_env["USEMODULE"] = modules
-        # retrieve a RIOTCtrl Object
         ctrl = super().get_ctrl(env=the_env, application_directory=app_dir)
+        # if flashfile is set, flash without compiling
+        if flashfile:
+            ctrl.env["FLASHFILE"] = flashfile
+            ctrl.FLASH_TARGETS = ["flash-only"]
         # append ctrl to list
         self.ctrl_list.append(ctrl)
-        # flash and start terminal
-        if flash:
-            ctrl.flash()
+        ctrl.flash()
         ctrl.reset()
         ctrl.start_term()
         # return ctrl with started terminal
         return ctrl
+
+
+class RIOTCtrlEnvFactory(ABC, ContextDecorator):
+    @abstractmethod
+    def cleanup(self):
+        pass
+
+    @abstractmethod
+    def get_envs(self, **kwargs) -> List[Dict]:
+        pass
 
 
 class FileCtrlEnvFactory(ContextDecorator):
@@ -75,16 +80,6 @@ class FileCtrlEnvFactory(ContextDecorator):
         return envs
 
     def cleanup(self):
-        pass
-
-
-class RIOTCtrlEnvFactory(ABC, ContextDecorator):
-    @abstractmethod
-    def cleanup(self):
-        pass
-
-    @abstractmethod
-    def get_envs(self, **kwargs) -> List[Dict]:
         pass
 
 
