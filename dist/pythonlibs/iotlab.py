@@ -165,7 +165,7 @@ class IoTLABExperiment:
         for env in self.envs:
             if 'IOTLAB_NODE' in env:
                 resources.append(exp_resources([env['IOTLAB_NODE']]))
-            elif env['BOARD'] is not None:
+            elif 'BOARD' in env:
                 board = IoTLABExperiment._archi_from_board(env['BOARD'])
                 alias = AliasNodes(1, site, board)
                 resources.append(exp_resources(alias))
