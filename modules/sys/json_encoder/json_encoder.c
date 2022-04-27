@@ -22,6 +22,7 @@
 #include <stdio.h>
 #include <assert.h>
 
+#include "kernel_defines.h"
 #include "json_encoder.h"
 #include "fmt.h"
 

@@ -53,7 +53,7 @@ def publish(server_dir, server_url, distance=200, keys='default'):
     cmd = [
         "make",
         "suit/publish",
-        "BPF_CFLAGS=-DMAX_DISTANCE_CM={}".format(distance),
+        "F12R_CFLAGS=-DMAX_DISTANCE_CM={}".format(distance),
         "SUIT_COAP_FSROOT={}".format(server_dir),
         "SUIT_COAP_SERVER={}".format(server_url),
         "RIOTBOOT_SKIP_COMPILE=1",

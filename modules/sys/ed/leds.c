@@ -53,7 +53,7 @@ static toggle_count_t _toggle_count[4] = {
 };
 static ztimer_periodic_t _timer;
 
-static int _blink(void *arg)
+static bool _blink(void *arg)
 {
     (void)arg;
 
@@ -64,7 +64,7 @@ static int _blink(void *arg)
         }
     }
 
-    return 0;
+    return false;
 }
 
 static void _blink_init_start(void)

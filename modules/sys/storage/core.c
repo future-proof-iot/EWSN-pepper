@@ -34,7 +34,6 @@
 #include "log.h"
 
 static fatfs_desc_t fs_desc;
-mtd_dev_t *fatfs_mtd_devs[FF_VOLUMES];
 
 static vfs_mount_t _storage_fs_mount = {
     .fs = &fatfs_file_system,
@@ -89,7 +88,7 @@ static int _storage_prepare(vfs_mount_t *fs)
 int storage_init(void)
 {
     if(MTD_0) {
-        fatfs_mtd_devs[fs_desc.vol_idx] = MTD_0;
+        fs_desc.dev = MTD_0;
         if(_storage_prepare(&_storage_fs_mount) != 0 ) {
             LOG_ERROR("[fs]: ERROR, failed to setup storage backends\n");
             return -1;

@@ -3,11 +3,11 @@
 
 #include "embUnit.h"
 #include "ed.h"
-#include "bpf.h"
+#include "femtocontainer/femtocontainer.h"
 
 static void setUp(void)
 {
-    bpf_init();
+    /* setup */
 }
 
 static void tearDown(void)

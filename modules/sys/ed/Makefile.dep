@@ -4,7 +4,7 @@ USEMODULE += memarray
 USEMODULE += test_utils_result_output
 
 ifneq (,$(filter ed_uwb_bpf,$(USEMODULE)))
-  USEMODULE += bpf
+  USEPKG += femto-container
   ifneq (,$(filter ed_uwb_bpf_suit,$(USEMODULE)))
     USEMODULE += suit
     USEMODULE += suit_storage_ram

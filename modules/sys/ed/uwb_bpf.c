@@ -23,7 +23,8 @@
 #include <string.h>
 
 #include "mutex.h"
-#include "bpf.h"
+#include "femtocontainer/femtocontainer.h"
+#include "shared.h"
 #if IS_USED(MODULE_UWB_BPF_SUIT)
 #include "suit/transport/coap.h"
 #include "suit/storage.h"
@@ -105,7 +106,7 @@ void ed_uwb_bpf_init(void)
 
     /* start gcoap listener */
     gcoap_register_listener(&_suit_listener);
-    #endif
+#endif
 }
 
 bool ed_uwb_bpf_finish(ed_t *ed)
@@ -124,7 +125,7 @@ bool ed_uwb_bpf_finish(ed_t *ed)
     LOG_DEBUG("[ed_bpf]: time=(%" PRIu16 "), d=(%" PRIu32 "), req=(%" PRIu16 ")\n",
               time, ed->uwb.cumulative_d_cm, ed->uwb.req_count);
 
-    bpf_t bpf = {
+    f12r_t femtoc = {
 #if IS_USED(MODULE_UWB_BPF_SUIT)
         .application = suit_storage_region_location(region),
         .application_len = suit_storage_region_size_used(region),
@@ -139,9 +140,9 @@ bool ed_uwb_bpf_finish(ed_t *ed)
     int64_t result = 0;
 
     LOG_INFO("[encounter_record]: log... ");
-    bpf_setup(&bpf);
+    f12r_setup(&femtoc);
     mutex_lock(&_lock);
-    bpf_execute_ctx(&bpf, &ctx, sizeof(ctx), &result);
+    f12r_execute_ctx(&femtoc, &ctx, sizeof(ctx), &result);
     mutex_unlock(&_lock);
     if (result == 1) {
         LOG_INFO("YES\n");

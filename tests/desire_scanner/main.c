@@ -83,7 +83,7 @@ int _cmd_desire_scan(int argc, char **argv)
         duration = (uint32_t)(atoi(argv[1]));
     }
     printf("Scanning for %"PRIu32"\n", duration);
-    ble_scan_params_t = CONFIG_BLE_LOW_LATENCY_PARAMS;
+    ble_scan_params_t params = CONFIG_BLE_LOW_LATENCY_PARAMS;
     desire_ble_scan_start(&params, duration);
 
     return 0;

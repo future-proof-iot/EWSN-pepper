@@ -7,8 +7,6 @@ RIOTBASE ?= $(CURDIR)/../../RIOT
 
 # Desire BLE Scanner
 USEMODULE += desire_scanner
-USEMODULE += desire_scanner_netif
-USEMODULE += desire_scanner_time_update
 EXTERNAL_MODULE_DIRS += $(CURDIR)/../../modules/ble
 
 # EBID module

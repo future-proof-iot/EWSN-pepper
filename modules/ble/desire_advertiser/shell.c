@@ -29,7 +29,7 @@
 
 #include "random.h"
 #include "desire_ble_adv.h"
-#include "pepper.h"
+#include "pepper/config.h"
 
 #define BLE_ADV_MAX_EVENTS_DEFAULT  ((CONFIG_EBID_ROTATION_T_S * MS_PER_SEC) / \
                                      CONFIG_BLE_ADV_ITVL_MS)
@@ -64,8 +64,8 @@ static int _adv_handler(int argc, char **argv)
             .itvl_ms = CONFIG_BLE_ADV_ITVL_MS,
             .advs_max = BLE_ADV_MAX_EVENTS_DEFAULT,
             .advs_slice = CONFIG_ADV_PER_SLICE,
-        }
-       int res = 0;
+        };
+        int res = 0;
 
         /* parse command line arguments */
         for (int i = 2; i < argc; i++) {
@@ -126,7 +126,7 @@ static int _adv_handler(int argc, char **argv)
         if (argc == 4) {
             if (!strcmp(argv[2], "cid")) {
                 desire_ble_adv_set_cid(atoi(argv[3]));
-                printf("[adv] shell: set cid to 0x%08"PRIx32"\n", desire_ble_adv_get_cid());
+                printf("[adv] shell: set cid to 0x%08" PRIx32 "\n", desire_ble_adv_get_cid());
                 return 0;
             }
         }
@@ -137,7 +137,7 @@ static int _adv_handler(int argc, char **argv)
     if (!strcmp(argv[1], "get")) {
         if (argc == 3) {
             if (!strcmp(argv[2], "cid")) {
-                printf("[adv] shell: cid 0x%08"PRIx32"\n", desire_ble_adv_get_cid());
+                printf("[adv] shell: cid 0x%08" PRIx32 "\n", desire_ble_adv_get_cid());
                 return 0;
             }
         }
