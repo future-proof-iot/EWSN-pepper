@@ -67,11 +67,12 @@ static uint32_t pepper_sec_since_start(void)
 #if IS_USED(MODULE_TWR)
 static bool _twr_should_listen(uint32_t timestamp, ed_t *ed)
 {
+    /* check if no successfull TWR exchange in last CONFIG_ED_UWB_BACK_OFF_S */
     if (ed->uwb.seen_last_rx_s + CONFIG_ED_UWB_BACK_OFF_S <= timestamp) {
-        LOG_DEBUG("[ble/uwb]: skip, successfull twr < %" PRIu32 "s\n",
-                  CONFIG_ED_UWB_BACK_OFF_S);
         return true;
     }
+    LOG_DEBUG("[ble/uwb]: skip, successfull twr < %" PRIu32 "s\n",
+              CONFIG_ED_UWB_BACK_OFF_S);
     return false;
 }
 

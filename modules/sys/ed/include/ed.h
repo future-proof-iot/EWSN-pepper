@@ -91,7 +91,7 @@ extern "C" {
  *
  */
 #ifndef CONFIG_ED_UWB_BACK_OFF_S
-#define CONFIG_ED_UWB_BACK_OFF_S                (10LU - 1LU)
+#define CONFIG_ED_UWB_BACK_OFF_S                (0LU)
 #endif
 
 #if IS_USED(MODULE_ED_UWB_STATS)
