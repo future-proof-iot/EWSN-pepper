@@ -30,6 +30,7 @@
 #include "services/gap/ble_svc_gap.h"
 #include "services/gatt/ble_svc_gatt.h"
 
+#include "desire_ble_adv.h"
 #include "pepper.h"
 
 #ifndef LOG_LEVEL
@@ -58,6 +59,11 @@ static const ble_uuid128_t gatt_svr_chr_pepper_stop_uuid
     = BLE_UUID128_INIT(0xd2, 0xc8, 0x0a, 0x2b, 0x2f, 0xba, 0x5a, 0x98,
                        0x48, 0xc3, 0x67, 0xb0, 0xd5, 0xe1, 0x2a, 0xce);
 
+/* UUID = ce2ae1d5-b067-c348-985a-ba2f2b0ac8d3 */
+static const ble_uuid128_t gatt_svr_chr_pepper_restart_uuid
+    = BLE_UUID128_INIT(0xd3, 0xc8, 0x0a, 0x2b, 0x2f, 0xba, 0x5a, 0x98,
+                       0x48, 0xc3, 0x67, 0xb0, 0xd5, 0xe1, 0x2a, 0xce);
+
 /* service handlers */
 static int _pepper_cfg_handler(uint16_t conn_handle, uint16_t attr_handle,
                                struct ble_gatt_access_ctxt *ctxt, void *arg);
@@ -67,6 +73,8 @@ static int _pepper_start_handler(uint16_t conn_handle, uint16_t attr_handle,
                                  struct ble_gatt_access_ctxt *ctxt, void *arg);
 static int _pepper_stop_handler(uint16_t conn_handle, uint16_t attr_handle,
                                 struct ble_gatt_access_ctxt *ctxt, void *arg);
+static int _pepper_restart_handler(uint16_t conn_handle, uint16_t attr_handle,
+                                 struct ble_gatt_access_ctxt *ctxt, void *arg);
 
 /* define the bluetooth services for our device */
 /* GATT service definitions */
@@ -114,6 +122,12 @@ static const struct ble_gatt_svc_def gatt_svr_svcs[] =
                 .uuid = (ble_uuid_t *)&gatt_svr_chr_pepper_stop_uuid.u,
                 .access_cb = _pepper_stop_handler,
                 .flags = BLE_GATT_CHR_F_WRITE,
+            },
+            {
+                /* Characteristic: retart PEPPER */
+                .uuid = (ble_uuid_t *)&gatt_svr_chr_pepper_restart_uuid.u,
+                .access_cb = _pepper_restart_handler,
+                .flags =  BLE_GATT_CHR_F_WRITE,
             },
             {
                 0,     /* No more characteristics in this service */
@@ -266,6 +280,52 @@ static int _pepper_stop_handler(uint16_t conn_handle, uint16_t attr_handle,
         LOG_INFO("[pepper] gatt: stop ... ");
         pepper_stop();
         LOG_INFO("stopped\n");
+        break;
+
+    case BLE_GATT_ACCESS_OP_READ_CHR:
+        LOG_INFO("[pepper] gatt: start read characteristic\n");
+        break;
+
+    case BLE_GATT_ACCESS_OP_READ_DSC:
+        LOG_INFO("[pepper] gatt: start read from descriptor\n");
+        break;
+
+    case BLE_GATT_ACCESS_OP_WRITE_DSC:
+        LOG_INFO("[pepper] gatt: start write to descriptor\n");
+        break;
+
+    default:
+        LOG_INFO("[pepper] gatt: start unhandled operation!\n");
+        rc = 1;
+        break;
+    }
+
+    return rc;
+}
+
+
+static int _pepper_restart_handler(uint16_t conn_handle, uint16_t attr_handle,
+                                struct ble_gatt_access_ctxt *ctxt, void *arg)
+{
+    (void)conn_handle;
+    (void)attr_handle;
+    (void)arg;
+    int rc = 0;
+
+    switch (ctxt->op) {
+    case BLE_GATT_ACCESS_OP_WRITE_CHR:
+        LOG_INFO("[pepper] gatt: restart ... ");
+            /* start pepper with default parameters */
+        pepper_start_params_t params = {
+            .epoch_duration_s = CONFIG_EPOCH_DURATION_SEC,
+            .epoch_iterations = 0,
+            .adv_itvl_ms = CONFIG_BLE_ADV_ITVL_MS,
+            .advs_per_slice = CONFIG_ADV_PER_SLICE,
+            .scan_itvl_ms = CONFIG_BLE_SCAN_ITVL_MS,
+            .scan_win_ms = CONFIG_BLE_SCAN_WIN_MS,
+            .align = false,
+        };
+        pepper_start(&params);
         break;
 
     case BLE_GATT_ACCESS_OP_READ_CHR:
