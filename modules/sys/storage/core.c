@@ -20,26 +20,18 @@
 
 #include <stdint.h>
 #include <errno.h>
+#include <assert.h>
 #include <fcntl.h>
 
-#include "fs/fatfs.h"
 #include "vfs.h"
 #include "board.h"
 
 #include "storage.h"
 #include "storage/dirs.h"
 #ifndef LOG_LEVEL
-#define LOG_LEVEL   LOG_WARNING
+#define LOG_LEVEL   LOG_DEBUG
 #endif
 #include "log.h"
-
-static fatfs_desc_t fs_desc;
-
-static vfs_mount_t _storage_fs_mount = {
-    .fs = &fatfs_file_system,
-    .mount_point = STORAGE_FS_MOUNT_POINT,
-    .private_data = &fs_desc,
-};
 
 /* Configure MTD device for SD card if none is provided */
 #if !defined(MTD_0) && MODULE_MTD_SDCARD
@@ -53,44 +45,39 @@ static vfs_mount_t _storage_fs_mount = {
 extern sdcard_spi_t sdcard_spi_devs[SDCARD_SPI_NUM];
 
 /* Configure MTD device for the first SD card */
-static mtd_sdcard_t mtd_sdcard_dev = {
+static mtd_sdcard_t _mtd_sdcard = {
     .base = {
         .driver = &mtd_sdcard_driver
     },
     .sd_card = &sdcard_spi_devs[0],
     .params = &sdcard_spi_params[0],
 };
-static mtd_dev_t *mtd0 = (mtd_dev_t *)&mtd_sdcard_dev;
-#define MTD_0 mtd0
+static mtd_dev_t *_mtd0 = (mtd_dev_t *)&_mtd_sdcard;
+#define MTD_0     _mtd0
+
+#ifdef MODULE_VFS_DEFAULT
+#include "vfs_default.h"
+#if defined(MODULE_LITTLEFS)
+VFS_AUTO_MOUNT(littlefs, VFS_MTD(_mtd_sdcard), VFS_DEFAULT_NVM(0), 0);
+/* littlefs2 support */
+#elif defined(MODULE_LITTLEFS2)
+VFS_AUTO_MOUNT(littlefs2, VFS_MTD(_mtd_sdcard_mtd0), VFS_DEFAULT_NVM(0), 0);
+/* spiffs support */
+#elif defined(MODULE_SPIFFS)
+VFS_AUTO_MOUNT(spiffs, VFS_MTD(_mtd_sdcard_mtd0), VFS_DEFAULT_NVM(0), 0);
+/* FAT support */
+#elif defined(MODULE_FATFS_VFS)
+VFS_AUTO_MOUNT(fatfs, VFS_MTD(_mtd_sdcard_mtd0), VFS_DEFAULT_NVM(0), 0);
 #endif
-
-static int _storage_prepare(vfs_mount_t *fs)
-{
-    LOG_INFO("[fs]: Initializing file system mount %s\n", fs->mount_point);
-    if (IS_ACTIVE(CONFIG_STORAGE_FS_FORCE_FORMAT)) {
-        assert(vfs_format(fs) == 0);
-    }
-    int res = vfs_mount(fs);
-
-    if (res < 0) {
-        LOG_ERROR("[fs]: Unable to mount filesystem %s: %d\n", fs->mount_point,
-                  res);
-        res = vfs_format(fs);
-        if (res < 0) {
-            LOG_ERROR("[fs]: Unable to format filesystem %s: %d\n",
-                      fs->mount_point, res);
-        }
-        return vfs_mount(fs);
-    }
-    return res;
-}
+#endif
+#endif
 
 int storage_init(void)
 {
-    if(MTD_0) {
-        fs_desc.dev = MTD_0;
-        if(_storage_prepare(&_storage_fs_mount) != 0 ) {
-            LOG_ERROR("[fs]: ERROR, failed to setup storage backends\n");
+    if (MTD_0) {
+        int res = vfs_mount_by_path(VFS_STORAGE_DATA);
+        if ( res != 0 && res != -EBUSY) {
+            LOG_ERROR("[fs]: ERROR, failed to setup %s res=(%d)\n", VFS_STORAGE_DATA, res);
             return -1;
         }
         return storage_dirs_create_sys_hier();
@@ -102,17 +89,17 @@ int storage_init(void)
 
 int storage_deinit(void)
 {
-    if(MTD_0) {
-        return vfs_umount(&_storage_fs_mount);
+    if (MTD_0) {
+        return vfs_umount_by_path(VFS_STORAGE_DATA);
     }
     else {
         return -1;
     }
 }
 
-int storage_log(const char* path, uint8_t *buffer, size_t len)
+int storage_log(const char *path, uint8_t *buffer, size_t len)
 {
-    if(MTD_0) {
+    if (MTD_0) {
         int fd = vfs_open(path, O_WRONLY | O_APPEND | O_CREAT, 0);
 
         if (fd < 0) {

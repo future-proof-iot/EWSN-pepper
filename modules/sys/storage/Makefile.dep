@@ -1,3 +1,4 @@
-USEMODULE += mtd
+## Use VFS
 USEMODULE += vfs
-USEMODULE += fatfs_vfs
+USEMODULE += vfs_default
+USEMODULE += vfs_auto_format

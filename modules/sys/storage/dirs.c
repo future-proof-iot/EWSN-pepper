@@ -77,5 +77,5 @@ int storage_dirs_create_hier(const storage_dir_t *hierarchy, const char *prefix)
 
 int storage_dirs_create_sys_hier(void)
 {
-    return storage_dirs_create_hier(sys_hier, STORAGE_FS_MOUNT_POINT);
+    return storage_dirs_create_hier(sys_hier, VFS_STORAGE_DATA);
 }

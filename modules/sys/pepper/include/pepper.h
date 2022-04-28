@@ -69,6 +69,9 @@
 #include "desire_ble_adv.h"
 #include "desire_ble_scan.h"
 #endif
+#if IS_USED(MODULE_STORAGE)
+#include "storage.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -161,7 +164,7 @@ extern "C" {
  * @brief   Default pepper logfile name
  */
 #ifndef CONFIG_PEPPER_LOGS_DIR
-#define CONFIG_PEPPER_LOGS_DIR           "/sda/log/"
+#define CONFIG_PEPPER_LOGS_DIR           (VFS_STORAGE_DATA "/log/")
 #endif
 
 /**

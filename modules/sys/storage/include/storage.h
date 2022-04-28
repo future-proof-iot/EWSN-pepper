@@ -33,10 +33,11 @@
 extern "C" {
 #endif
 
-#define STORAGE_FS_MOUNT_POINT              "/sda"
-
-#ifndef CONFIG_STORAGE_FS_FORCE_FORMAT
-#define CONFIG_STORAGE_FS_FORCE_FORMAT      0
+#ifdef MODULE_VFS_DEFAULT
+#include "vfs_default.h"
+#define VFS_STORAGE_DATA              VFS_DEFAULT_DATA
+#else
+#define VFS_STORAGE_DATA              "/sda"
 #endif
 
 int storage_init(void);
