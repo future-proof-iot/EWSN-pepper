@@ -66,7 +66,7 @@ int main(void)
     gpio_init_int(BTN0_PIN, BTN0_MODE, GPIO_FALLING, _pepper_start_stop, NULL);
     pepper_init();
 #if IS_USED(MODULE_PEPPER_SRV)
-    pepper_srv_init(EVENT_PRIO_MEDIUM);
+    pepper_srv_init(CONFIG_PEPPER_LOW_EVENT_PRIO);
 #endif
     /* the shell contains commands that receive packets via GNRC and thus
        needs a msg queue */

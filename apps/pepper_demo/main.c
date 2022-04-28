@@ -85,7 +85,7 @@ int main(void)
     /* initialize a button to stop pepper */
     gpio_init_int(BTN0_PIN, BTN0_MODE, GPIO_FALLING, _toggle_infected, NULL);
     pepper_init();
-    pepper_srv_init(EVENT_PRIO_LOWEST);
+    pepper_srv_init(CONFIG_PEPPER_LOW_EVENT_PRIO);
 
     /* periodic event for epoch start */
     event_periodic_init(&_periodic_esr, ZTIMER_MSEC, EVENT_PRIO_LOWEST, &_event_esr);

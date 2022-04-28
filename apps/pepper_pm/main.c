@@ -51,7 +51,7 @@ int main(void)
     /* initialize a button to stop pepper */
     gpio_init_int(BTN0_PIN, BTN0_MODE, GPIO_FALLING, _pepper_gatt_start_stop, NULL);
     pepper_init();
-    pepper_srv_init(EVENT_PRIO_MEDIUM);
+    pepper_srv_init(CONFIG_PEPPER_LOW_EVENT_PRIO);
     /* disable GATT server on start */
     nimble_autoadv_stop();
     /* TODO: could use main thread for something else */
