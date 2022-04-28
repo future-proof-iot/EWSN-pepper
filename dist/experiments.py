@@ -15,6 +15,7 @@ from pepper_data.experiment_data import ExperimentData, ExperimentNode
 from pepperctrl_shell.pepper_shell import PepperCmd, PepperStartParser, PepperParams
 from pepperctrl_shell.current_time_shell import CurrentTimeCmd
 from factories import FileCtrlEnvFactory, RIOTCtrlAppFactory, IoTLABCtrlEnvFactory
+import common
 
 DEFAULT_DIRECTORY = "exp"
 DEFAULT_LOGDUMP_FILE = "dump.log"
@@ -115,9 +116,7 @@ PARSER.add_argument(
     help="FLASHFILE to set",
 )
 
-
-APPLICATION = "."
-CFLAGS_DEFAULT = "-DCONFIG_PEPPER_SHELL_BLOCKING=1 "
+CFLAGS_DEFAULT = "-DCONFIG_PEPPER_SHELL_BLOCKING=1 -DCONFIG_SHELL_NO_ECHO=1"
 
 
 class PepperShell(Reboot, PepperCmd, CurrentTimeCmd):
@@ -135,50 +134,6 @@ class PepperShell(Reboot, PepperCmd, CurrentTimeCmd):
 
     def uid(self):
         return self._uid
-
-
-def create_directory(directory, clean=False, mode=0o755):
-    """Directory creation helper with `clean` option.
-
-    :param clean: tries deleting the directory before re-creating it
-    """
-    if clean:
-        try:
-            shutil.rmtree(directory)
-        except OSError:
-            pass
-    os.makedirs(directory, mode=mode, exist_ok=True)
-
-
-def create_and_dump(data, directory, file_name):
-    """Create file with name in 'directory' and dumps
-    data do file
-    """
-    LOGGER.info("logging to file {}".format(file_name))
-    file_path = os.path.join(directory, file_name)
-    if os.path.exists(file_path):
-        LOGGER.warning(f"File {file_name} already exists, overwriting")
-    try:
-        with open(file_path, "w") as f:
-            for line in data:
-                f.write("{}\n".format(line))
-    except OSError as err:
-        sys.exit("Failed to create a log file: {}".format(err))
-    return file_path
-
-
-def cleanup_termlog(node: ExperimentNode, dir):
-    """Removes non utf-8 characters that show up when connecting to node
-    over IoT-LAB"""
-    filename = os.path.join(dir, f"{node.node_id}.log")
-    with open(filename, "r+", encoding="utf-8", errors="ignore") as fp:
-        lines = fp.readlines()
-        m = re.search(r".*(>.*$)", lines[0])
-        if m:
-            fp.seek(0)
-            fp.truncate()
-            fp.write(m.group(1) + "\n")
-            fp.writelines(lines[1:])
 
 
 async def finish_epoch(node: ExperimentNode, future):
@@ -262,7 +217,8 @@ def run(config, flashfile, app_dir, log_dir, params: PepperParams):
         loop.run_until_complete(asyncio.gather(*futures))
 
     for node in exp_data.nodes:
-        cleanup_termlog(node, log_dir)
+        filename = os.path.join(log_dir, f"{node.node_id}.log")
+        common.cleanup_termlog(filename)
 
     return exp_data
 
@@ -280,7 +236,7 @@ def main(args=None):
 
     # parse args
     app_dir = args.app_dir
-    log_directory = f"logs/{args.log_directory}"
+    log_directory = os.path.abspath(f"logs/{args.log_directory}")
     data_file = args.data_file
     flashfile = args.flashfile
     iotlab_nodes_num = args.iotlab_nodes_num
@@ -297,7 +253,7 @@ def main(args=None):
         align_start=False,
     )
     # create directory if non existant
-    create_directory(log_directory)
+    common.create_directory(log_directory)
 
     if iotlab_nodes:
         config = {"boards": iotlab_nodes}
@@ -312,7 +268,7 @@ def main(args=None):
         node.shell = None  # not JSON serializable
 
     # dump json
-    create_and_dump([exp_data.to_json_str()], log_directory, data_file)
+    common.create_and_dump([exp_data.to_json_str()], log_directory, data_file)
 
 
 if __name__ == "__main__":

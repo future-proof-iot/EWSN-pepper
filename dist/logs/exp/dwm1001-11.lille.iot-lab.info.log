@@ -1,0 +1,25 @@
+> [pepper]: uid DWE70A
+> [pepper] current_time: pause, time diff is too high
+[pepper] current_time: resume
+[current_time] shell:
+	Date: 2022-04-26 17:31:36
+	Epoch: 73157496
+> [pepper] shell: start proximity tracing
+	epoch_duration: 30[s]
+	epoch_iterations: 1
+	adv_per_slice: 10
+	adv_itvl: 1000[ms]
+	scan_itvl: 1024[ms]
+	scan_win: 1024[ms]
+[pepper]: align first epoch end in 24s
+[pepper]: new uwb_epoch t=73157496
+[pepper]: new ebid generation
+[pepper]: local ebid: 
+	0xfd 0xec 0xdf 0x88 0x98 0x0c 0x92 0x39
+	0xbc 0x15 0x0d 0x3a 0xc1 0x4a 0xe1 0x19
+	0x20 0x46 0x36 0x3c 0x83 0x0a 0x1f 0xcf
+	0x40 0x21 0x0c 0x68 0x08 0xc9 0x5d 0x56 
+[pepper]: end of uwb_epoch
+[pepper]: process all uwb_epoch data
+{"tag":"pepper","epoch":73157496,"pets":[]}
+> 
