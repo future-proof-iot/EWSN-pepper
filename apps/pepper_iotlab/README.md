@@ -1,22 +1,24 @@
-# PEPPPER
+# PEPPER IoT-LAB Application
 
 This implements PEPPER (PrEcise Privacy-PresERving Proximity Tracing). The
-application is controlled via shell commands. Et the beginning of every
-epoch (`CONFIG_EPOCH_DURATION_SEC` (default `15*60s`)) ephemeral unique
-identifiers are generated and advertised over BLE. At the same time
-devices scan for neighboring advertisements.
+application is controlled via shell commands.
 
-When advertisements are received a TWR exchange can optionally be initiated
-between the scanner and advertiser.
+Some of the default parameters have been toggled to run better on IoT-LAB
+when many devices are active and to perform as read-eval-print-loops.
+
+- shell echo is disabled: `CFLAGS=-DCONFIG_SHELL_NO_ECHO=1`
+- shell operates in blocking mode: `CFLAGS=-DCONFIG_PEPPER_SHELL_BLOCKING=1`
+- UWB pan-id is changed from default (`0xcafe` instead of `0xdeca`)
+- TWR event buffer `CONFIG_TWR_EVENT_BUF_SIZE` is doubled and so is the
+  `CONFIG_ED_BUF_SIZE`
+- `current_time_shell`: module is included to set the current time for the
+  devices and have accurate EPOCH based timestamps.
+
+By default UWB and BLE data is logged, but if running the experiment with
+many nodes its better to disable it since it might overload the state machine.
+(compile with `PEPPER_LOG_BLE=0 & PEPPER_LOG_UWB=0`).
 
 At the end of of an epoch information on the encounters is logged over serial.
-
-This application is also enabling logging UWB `los` information through the
-`ed_uwb_los` module as well as logging epoch data to an attached sd-card, if
-any is present.
-
-Its also making the `dwm1001` devices user button stop pepper, or re-start it
-with the default configured parameters. See the `Makefile`. For more on this.
 
 Currently devices are not time synchronized so if the `MIN_EXPOSE_TIME_S`
 is too large with respect to `CONFIG_EPOCH_DURATION_SEC` they might miss each
@@ -57,7 +59,6 @@ $ pepper start
 # Run the application for only 5 epochs, shorten advertisement intervals to
 # 500ms, and rotate the EBID slice on every advertisement
 $ pepper start -c 5 -i 500 -r 1
-TODO: update logs
 ```
 
 To modify more parameters take a look at the `help` command:

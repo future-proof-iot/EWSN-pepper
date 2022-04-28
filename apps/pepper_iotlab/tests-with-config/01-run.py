@@ -6,10 +6,9 @@
 # General Public License v2.1. See the file LICENSE in the top level
 # directory for more details.
 
-from datetime import datetime, timedelta
+from datetime import timedelta
 import logging
 import sys
-from time import time
 import unittest
 import re
 
@@ -66,12 +65,14 @@ class TestPepper(TestPepperBase):
         status = parser.parse(self.shell.pepper_status())
         assert status["active"] is False
 
-    def test_start(self):
+    def test_start_stop(self):
         params = PepperParams(
             duration=5, adv_itvl=100, advs_slice=1, scan_itvl=1024, scan_win=1024
         )
         out = self.shell.pepper_start(params)
         assert "[pepper] shell: start proximity tracing" in out
+        out = self.shell.pepper_stop()
+        assert "[pepper] shell: stop proximity tracing" in out
 
 
 class TestCurrentTime(TestPepperBase):

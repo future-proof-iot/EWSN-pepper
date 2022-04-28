@@ -24,13 +24,15 @@ USEMODULE += pepper_current_time
 USEMODULE += pepper_shell
 USEMODULE += pepper_util
 USEMODULE += ed_uwb
+## Include all debug data
 USEMODULE += ed_uwb_stats
 USEMODULE += ed_uwb_los
 USEMODULE += ed_uwb_rssi
 USEMODULE += ed_ble
+## Add leds
 USEMODULE += ed_leds
+## Include current_time_shell
 USEMODULE += current_time_shell
-FEATURES_REQUIED += periph_gpio_irq
 
 # Include shell and, process information fonctionality
 USEMODULE += shell
@@ -53,10 +55,15 @@ CFLAGS += -DCONFIG_BLE_ADV_ITVL_MS=$(ADV_ITVL_MS)
 
 # Disable shell echo
 CFLAGS += -DCONFIG_SHELL_NO_ECHO=1
+# Force blocking shell
+CFLAGS += -DCONFIG_PEPPER_SHELL_BLOCKING=1
 
-# Enable all logs
-# CFLAGS += -DCONFIG_PEPPER_LOG_UWB=1
-# CFLAGS += -DCONFIG_PEPPER_LOG_BLE=1
+# Log BLE scan information over serial
+PEPPER_LOG_BLE ?= 1
+CFLAGS += -DCONFIG_PEPPER_LOG_BLE=$(PEPPER_LOG_BLE)
+# Log UWB scan information over serial
+PEPPER_LOG_UWB ?= 1
+CFLAGS += -DCONFIG_PEPPER_LOG_UWB=$(PEPPER_LOG_UWB)
 
 # The event thread will handle:
 # * advertisement
@@ -65,9 +72,6 @@ CFLAGS += -DCONFIG_SHELL_NO_ECHO=1
 # * other app event
 CFLAGS += -DEVENT_THREAD_MEDIUM_STACKSIZE=THREAD_STACKSIZE_LARGE
 CFLAGS += -DEVENT_THREAD_HIGHEST_STACKSIZE=THREAD_STACKSIZE_LARGE
-
-# Increase ISR stacksize...
-CFLAGS += -DISR_STACKSIZE=1024
 
 # Use a different PANID
 CFLAGS += -DMYNEWT_VAL_PANID=0xcafe
