@@ -135,7 +135,7 @@ static void _twr_cb(twr_event_data_t *data, twr_status_t status)
 
     if (LOG_LEVEL == LOG_DEBUG || IS_ACTIVE(CONFIG_PEPPER_LOG_UWB)) {
         /* log with a milliseconds based timestamp */
-        ed_serialize_uwb_json(data->range, data->los, data->rssi,
+        ed_serialize_uwb_printf(data->range, data->los, data->rssi,
                               ed->cid, ztimer_now(ZTIMER_MSEC),
                               pepper_get_serializer_bn());
     }
@@ -243,7 +243,7 @@ static void _scan_cb(uint32_t ticks, const ble_addr_t *addr, int8_t rssi,
     if (LOG_LEVEL == LOG_DEBUG || IS_ACTIVE(CONFIG_PEPPER_LOG_BLE)) {
 #if IS_USED(MODULE_ED_BLE) || IS_USED(MODULE_ED_BLE_WIN)
         /* log with a milliseconds based timestamp */
-        ed_serialize_ble_json(rssi, cid, ztimer_now(ZTIMER_MSEC),
+        ed_serialize_ble_printf(rssi, cid, ztimer_now(ZTIMER_MSEC),
                               pepper_get_serializer_bn());
 #endif
     }

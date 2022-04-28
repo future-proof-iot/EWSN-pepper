@@ -141,7 +141,7 @@ int _storage_srv_notify_epoch_data(epoch_data_t *epoch_data)
         // TODO: I wanted to use pepper_get_serializer_bn() but for some reason
         // it fails two often, need to investigate..
         sprintf(logfile, "%s%s%s", CONFIG_PEPPER_LOGS_DIR,
-                "pepper", CONFIG_PEPPER_LOG_EXT);
+                "epoch", CONFIG_PEPPER_LOG_EXT);
         if (storage_log(logfile, _buffer, len - 1)) {
             LOG_DEBUG("[pepper_srv] storage: ERROR, failed to log to %s\n", logfile);
             return -1;

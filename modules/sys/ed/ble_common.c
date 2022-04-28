@@ -83,7 +83,7 @@ ed_t *ed_list_process_scan_data(ed_list_t *list, const uint32_t cid, uint16_t ti
     return ed;
 }
 
-void ed_serialize_ble_json(int8_t rssi, uint32_t cid, uint32_t time, const char *base_name)
+void ed_serialize_ble_printf(int8_t rssi, uint32_t cid, uint32_t time, const char *base_name)
 {
     turo_t ctx;
     char bn_buff[32 + sizeof(":ble:") + 2 * sizeof(uint32_t)];

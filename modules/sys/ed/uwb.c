@@ -101,7 +101,7 @@ bool ed_uwb_finish(ed_t *ed, uint32_t min_exposure_s)
 }
 
 /* TODO: style this more in SenML, the name should not be the cid, and the bn either */
-void ed_serialize_uwb_json(uint16_t d_cm, uint16_t los, float rssi, uint32_t cid,
+void ed_serialize_uwb_printf(uint16_t d_cm, uint16_t los, float rssi, uint32_t cid,
                            uint32_t time, const char *base_name)
 {
     turo_t ctx;

@@ -438,7 +438,7 @@ ed_t *ed_list_process_rng_data(ed_list_t *list, const uint16_t addr, uint16_t ti
  * @param[in]       bn       optional base name tag
  *
  */
-void ed_serialize_uwb_json(uint16_t d_cm, uint16_t los, float rssi, uint32_t cid,
+void ed_serialize_uwb_printf(uint16_t d_cm, uint16_t los, float rssi, uint32_t cid,
                            uint32_t time, const char *base_name);
 #endif
 
@@ -472,7 +472,7 @@ ed_t *ed_list_process_scan_data(ed_list_t *list, const uint32_t cid, uint16_t ti
  * @param[in]       bn       optional base name tag
  *
  */
-void ed_serialize_ble_json(int8_t rssi, uint32_t cid, uint32_t time, const char *base_name);
+void ed_serialize_ble_printf(int8_t rssi, uint32_t cid, uint32_t time, const char *base_name);
 
 
 /**

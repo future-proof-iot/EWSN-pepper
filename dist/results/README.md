@@ -76,7 +76,7 @@ set very high:
 ```
 
 On a second device the same application was flashed but with the BLE
-RSSI logs enabled (`ed_serialize_ble_json()`) and the scanner was
+RSSI logs enabled (`ed_serialize_ble_printf()`) and the scanner was
 ser to be always on. This can be done by setting in the application
 makefile or at compile time:
 
