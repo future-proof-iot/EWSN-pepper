@@ -16,6 +16,8 @@ successful previous exchange.
 Its also making the `dwm1001` devices user button stop/start  advertising
 its GATT services.
 
+To easily identify exchanges static CID can be used by adding `CFLAGS=-DCONFIG_BLE_ADV_STATIC_CID=1`
+
 ## PRE-requisites
 
 - [DWM1001 Development Board](https://www.decawave.com/product/dwm1001-development-board/)
