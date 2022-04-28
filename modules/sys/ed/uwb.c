@@ -24,6 +24,8 @@
 #include "fmt.h"
 #include "test_utils/result_output.h"
 
+#include "json_encoder.h"
+
 #ifndef LOG_LEVEL
 #define LOG_LEVEL   LOG_WARNING
 #endif
@@ -101,14 +103,13 @@ bool ed_uwb_finish(ed_t *ed, uint32_t min_exposure_s)
 }
 
 /* TODO: style this more in SenML, the name should not be the cid, and the bn either */
-void ed_serialize_uwb_printf(uint16_t d_cm, uint16_t los, float rssi, uint32_t cid,
-                           uint32_t time, const char *base_name)
+void ed_serialize_uwb_printf(ed_uwb_data_t *ed, const char *bn)
 {
     turo_t ctx;
     char bn_buff[32 + sizeof(":uwb:") + 2 * sizeof(uint32_t)];
 
     /* "pepper_tag:cid_string" */
-    if (strlen(base_name) > 32) {
+    if (strlen(bn) > 32) {
         return;
     }
 
@@ -116,19 +117,19 @@ void ed_serialize_uwb_printf(uint16_t d_cm, uint16_t los, float rssi, uint32_t c
     turo_array_open(&ctx);
     turo_dict_open(&ctx);
     turo_dict_key(&ctx, "bn");
-    if (base_name) {
-        sprintf(bn_buff, "%s:uwb:%" PRIx32 "", base_name, cid);
+    if (bn) {
+        sprintf(bn_buff, "%s:uwb:%" PRIx32 "", bn, ed->cid);
     }
     else {
-        sprintf(bn_buff, "uwb:%" PRIx32 "", cid);
+        sprintf(bn_buff, "uwb:%" PRIx32 "", ed->cid);
     }
     turo_string(&ctx, bn_buff);
     turo_dict_key(&ctx, "bt");
-    turo_u32(&ctx, time);
+    turo_u32(&ctx, ed->time);
     turo_dict_key(&ctx, "n");
     turo_string(&ctx, "d_cm");
     turo_dict_key(&ctx, "v");
-    turo_u32(&ctx, (uint32_t)d_cm);
+    turo_u32(&ctx, (uint32_t)ed->d_cm);
     turo_dict_key(&ctx, "u");
     turo_string(&ctx, "cm");
     turo_dict_close(&ctx);
@@ -137,25 +138,76 @@ void ed_serialize_uwb_printf(uint16_t d_cm, uint16_t los, float rssi, uint32_t c
     turo_dict_key(&ctx, "n");
     turo_string(&ctx, "los");
     turo_dict_key(&ctx, "v");
-    turo_u32(&ctx, (uint32_t)los);
+    turo_u32(&ctx, (uint32_t)ed->los);
     turo_dict_key(&ctx, "u");
     turo_string(&ctx, "%");
     turo_dict_close(&ctx);
-#else
-    (void)los;
 #endif
 #if IS_USED(MODULE_ED_UWB_RSSI)
     turo_dict_open(&ctx);
     turo_dict_key(&ctx, "n");
     turo_string(&ctx, "rssi");
     turo_dict_key(&ctx, "v");
-    turo_float(&ctx, rssi);
+    turo_float(&ctx, ed->rssi);
     turo_dict_key(&ctx, "u");
     turo_string(&ctx, "dBm");
     turo_dict_close(&ctx);
-#else
-    (void)rssi;
 #endif
     turo_array_close(&ctx);
     print_str("\n");
+}
+
+size_t ed_serialize_uwb_json(ed_uwb_data_t *ed, const char *bn, uint8_t *buf, size_t len)
+{
+    json_encoder_t ctx;
+
+    json_encoder_init(&ctx, (char *)buf, len);
+    char bn_buff[32 + sizeof(":uwb:") + 2 * sizeof(uint32_t)];
+
+    /* "pepper_tag:cid_string" */
+    if (strlen(bn) > 32) {
+        return 0;
+    }
+
+    json_array_open(&ctx);
+    json_dict_open(&ctx);
+    json_dict_key(&ctx, "bn");
+    if (bn) {
+        sprintf(bn_buff, "%s:uwb:%" PRIx32 "", bn, ed->cid);
+    }
+    else {
+        sprintf(bn_buff, "uwb:%" PRIx32 "", ed->cid);
+    }
+    json_string(&ctx, bn_buff);
+    json_dict_key(&ctx, "bt");
+    json_u32(&ctx, ed->time);
+    json_dict_key(&ctx, "n");
+    json_string(&ctx, "d_cm");
+    json_dict_key(&ctx, "v");
+    json_u32(&ctx, (uint32_t)ed->d_cm);
+    json_dict_key(&ctx, "u");
+    json_string(&ctx, "cm");
+    json_dict_close(&ctx);
+#if IS_USED(MODULE_ED_UWB_LOS)
+    json_dict_open(&ctx);
+    json_dict_key(&ctx, "n");
+    json_string(&ctx, "los");
+    json_dict_key(&ctx, "v");
+    json_u32(&ctx, (uint32_t)ed->los);
+    json_dict_key(&ctx, "u");
+    json_string(&ctx, "%");
+    json_dict_close(&ctx);
+#endif
+#if IS_USED(MODULE_ED_UWB_RSSI)
+    json_dict_open(&ctx);
+    json_dict_key(&ctx, "n");
+    json_string(&ctx, "rssi");
+    json_dict_key(&ctx, "v");
+    json_float(&ctx, ed->rssi);
+    json_dict_key(&ctx, "u");
+    json_string(&ctx, "dBm");
+    json_dict_close(&ctx);
+#endif
+    json_array_close(&ctx);
+    return json_encoder_end(&ctx);
 }

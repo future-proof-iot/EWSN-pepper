@@ -134,10 +134,23 @@ static void _twr_cb(twr_event_data_t *data, twr_status_t status)
     (void)ed;
 
     if (LOG_LEVEL == LOG_DEBUG || IS_ACTIVE(CONFIG_PEPPER_LOG_UWB)) {
-        /* log with a milliseconds based timestamp */
-        ed_serialize_uwb_printf(data->range, data->los, data->rssi,
-                              ed->cid, ztimer_now(ZTIMER_MSEC),
-                              pepper_get_serializer_bn());
+        ed_uwb_data_t uwb_data = {
+#if IS_USED(MODULE_ED_UWB_RSSI)
+            .rssi = data->rssi,
+#endif
+#if IS_USED(MODULE_ED_UWB_LOS)
+            .los = data->los,
+#endif
+            .d_cm = data->range,
+            .time = data->time,
+            .cid = ed->cid,
+        };
+
+#if IS_USED(MODULE_PEPPER_SRV)
+        pepper_srv_uwb_data_submit(&uwb_data);
+#else
+        ed_serialize_uwb_printf(&uwb_data, pepper_get_serializer_bn());
+#endif
     }
 }
 
@@ -241,10 +254,15 @@ static void _scan_cb(uint32_t ticks, const ble_addr_t *addr, int8_t rssi,
 #endif
     }
     if (LOG_LEVEL == LOG_DEBUG || IS_ACTIVE(CONFIG_PEPPER_LOG_BLE)) {
-#if IS_USED(MODULE_ED_BLE) || IS_USED(MODULE_ED_BLE_WIN)
-        /* log with a milliseconds based timestamp */
-        ed_serialize_ble_printf(rssi, cid, ztimer_now(ZTIMER_MSEC),
-                              pepper_get_serializer_bn());
+        ed_ble_data_t ble_data = {
+            .rssi = rssi,
+            .time = ztimer_now(ZTIMER_MSEC),
+            .cid = cid,
+        };
+#if IS_USED(MODULE_PEPPER_SRV)
+        pepper_srv_ble_data_submit(&ble_data);
+#else
+        ed_serialize_ble_printf(&ble_data, pepper_get_serializer_bn());
 #endif
     }
 

@@ -22,6 +22,7 @@
 #include "ed_shared.h"
 #include "fmt.h"
 #include "test_utils/result_output.h"
+#include "json_encoder.h"
 
 #ifndef LOG_LEVEL
 #define LOG_LEVEL   LOG_INFO
@@ -83,13 +84,13 @@ ed_t *ed_list_process_scan_data(ed_list_t *list, const uint32_t cid, uint16_t ti
     return ed;
 }
 
-void ed_serialize_ble_printf(int8_t rssi, uint32_t cid, uint32_t time, const char *base_name)
+void ed_serialize_ble_printf(ed_ble_data_t *data, const char *bn)
 {
     turo_t ctx;
     char bn_buff[32 + sizeof(":ble:") + 2 * sizeof(uint32_t)];
 
     /* "pepper_tag:cid_string" */
-    if (strlen(base_name) > 32) {
+    if (strlen(bn) > 32) {
         return;
     }
 
@@ -97,22 +98,57 @@ void ed_serialize_ble_printf(int8_t rssi, uint32_t cid, uint32_t time, const cha
     turo_array_open(&ctx);
     turo_dict_open(&ctx);
     turo_dict_key(&ctx, "bn");
-    if (base_name) {
-        sprintf(bn_buff, "%s:ble:%" PRIx32 "", base_name, cid);
+    if (bn) {
+        sprintf(bn_buff, "%s:ble:%" PRIx32 "", bn, data->cid);
     }
     else {
-        sprintf(bn_buff, "ble:%" PRIx32 "", cid);
+        sprintf(bn_buff, "ble:%" PRIx32 "", data->cid);
     }
     turo_string(&ctx, bn_buff);
     turo_dict_key(&ctx, "bt");
-    turo_u32(&ctx, time);
+    turo_u32(&ctx, data->time);
     turo_dict_key(&ctx, "n");
     turo_string(&ctx, "rssi");
     turo_dict_key(&ctx, "v");
-    turo_s32(&ctx, (int32_t)rssi);
+    turo_s32(&ctx, (int32_t)data->rssi);
     turo_dict_key(&ctx, "u");
     turo_string(&ctx, "dBm");
     turo_dict_close(&ctx);
     turo_array_close(&ctx);
     print_str("\n");
+}
+
+size_t ed_serialize_ble_json(ed_ble_data_t *data, const char *bn, uint8_t *buf, size_t len)
+{
+    json_encoder_t ctx;
+
+    json_encoder_init(&ctx, (char *)buf, len);
+    char bn_buff[32 + sizeof(":ble:") + 2 * sizeof(uint32_t)];
+
+    /* "pepper_tag:cid_string" */
+    if (strlen(bn) > 32) {
+        return 0;
+    }
+
+    json_array_open(&ctx);
+    json_dict_open(&ctx);
+    json_dict_key(&ctx, "bn");
+    if (bn) {
+        sprintf(bn_buff, "%s:ble:%" PRIx32 "", bn, data->cid);
+    }
+    else {
+        sprintf(bn_buff, "ble:%" PRIx32 "", data->cid);
+    }
+    json_string(&ctx, bn_buff);
+    json_dict_key(&ctx, "bt");
+    json_u32(&ctx, data->time);
+    json_dict_key(&ctx, "n");
+    json_string(&ctx, "rssi");
+    json_dict_key(&ctx, "v");
+    json_s32(&ctx, (int32_t)data->rssi);
+    json_dict_key(&ctx, "u");
+    json_string(&ctx, "dBm");
+    json_dict_close(&ctx);
+    json_array_close(&ctx);
+    return json_encoder_end(&ctx);
 }

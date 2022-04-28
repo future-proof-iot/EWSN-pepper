@@ -135,6 +135,17 @@ typedef struct ed_uwb {
 } ed_uwb_t;
 #endif
 
+typedef struct ed_uwb_data {
+#if IS_USED(MODULE_ED_UWB_RSSI)
+    float rssi;
+#endif
+    uint16_t d_cm;
+#if IS_USED(MODULE_ED_UWB_LOS)
+    uint16_t los;
+#endif
+    uint32_t time;
+    uint32_t cid;
+} ed_uwb_data_t;
 
 #if IS_USED(MODULE_ED_BLE)
 /**
@@ -165,6 +176,12 @@ typedef struct ed_ble_win {
 } ed_ble_win_t;
 #endif
 
+typedef struct ed_ble_data {
+    float rssi;
+    uint32_t time;
+    uint32_t cid;
+} ed_ble_data_t;
+
 /**
  * @brief   Encounter data, structure to track encounters per epoch
  */
@@ -179,14 +196,13 @@ typedef struct ed {
 #endif
 #if IS_USED(MODULE_ED_UWB)
     ed_uwb_t uwb;               /**< uwb encounter data */
- #endif
+#endif
     uint32_t cid;               /**< the cid */
 #if IS_USED(MODULE_ED_BLE) || IS_USED(MODULE_ED_BLE_WIN)
     int16_t obf;                /**< obfuscation value or calibrated noise (CN) in DESIRE */
 #endif
     uint16_t seen_last_s;       /**< time of last message, relative to start of epoch [s] */
 } ed_t;
-
 
 /**
  * @brief   UWB Encounter data memory manager structure
@@ -427,19 +443,25 @@ ed_t *ed_list_process_rng_data(ed_list_t *list, const uint16_t addr, uint16_t ti
                                uint16_t d_cm, uint16_t los, float rssi);
 
 /**
- * @brief   Serializes UWB encounter data over stdio
+ * @brief   Serializes UWB data over stdio
  *
- * @param[in]       cid      the cid or short addr
- * @param[in]       time     the timestamp in seconds relative to the start of
- *                           the epoch
- * @param[in]       d_cm     the measured distance in cm
- * @param[in]       los      the estimated los
- * @param[in]       rssi     the estimated rssi
+ * @param[in]       ed       uwb data
  * @param[in]       bn       optional base name tag
  *
  */
-void ed_serialize_uwb_printf(uint16_t d_cm, uint16_t los, float rssi, uint32_t cid,
-                           uint32_t time, const char *base_name);
+void ed_serialize_uwb_printf(ed_uwb_data_t *ed, const char *base_name);
+
+/**
+ * @brief   Serialized UWB data to buffet in JSON format
+ *
+ * @param[in]       ed       uwb data
+ * @param[in]       bn       optional base name tag
+ * @param[in]       buf      pointer to allocated encoding buffer
+ * @param[in]       len      length of encoding buffer
+
+ * @return  Encoded length
+ */
+size_t ed_serialize_uwb_json(ed_uwb_data_t *ed, const char *bn, uint8_t *buf, size_t len);
 #endif
 
 #if IS_USED(MODULE_ED_BLE) || IS_USED(MODULE_ED_BLE_WIN)
@@ -463,17 +485,25 @@ ed_t *ed_list_process_scan_data(ed_list_t *list, const uint32_t cid, uint16_t ti
                                 int8_t rssi);
 
 /**
- * @brief   Serializes BLE encounter data over stdio
+ * @brief   Serializes BLE data over stdio
  *
- * @param[in]       rssi     the received signal strength
- * @param[in]       cid      the cid or short addr
- * @param[in]       time     the timestamp in seconds relative to the start of
- *                           the epoch
+ * @param[in]       data     ble data
  * @param[in]       bn       optional base name tag
  *
  */
-void ed_serialize_ble_printf(int8_t rssi, uint32_t cid, uint32_t time, const char *base_name);
+void ed_serialize_ble_printf(ed_ble_data_t *data, const char *bn);
 
+/**
+ * @brief   Serialized BLE data to buffet in JSON format
+ *
+ * @param[in]       data     ble data
+ * @param[in]       bn       optional base name tag
+ * @param[in]       buf      pointer to allocated encoding buffer
+ * @param[in]       len      length of encoding buffer
+
+ * @return  Encoded length
+ */
+size_t ed_serialize_ble_json(ed_ble_data_t *data, const char *bn, uint8_t *buf, size_t len);
 
 /**
  * @brief   Converts an rssi value to a distance estimation based on the configured

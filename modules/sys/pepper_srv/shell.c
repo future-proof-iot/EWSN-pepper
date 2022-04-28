@@ -48,7 +48,19 @@ int _shell_srv_notify_epoch_data(epoch_data_t *epoch_data)
     printf(">--< End point shell : notify epoch_data, contacts = %d, ts = %ld\n",
            epoch_contacts(epoch_data), epoch_data->timestamp);
 
-    contact_data_serialize_all_printf(epoch_data, NULL);
+    contact_data_serialize_all_printf(epoch_data, pepper_get_serializer_bn());
+    return 0;
+}
+
+int _shell_srv_notify_uwb_data(ed_uwb_data_t *data)
+{
+    ed_serialize_uwb_printf(data, pepper_get_serializer_bn());
+    return 0;
+}
+
+int _shell_srv_notify_ble_data(ed_ble_data_t *data)
+{
+    ed_serialize_ble_printf(data, pepper_get_serializer_bn());
     return 0;
 }
 
@@ -72,6 +84,8 @@ int _shell_srv_request_exposure(bool *esr /*out*/)
 XFA_CONST(pepper_srv_endpoints, 0) pepper_srv_endpoint_t _pepper_srv_shell = {
     .init = _shell_srv_init,
     .notify_epoch_data = _shell_srv_notify_epoch_data,
+    .notify_uwb_data = _shell_srv_notify_uwb_data,
+    .notify_ble_data = _shell_srv_notify_ble_data,
     .notify_infection = _shell_srv_notify_infection,
     .request_exposure = _shell_srv_request_exposure
 };

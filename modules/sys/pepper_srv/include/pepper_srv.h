@@ -68,7 +68,23 @@ int pepper_srv_init(event_queue_t *evt_queue);
  * @param[in]       epoch_data           Epoch data to offload to server
  *
  */
-void pepper_srv_data_submit(epoch_data_t*);
+void pepper_srv_data_submit(epoch_data_t *data);
+
+/**
+ * @brief   Submit new ed_uwb_data_t to the server broker
+ *
+ * @param[in]       data                UWB data to offload to server
+ *
+ */
+void pepper_srv_uwb_data_submit(ed_uwb_data_t *data);
+
+/**
+ * @brief   Submit new ed_ble_data_t to the server broker
+ *
+ * @param[in]       data                ble data to offload to server
+ *
+ */
+void pepper_srv_ble_data_submit(ed_ble_data_t *data);
 
 /**
  * @brief   Notify end of epoch for offloading the encounter data
@@ -78,6 +94,24 @@ void pepper_srv_data_submit(epoch_data_t*);
  * @return  a status flag equal 0 if all went fine and a bitmap indicating the plugin endpoint init flags.
  */
 int pepper_srv_notify_epoch_data(epoch_data_t *epoch_data);
+
+/**
+ * @brief   Notify new ed_uwb_data is ready to be offloaded
+ *
+ * @param[in]       data                 UWB data to offload to server
+ *
+ * @return  a status flag equal 0 if all went fine and a bitmap indicating the plugin endpoint init flags.
+ */
+int pepper_srv_notify_uwb_data(ed_uwb_data_t *data);
+
+/**
+ * @brief   Notify new ed_ble_data is ready to be offloaded
+ *
+ * @param[in]       data                 ble data to offload to server
+ *
+ * @return  a status flag equal 0 if all went fine and a bitmap indicating the plugin endpoint init flags.
+ */
+int pepper_srv_notify_ble_data(ed_ble_data_t *data);
 
 /**
  * @brief   Notify the notification status update
@@ -104,6 +138,8 @@ typedef struct pepper_srv_endpoint {
     int (*init)(event_queue_t *evt_queue);          /**< Shared event queue for posting events required by the plugin endpoint */
     /* core --> endpoint */
     int (*notify_epoch_data)(epoch_data_t *);       /**< Handler to process end of epoch data */
+    int (*notify_uwb_data)(ed_uwb_data_t *);        /**< Handler to process end of uwb data */
+    int (*notify_ble_data)(ed_ble_data_t *);        /**< Handler to process end of ble data */
     int (*notify_infection)(bool infected);         /**< Handler to process infection update event */
     /* core <-- endpoint */
     int (*request_exposure)(bool *esr /*out*/);     /**< Handler to query the exposure status */
