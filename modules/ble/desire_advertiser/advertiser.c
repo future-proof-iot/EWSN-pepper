@@ -241,7 +241,7 @@ static void _adv_mgr_init(ebid_t *ebid, uint32_t itvl_ms, uint32_t advs_max,
     /* generate a random CID that remains the same for the given EBID during
        the advertisement period */
     if (!IS_ACTIVE(CONFIG_BLE_ADV_STATIC_CID)) {
-        _adv_mgr.cid = random_uint32() & MASK_CID;
+        _adv_mgr.cid = desire_ble_adv_gen_cid();
     }
     _adv_mgr.ebid = ebid;
     _adv_mgr.advs = 0;
@@ -290,10 +290,6 @@ void desire_ble_adv_init(event_queue_t *queue)
     _adv_event.mgr = &_adv_mgr;
     /* configure advertisement base parameters */
     _configure_ext_adv();
-    /* set static cid if requested */
-    if (IS_ACTIVE(CONFIG_BLE_ADV_STATIC_CID)) {
-        _adv_mgr.cid = CONFIG_BLE_ADV_STATIC_CID;
-    }
 }
 
 #if IS_USED(MODULE_DESIRE_ADVERTISER_THREADED)
@@ -335,6 +331,11 @@ void desire_ble_adv_start(ebid_t *ebid, adv_params_t *params)
 uint32_t desire_ble_adv_get_cid(void)
 {
     return _adv_mgr.cid;
+}
+
+uint32_t desire_ble_adv_gen_cid(void)
+{
+    return random_uint32() & MASK_CID;
 }
 
 void desire_ble_adv_set_cid(uint32_t cid)

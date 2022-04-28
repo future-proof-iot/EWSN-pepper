@@ -61,7 +61,7 @@ extern "C" {
 #endif
 
 /**
- * @brief   The advertisement interval in milliseconds
+ * @brief   The static CID value
  */
 #ifndef CONFIG_BLE_ADV_STATIC_CID
 #define CONFIG_BLE_ADV_STATIC_CID       0
@@ -151,6 +151,13 @@ typedef void (*ble_adv_cb_t)(uint32_t advs, void *arg);
  * @return  the cid
  */
 uint32_t desire_ble_adv_get_cid(void);
+
+/**
+ * @brief   Generates a valid cid
+ *
+ * @return  the cid
+ */
+uint32_t desire_ble_adv_gen_cid(void);
 
 /**
  * @brief   Sets a new cid
