@@ -28,7 +28,6 @@ USEMODULE += pepper_srv
 USEMODULE += pepper_srv_storage
 USEMODULE += ed_uwb
 USEMODULE += ed_uwb_stats
-USEMODULE += ed_uwb_los
 USEMODULE += ed_ble
 FEATURES_REQUIED += periph_gpio_irq
 ## Add TWR sleep module
