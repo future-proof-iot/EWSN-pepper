@@ -241,7 +241,7 @@ static int _pepper_handler(int argc, char **argv)
             }
             if (IS_USED(MODULE_PEPPER_UTIL)) {
                 if (!strcmp(argv[2], "uid")) {
-                    printf("[pepper]: uid %s\n", pepper_get_uid());
+                    printf("[pepper]: uid %s\n", pepper_get_uid_str());
                     return 0;
                 }
                 if (!strcmp(argv[2], "bn")) {

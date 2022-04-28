@@ -72,9 +72,9 @@ void _esr_callback(int res, void *data, size_t data_len, void *arg)
 int _coap_srv_init(event_queue_t *evt_queue)
 {
     _evt_queue = evt_queue;
-    sprintf(_ertl_uri, "/%s/ertl", pepper_get_uid());
-    sprintf(_inf_uri, "/%s/infected", pepper_get_uid());
-    sprintf(_esr_uri, "/%s/esr", pepper_get_uid());
+    sprintf(_ertl_uri, "/%s/ertl", pepper_get_uid_str());
+    sprintf(_inf_uri, "/%s/infected", pepper_get_uid_str());
+    sprintf(_esr_uri, "/%s/esr", pepper_get_uid_str());
 
     coap_init_remote(&_remote, CONFIG_PEPPER_SRV_COAP_HOST, CONFIG_PEPPER_SRV_COAP_PORT);
 

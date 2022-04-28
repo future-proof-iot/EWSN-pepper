@@ -353,7 +353,7 @@ void pepper_gatt_init(void)
 {
     int rc = 0;
 
-    char *uid = pepper_get_uid();
+    char *uid = pepper_get_uid_str();
 
     /* verify and add our custom services */
     rc = ble_gatts_count_cfg(gatt_svr_svcs);

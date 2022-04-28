@@ -44,7 +44,7 @@ void pepper_stdio_nimble_init(void)
     int rc = 0;
 
     pepper_uid_init();
-    char *uid = pepper_get_uid();
+    char *uid = pepper_get_uid_str();
     /* set the device name */
     ble_svc_gap_device_name_set(uid);
 

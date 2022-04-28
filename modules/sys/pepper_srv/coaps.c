@@ -145,21 +145,21 @@ void _esr_callback(int res, void *data, size_t data_len, void *arg)
 int _coaps_srv_init(event_queue_t *evt_queue)
 {
     _evt_queue = evt_queue;
-    sprintf(_ertl_uri, "/%s/ertl", pepper_get_uid());
-    sprintf(_inf_uri, "/%s/infected", pepper_get_uid());
-    sprintf(_esr_uri, "/%s/esr", pepper_get_uid());
+    sprintf(_ertl_uri, "/%s/ertl", pepper_get_uid_str());
+    sprintf(_inf_uri, "/%s/infected", pepper_get_uid_str());
+    sprintf(_esr_uri, "/%s/esr", pepper_get_uid_str());
 
     coap_init_remote(&_remote, CONFIG_PEPPER_SRV_COAP_HOST, CONFIG_PEPPER_SRV_COAP_PORT);
 
     coap_req_ctx_init(&_get_ctx, _esr_callback, NULL);
     coap_req_ctx_init(&_block_ctx.req_ctx, NULL, NULL);
 
-    security_ctx_init(&_sec_ctx, (uint8_t *)pepper_get_uid(), strlen(pepper_get_uid()),
+    security_ctx_init(&_sec_ctx, (uint8_t *)pepper_get_uid_str(), strlen(pepper_get_uid_str()),
                       (uint8_t *)pepper_server_id, sizeof(pepper_server_id));
 
     /* setup initiator context */
-    if (edhoc_coap_init(&_edhoc_ctx, EDHOC_IS_INITIATOR, (uint8_t *)pepper_get_uid(),
-                        strlen(pepper_get_uid())) == 0) {
+    if (edhoc_coap_init(&_edhoc_ctx, EDHOC_IS_INITIATOR, (uint8_t *)pepper_get_uid_str(),
+                        strlen(pepper_get_uid_str())) == 0) {
         event_timeout_ztimer_init(&_handshake_timeout, ZTIMER_MSEC, _evt_queue,
                                   &_handshake_event.super);
         _handshake_retry = true;

@@ -389,11 +389,18 @@ static inline char *pepper_get_serializer_bn(void)
 #endif
 
 /**
- * @brief   Returns the devices UID
+ * @brief   Returns the devices UID string
  *
  * @return  Pointer to the uid string
  */
-char *pepper_get_uid(void);
+char *pepper_get_uid_str(void);
+
+/**
+ * @brief   Returns the devices UID
+ *
+ * @return  the 16bites UID
+ */
+uint8_t* pepper_get_uid(void);
 
 /**
  * @brief   PEPPER uid service initialization

@@ -456,6 +456,20 @@ void pepper_init(void)
     /* TODO: move this to a different event queue, use defines to force it */
     event_periodic_init(&_end_epoch, ZTIMER_EPOCH, CONFIG_PEPPER_EVENT_PRIO,
                         &_end_of_epoch.super);
+    /* set static cid if requested */
+    if (IS_ACTIVE(CONFIG_BLE_ADV_STATIC_CID)) {
+        uint32_t cid = 0x00000000;
+        if (IS_USED(MODULE_PEPPER_UTIL)) {
+            memcpy(&cid,
+                   pepper_get_uid(),
+                   PEPPER_UID_LEN > sizeof(uint32_t) ? sizeof(uint32_t) : PEPPER_UID_LEN);
+            cid &= 0x3FFFFFFF;
+        }
+        else {
+            cid = desire_ble_adv_gen_cid();
+        }
+        desire_ble_adv_set_cid(cid);
+    }
 }
 
 void pepper_start(pepper_start_params_t *params)
