@@ -1,4 +1,6 @@
 from dataclasses import dataclass, asdict
+from distutils.dir_util import copy_tree
+from multiprocessing.sharedctypes import Value
 from typing import List, Optional, Union
 from dacite import from_dict
 import json
@@ -10,9 +12,8 @@ class Datum:
     n: str  # node id (desire CID)
     v: Union[float, int]  # value
     u: str  # unit
-    bt: Optional[int] = 0 # data tag
+    bt: Optional[int] = 0  # data tag
     t: Optional[int] = 0  # timestamp in milliseconds
-
 
     @property
     def annotation_tag(self) -> str:
@@ -27,7 +28,7 @@ class Datum:
         return self.u
 
     @property
-    def neighbor_id(self) -> str:
+    def cid(self) -> str:
         return self.n
 
     @property
@@ -50,23 +51,29 @@ class Datums:
     meas: List[Datum]
 
     @property
-    def neighbor_id(self) -> str:
-        "'pepper:ble:2ede8fd6' => 2ede8fd6"
-        return self.base.bn.split(":")[-1]
+    def node_id(self) -> str:
+        "'DWABCD:pepper:ble:2ede8fd6' => DWABCD"
+        return self.base.bn.split(":")[0]
 
     @property
     def tag(self) -> str:
-        "'pepper:ble:2ede8fd6' => pepper"
-        return self.base.bn.split(":")[0] if len(self.base.bn.split(":")) == 3 else None
+        "'DWABCD:pepper:ble:2ede8fd6' => pepper"
+        return self.base.bn.split(":")[1] if len(self.base.bn.split(":")) == 4 else None
 
     @property
     def tag_type(self) -> str:
-        "'pepper:ble:2ede8fd6' => ble"
-        return (
-            self.base.bn.split(":")[1]
-            if len(self.base.bn.split(":")) == 3
-            else self.base.bn.split(":")[0]
-        )
+        "'DWABCD:pepper:ble:2ede8fd6' => ble"
+        return self.base.bn.split(":")[-2]
+
+    @property
+    def cid(self) -> str:
+        "'DWABCD:pepper:ble:2ede8fd6' => 2ede8fd6"
+        return self.base.bn.split(":")[-1]
+
+    @property
+    def neigh_id(self) -> str:
+        "'DWABCD:pepper:ble:8fd6' => DW8fd6"
+        return f"DW{self.cid.upper()}" if len(self.cid) == 4 else None
 
     def name(self, idx) -> str:
         if idx > len(self.meas):
@@ -105,17 +112,85 @@ class Datums:
 class UWBDatum:
     cid: str
     time: int
+    node_id: str
     d_cm: Optional[Union[float, int]] = None
     tag: Optional[str] = ""
     rssi: Optional[Union[float, int]] = None
     los: Optional[Union[float, int]] = None
+
+    @property
+    def neigh_id(self) -> str:
+        "'8fd6' => DW8fd6"
+        return f"DW{self.cid.upper()}" if len(self.cid) == 4 else None
+
+    @classmethod
+    def from_datum(cls, datum: Datums):
+        if datum.tag_type == "uwb":
+            uwb = UWBDatum(
+                cid=datum.cid, time=datum.base.timestamp, node_id=datum.node_id
+            )
+            for idx, _ in enumerate(datum.meas):
+                uwb.rssi = datum.value(idx) if datum.name(idx) == "rssi" else None
+                uwb.d_cm = datum.value(idx) if datum.name(idx) == "d_cm" else None
+                uwb.los = datum.value(idx) if datum.name(idx) == "los" else None
+            return uwb
+        raise ValueError("not UWBDatum")
+
+    @classmethod
+    def from_json_str(cls, json_string: str):
+        datum = Datums.from_json_str(json_string)
+        return UWBDatum.from_datum(datum)
+
+    @classmethod
+    def from_file(cls, filename: str):
+        datums = []
+        with open(filename, "r") as f:
+            for line in f:
+                try:
+                    datums.append(UWBDatum.from_json_str(line))
+                except ValueError:
+                    continue
+        return datums
 
 
 @dataclass
 class BLEDatum:
     cid: str
     time: int
+    node_id: str
     rssi: Optional[Union[float, int]] = None
+
+    @property
+    def neigh_id(self) -> str:
+        "'8fd6' => DW8fd6"
+        return f"DW{self.cid.upper()}" if len(self.cid) == 4 else None
+
+    @classmethod
+    def from_datum(cls, datum: Datums):
+        if datum.tag_type == "ble":
+            ble = BLEDatum(
+                cid=datum.cid, time=datum.base.timestamp, node_id=datum.node_id
+            )
+            for idx, _ in enumerate(datum.meas):
+                ble.rssi = datum.value(idx) if datum.name(idx) == "rssi" else None
+            return ble
+        raise ValueError("not BLEDatum")
+
+    @classmethod
+    def from_json_str(cls, json_string: str):
+        datum = Datums.from_json_str(json_string)
+        return BLEDatum.from_datum(datum)
+
+    @classmethod
+    def from_file(cls, filename: str):
+        datums = []
+        with open(filename, "r") as f:
+            for line in f:
+                try:
+                    datums.append(BLEDatum.from_json_str(line))
+                except ValueError:
+                    continue
+        return datums
 
 
 @dataclass
@@ -128,16 +203,25 @@ class DebugDatums:
         uwb_list = list()
         ble_list = list()
         for datum in datums:
-            if datum.tag_type == "uwb":
-                uwb = UWBDatum(cid=datum.neighbor_id, time=datum.base.timestamp)
-                for idx, _ in enumerate(datum.meas):
-                    uwb.rssi = datum.value(idx) if datum.name(idx) == "rssi" else None
-                    uwb.d_cm = datum.value(idx) if datum.name(idx) == "d_cm" else None
-                    uwb.los = datum.value(idx) if datum.name(idx) == "los" else None
-                uwb_list.append(uwb)
-            if datum.tag_type == "ble":
-                ble = BLEDatum(cid=datum.neighbor_id, time=datum.base.timestamp)
-                for idx, _ in enumerate(datum.meas):
-                    ble.rssi = datum.value(idx) if datum.name(idx) == "rssi" else None
-                ble_list.append(ble)
+            try:
+                uwb_list.append(UWBDatum.from_datum(datum))
+                continue
+            except ValueError:
+                pass
+            try:
+                ble_list.append(BLEDatum.from_datum(datum))
+                continue
+            except ValueError:
+                pass
         return DebugDatums(uwb=uwb_list, ble=ble_list)
+
+    @staticmethod
+    def from_file(filename: str):
+        datums = []
+        with open(filename, "r") as f:
+            for line in f:
+                try:
+                    datums.append(Datums.from_json_str(line))
+                except ValueError:
+                    continue
+        return DebugDatums.from_datums(datums)

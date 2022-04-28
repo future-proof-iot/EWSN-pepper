@@ -4,6 +4,7 @@
 Dataclass definitions matchings pepper JSON formatted end of epoch logs
 """
 
+from calendar import EPOCH
 import json
 from dataclasses import dataclass, asdict
 from typing import List, Optional, Union
@@ -52,9 +53,19 @@ class PetElement:
 
 @dataclass
 class EpochData:
-    tag: Optional[str]
+    tag: str
     epoch: int
     pets: List[PetElement]
+
+    @property
+    def annotation_tag(self) -> str:
+        "'DWABCD:pepper' => pepper"
+        return self.tag.split(":")[-1]
+
+    @property
+    def node_id(self) -> str:
+        "'DWABCD:pepper' => DWABCD"
+        return self.tag.split(":")[0]
 
     @staticmethod
     def from_json_str(json_string: str):
@@ -68,20 +79,13 @@ class EpochData:
         json_dict = asdict(self)
         return json.dumps(json_dict, indent=indent)
 
-
-@dataclass
-class NamedEpochData:
-    data: EpochData
-    uid: str
-
     @staticmethod
-    def from_json_str(json_string: str):
-        json_dict = json.loads(json_string)
-        return from_dict(data_class=NamedEpochData, data=json_dict)
-
-    def clone(self):
-        return from_dict(data_class=NamedEpochData, data=asdict(self))
-
-    def to_json_str(self, indent=None) -> str:
-        json_dict = asdict(self)
-        return json.dumps(json_dict, indent=indent)
+    def from_file(filename: str):
+        data = []
+        with open(filename, "r") as f:
+            for line in f:
+                try:
+                    data.append(EpochData.from_json_str(line))
+                except ValueError:
+                    continue
+        return data

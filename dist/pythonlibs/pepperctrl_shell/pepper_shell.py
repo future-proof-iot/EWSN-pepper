@@ -78,7 +78,7 @@ class PepperCmd(ShellInteraction):
         return self.cmd(cmd, timeout=timeout, async_=async_)
 
     def pepper_stop(self, on=True, timeout=-1, async_=False):
-        return self.twr_cmd(args=("stop"), timeout=timeout, async_=async_)
+        return self.pepper_cmd(args=("stop",), timeout=timeout, async_=async_)
 
     def pepper_start(
         self,

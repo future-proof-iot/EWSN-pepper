@@ -12,8 +12,8 @@ from riotctrl_shell.tests.common import init_ctrl
 def test_pepper_start():
     rc = init_ctrl(
         output="""
-{"tag":"door-50","epoch":183,"pets":[{"pet":{"etl":"84EABD1FB544407B83B55B5D51387FBD3BAC5A0AA670328471C1792275DB2D5B","rtl":"220A556FEFDC4DA7781707487A5649D3DA55C1A0BFEF2E7263204BDF05D1C395","uwb":{"exposure":262,"req_count":48,"avg_d_cm":21},"ble":{"exposure":276,"scan_count":69,"avg_rssi":-56.1581611,"avg_d_cm":44}}}]}
-{"epoch":1085,"pets":[{"pet":{"etl":"112223E0C6B719977D5B8CCD3180609D1C7A3AB5BC5BEDA5306252E95FD0C847","rtl":"6BE4C3FEE9FC15364165A330799A45DCAE2660C599945B9280A7B42EC87DBF2B","uwb":{"exposure":268,"req_count":50,"avg_d_cm":23},"ble":{"exposure":276,"scan_count":68,"avg_rssi":-55.4878273,"avg_d_cm":40}}}]}
+{"tag":"DWAFDE","epoch":731,"pets":[{"pet":{"etl":"4FA21E5EDBAF4F52765DC267EBD38E8558F300DAA180DF24CD32378F2D004B8B","rtl":"15E32EE320E98F4AB3D8DB59381B9ADA67FFD266FBCA917E6F0B2B98DBDBCC3A","uwb":{"exposure":24,"req_count":20,"avg_d_cm":42},"ble":{"exposure":24,"scan_count":25,"avg_rssi":-47.9868011,"avg_d_cm":8}}}]}
+{"tag":"DWAFDE:door","epoch":1367,"pets":[{"pet":{"etl":"E5392F096D847C457BF175EA048FA882E2BC91648CA33F55B706DBF58A2D9D7B","rtl":"4BC59A4BD82FD96FC68E61053090C87C9F586CF635B5B54037A19180F903C175","uwb":{"exposure":14,"lst_scheduled":22,"lst_aborted":0,"lst_timeout":5,"req_scheduled":25,"req_aborted":0,"req_timeout":17,"req_count":7,"avg_d_cm":51,"avg_los":100,"avg_rssi":-79.7874527},"ble":{"exposure":24,"scan_count":22,"avg_rssi":-44.8905716,"avg_d_cm":5}}}]}
     """
     )
     shell = pepper_shell.PepperCmd(rc)
@@ -22,8 +22,8 @@ def test_pepper_start():
     parser = pepper_shell.PepperStartParser()
     epoch_data, uwb_ble_data = parser.parse(out)
     assert len(epoch_data) == 2
-    assert epoch_data[0].tag == "door-50"
-    assert epoch_data[1].tag == None
+    assert epoch_data[0].tag == "DWAFDE"
+    assert epoch_data[1].tag == "DWAFDE:door"
 
 
 def test_pepper_start_with_ble_uwb():

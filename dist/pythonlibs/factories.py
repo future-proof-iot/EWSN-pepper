@@ -79,6 +79,13 @@ class FileCtrlEnvFactory(ContextDecorator):
             envs = yaml.safe_load(stream)
         return envs
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc):
+        self.cleanup()
+        return False
+
     def cleanup(self):
         pass
 

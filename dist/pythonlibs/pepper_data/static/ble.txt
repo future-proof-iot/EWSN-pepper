@@ -1,0 +1,5 @@
+[{"bn":"DWAFDE:ble:55ad","bt":5766,"n":"rssi","v":-49,"u":"dBm"}]
+[{"bn":"DWAFDE:ble:55ad","bt":6759,"n":"rssi","v":-47,"u":"dBm"}]
+[{"bn":"DWAFDE:ble:55ad","bt":8765,"n":"rssi","v":-49,"u":"dBm"}]
+[{"bn":"DWAFDE:ble:55ad","bt":10767,"n":"rssi","v":-47,"u":"dBm"}]
+[{"bn":"DWAFDE:ble:55ad","bt":11761,"n":"rssi","v":-49,"u":"dBm"}]

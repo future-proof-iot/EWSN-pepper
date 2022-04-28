@@ -1,0 +1,5 @@
+[{"bn":"DWAFDE:uwb:55ad","bt":9985,"n":"d_cm","v":104,"u":"cm"}]
+[{"bn":"DWAFDE:uwb:55ad","bt":10988,"n":"d_cm","v":99,"u":"cm"}]
+[{"bn":"DWAFDE:uwb:55ad","bt":11987,"n":"d_cm","v":100,"u":"cm"}]
+[{"bn":"DWAFDE:uwb:55ad","bt":12991,"n":"d_cm","v":104,"u":"cm"}]
+[{"bn":"DWAFDE:uwb:55ad","bt":14990,"n":"d_cm","v":105,"u":"cm"}]
