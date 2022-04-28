@@ -26,8 +26,7 @@ USEMODULE += ed_uwb
 USEMODULE += ed_ble
 USEMODULE += ztimer_epoch
 USEMODULE += ztimer_msec
+USEMODULE += ztimer_usec
 USEMODULE += storage
-
-USEMODULE += mtd_sdcard
 
 include $(RIOTBASE)/Makefile.include
