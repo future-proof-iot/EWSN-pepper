@@ -1,22 +1,14 @@
-# PEPPPER
+# PEPPER experience
 
 This implements PEPPER (PrEcise Privacy-PresERving Proximity Tracing). The
-application is controlled via shell commands. Et the beginning of every
-epoch (`CONFIG_EPOCH_DURATION_SEC` (default `15*60s`)) ephemeral unique
-identifiers are generated and advertised over BLE. At the same time
-devices scan for neighboring advertisements.
-
-When advertisements are received a TWR exchange can optionally be initiated
-between the scanner and advertiser.
-
-At the end of of an epoch information on the encounters is logged over serial.
+application is controlled via shell commands.
 
 This application is also enabling logging UWB `los` information through the
 `ed_uwb_los` module as well as logging epoch data to an attached sd-card, if
 any is present.
 
-Its also making the `dwm1001` devices user button stop pepper, or re-start it
-with the default configured parameters. See the `Makefile`. For more on this.
+It's very similar to `pepper_iotlab` application but without tunning some
+configurations values to expect many neighbors in the vicinity.
 
 Currently devices are not time synchronized so if the `MIN_EXPOSE_TIME_S`
 is too large with respect to `CONFIG_EPOCH_DURATION_SEC` they might miss each
@@ -25,7 +17,7 @@ other. A BLE time advertiser can be set up to synchronize devices. See
 
 ## PRE-requisites
 
-* A valid [FIT IoT-LAB](https://www.iot-lab.info/) account.
+* If running on IoT-LAB then a valid [FIT IoT-LAB](https://www.iot-lab.info/) account.
 * Initialize this repository as described in [README.md](../../README.md)
 
 ## Running IoT-LAB
