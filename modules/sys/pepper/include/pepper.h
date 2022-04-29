@@ -189,6 +189,13 @@ extern "C" {
 #endif
 
 /**
+ * @brief   Set to 1 to log in CSV format
+ */
+#ifndef CONFIG_PEPPER_LOG_CSV
+#define CONFIG_PEPPER_LOG_CSV           0
+#endif
+
+/**
  * @brief   Token ID length in bytes
  */
 #define PEPPER_UID_LEN          (2)

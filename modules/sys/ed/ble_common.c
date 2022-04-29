@@ -120,6 +120,7 @@ void ed_serialize_ble_printf(ed_ble_data_t *data, const char *bn)
 
 size_t ed_serialize_ble_json(ed_ble_data_t *data, const char *bn, uint8_t *buf, size_t len)
 {
+    (void)len;
     json_encoder_t ctx;
 
     json_encoder_init(&ctx, (char *)buf, len);
@@ -151,4 +152,41 @@ size_t ed_serialize_ble_json(ed_ble_data_t *data, const char *bn, uint8_t *buf, 
     json_dict_close(&ctx);
     json_array_close(&ctx);
     return json_encoder_end(&ctx);
+}
+
+size_t ed_serialize_ble_csv(ed_ble_data_t *ed, const char *bn, char*buf, size_t len)
+{
+    (void)len;
+    int size = 0;
+
+    if (bn) {
+        size += fmt_str(buf + size, bn);
+    }
+    size += fmt_char(buf + size, ',');
+    size += fmt_str(buf + size, "ble");
+    size += fmt_char(buf + size, ',');
+    size += fmt_bytes_hex(buf + size, (uint8_t*)&ed->cid, sizeof(uint32_t));
+    size += fmt_char(buf + size, ',');
+    size += fmt_u32_dec(buf + size, ed->time);
+    size += fmt_char(buf + size, ',');
+    size += fmt_float(buf + size, ed->rssi, 2);
+    size += fmt_char(buf + size, ',');
+    return size;
+}
+
+void ed_serialize_ble_printf_csv(ed_ble_data_t *ed, const char *bn)
+{
+    if (bn) {
+        print_str(bn);
+    }
+    print_str(",");
+    print_str("ble");
+    print_str(",");
+    print_bytes_hex((uint8_t *)&ed->cid, sizeof(uint32_t));
+    print_str(",");
+    print_u32_dec(ed->time);
+    print_str(",");
+    print_float(ed->rssi, 2);
+    print_str(",");
+    print_str("\n");
 }

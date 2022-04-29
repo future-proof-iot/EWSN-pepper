@@ -149,7 +149,12 @@ static void _twr_cb(twr_event_data_t *data, twr_status_t status)
 #if IS_USED(MODULE_PEPPER_SRV)
         pepper_srv_uwb_data_submit(&uwb_data);
 #else
-        ed_serialize_uwb_printf(&uwb_data, pepper_get_serializer_bn());
+        if (IS_ACTIVE(CONFIG_PEPPER_LOG_CSV)) {
+            ed_serialize_uwb_printf_csv(&uwb_data, pepper_get_serializer_bn());
+        }
+        else {
+            ed_serialize_uwb_printf(&uwb_data, pepper_get_serializer_bn());
+        }
 #endif
     }
 }
@@ -262,7 +267,12 @@ static void _scan_cb(uint32_t ticks, const ble_addr_t *addr, int8_t rssi,
 #if IS_USED(MODULE_PEPPER_SRV)
         pepper_srv_ble_data_submit(&ble_data);
 #else
-        ed_serialize_ble_printf(&ble_data, pepper_get_serializer_bn());
+        if (IS_ACTIVE(CONFIG_PEPPER_LOG_CSV)) {
+            ed_serialize_ble_printf_csv(&ble_data, pepper_get_serializer_bn());
+        }
+        else {
+            ed_serialize_ble_printf(&ble_data, pepper_get_serializer_bn());
+        }
 #endif
     }
 

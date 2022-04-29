@@ -443,13 +443,22 @@ ed_t *ed_list_process_rng_data(ed_list_t *list, const uint16_t addr, uint16_t ti
                                uint16_t d_cm, uint16_t los, float rssi);
 
 /**
- * @brief   Serializes UWB data over stdio
+ * @brief   Serializes UWB data over stdio in JSON
  *
  * @param[in]       ed       uwb data
  * @param[in]       bn       optional base name tag
  *
  */
 void ed_serialize_uwb_printf(ed_uwb_data_t *ed, const char *base_name);
+
+/**
+ * @brief   Serializes UWB data over stdio in CSV
+ *
+ * @param[in]       ed       uwb data
+ * @param[in]       bn       optional base name tag
+ *
+ */
+void ed_serialize_uwb_printf_csv(ed_uwb_data_t *ed, const char *bn);
 
 /**
  * @brief   Serialized UWB data to buffet in JSON format
@@ -462,6 +471,18 @@ void ed_serialize_uwb_printf(ed_uwb_data_t *ed, const char *base_name);
  * @return  Encoded length
  */
 size_t ed_serialize_uwb_json(ed_uwb_data_t *ed, const char *bn, uint8_t *buf, size_t len);
+
+/**
+ * @brief   Serialized UWB data to buffet in CSV format, dw1234,uwb,0x<cid>,d_cm,los,rssi
+ *
+ * @param[in]       ed       uwb data
+ * @param[in]       bn       optional base name tag
+ * @param[in]       buf      pointer to allocated encoding buffer
+ * @param[in]       len      length of encoding buffer
+
+ * @return  Encoded length
+ */
+size_t ed_serialize_uwb_csv(ed_uwb_data_t *ed, const char *bn, char *buf, size_t len);
 #endif
 
 #if IS_USED(MODULE_ED_BLE) || IS_USED(MODULE_ED_BLE_WIN)
@@ -485,13 +506,22 @@ ed_t *ed_list_process_scan_data(ed_list_t *list, const uint32_t cid, uint16_t ti
                                 int8_t rssi);
 
 /**
- * @brief   Serializes BLE data over stdio
+ * @brief   Serializes BLE data over stdio in JSON
  *
  * @param[in]       data     ble data
  * @param[in]       bn       optional base name tag
  *
  */
 void ed_serialize_ble_printf(ed_ble_data_t *data, const char *bn);
+
+/**
+ * @brief   Serializes BLE data over stdio in CSV
+ *
+ * @param[in]       data     ble data
+ * @param[in]       bn       optional base name tag
+ *
+ */
+void ed_serialize_ble_printf_csv(ed_ble_data_t *ed, const char *bn);
 
 /**
  * @brief   Serialized BLE data to buffet in JSON format
@@ -504,6 +534,18 @@ void ed_serialize_ble_printf(ed_ble_data_t *data, const char *bn);
  * @return  Encoded length
  */
 size_t ed_serialize_ble_json(ed_ble_data_t *data, const char *bn, uint8_t *buf, size_t len);
+
+/**
+ * @brief   Serialized BLE data to buffet in CSV format, dw1234,ble,0x<cid>,d_cm,los,rssi
+ *
+ * @param[in]       data     ble data
+ * @param[in]       bn       optional base name tag
+ * @param[in]       buf      pointer to allocated encoding buffer
+ * @param[in]       len      length of encoding buffer
+
+ * @return  Encoded length
+ */
+size_t ed_serialize_ble_csv(ed_ble_data_t *ed, const char *bn, char *buf, size_t len);
 
 /**
  * @brief   Converts an rssi value to a distance estimation based on the configured
