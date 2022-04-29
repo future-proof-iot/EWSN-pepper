@@ -22,17 +22,17 @@ def create_directory(directory, clean=False, mode=0o755):
     os.makedirs(directory, mode=mode, exist_ok=True)
 
 
-def create_and_dump(data, directory, file_name):
+def create_and_dump(data:str, directory, file_name, override=True):
     """Create file with name in 'directory' and dumps
     data do file
     """
     LOGGER.info("logging to file {}".format(file_name))
     file_path = os.path.join(directory, file_name)
-    if os.path.exists(file_path):
+    if os.path.exists(file_path) :
         LOGGER.warning(f"File {file_name} already exists, overwriting")
     try:
-        with open(file_path, "w") as f:
-            for line in data:
+        with open(file_path, 'w' if override else 'a') as f:
+            for line in data.splitlines():
                 f.write("{}\n".format(line))
     except OSError as err:
         sys.exit("Failed to create a log file: {}".format(err))
