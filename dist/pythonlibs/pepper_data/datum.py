@@ -130,10 +130,12 @@ class UWBDatum:
                 cid=datum.cid, time=datum.base.timestamp, node_id=datum.node_id
             )
             for idx, _ in enumerate(datum.meas):
-                uwb.rssi = datum.value(idx) if datum.name(idx) == "rssi" else None
-                uwb.d_cm = datum.value(idx) if datum.name(idx) == "d_cm" else None
-                uwb.los = datum.value(idx) if datum.name(idx) == "los" else None
-            return uwb
+                if datum.name(idx) == "rssi":
+                    uwb.rssi = datum.value(idx)
+                if datum.name(idx) == "d_cm":
+                    uwb.d_cm = datum.value(idx)
+                if datum.name(idx) == "los":
+                    uwb.los = datum.value(idx)
         raise ValueError("not UWBDatum")
 
     @classmethod
