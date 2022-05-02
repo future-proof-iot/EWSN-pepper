@@ -32,6 +32,7 @@
 
 #include "desire_ble_adv.h"
 #include "pepper.h"
+#include "current_time.h"
 
 #ifndef LOG_LEVEL
 #define LOG_LEVEL   LOG_INFO
@@ -74,7 +75,11 @@ static int _pepper_start_handler(uint16_t conn_handle, uint16_t attr_handle,
 static int _pepper_stop_handler(uint16_t conn_handle, uint16_t attr_handle,
                                 struct ble_gatt_access_ctxt *ctxt, void *arg);
 static int _pepper_restart_handler(uint16_t conn_handle, uint16_t attr_handle,
-                                 struct ble_gatt_access_ctxt *ctxt, void *arg);
+                                   struct ble_gatt_access_ctxt *ctxt, void *arg);
+#if IS_USED(MODULE_PEPPER_CURRENT_TIME)
+static int _pepper_current_time_handler(uint16_t conn_handle, uint16_t attr_handle,
+                                        struct ble_gatt_access_ctxt *ctxt, void *arg);
+#endif
 
 /* define the bluetooth services for our device */
 /* GATT service definitions */
@@ -109,7 +114,7 @@ static const struct ble_gatt_svc_def gatt_svr_svcs[] =
                 /* Characteristic: Read/Write PEPPER config */
                 .uuid = (ble_uuid_t *)&gatt_svr_chr_pepper_config_uuid.u,
                 .access_cb = _pepper_cfg_handler,
-                .flags =  BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_WRITE,
+                .flags = BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_WRITE,
             },
             {
                 /* Characteristic: Start PEPPER */
@@ -134,6 +139,25 @@ static const struct ble_gatt_svc_def gatt_svr_svcs[] =
             },
         }
     },
+#if IS_USED(MODULE_PEPPER_CURRENT_TIME)
+    {
+        /* Service: Device Information */
+        .type = BLE_GATT_SVC_TYPE_PRIMARY,
+        .uuid = BLE_UUID16_DECLARE(CURRENT_TIME_SERVICE_UUID16),
+        .characteristics = (struct ble_gatt_chr_def[]) { {
+                                                             /* Characteristic: * Manufacturer name */
+                                                             .uuid = BLE_UUID16_DECLARE(
+                                                                 CURRENT_TIME_UUID16),
+                                                             .access_cb =
+                                                                 _pepper_current_time_handler,
+                                                             .flags = BLE_GATT_CHR_F_READ |
+                                                                      BLE_GATT_CHR_F_WRITE,
+                                                         },
+                                                         {
+                                                             0, /* No more characteristics in this service */
+                                                         }, }
+    },
+#endif
     {
         0,     /* No more services */
     },
@@ -305,7 +329,7 @@ static int _pepper_stop_handler(uint16_t conn_handle, uint16_t attr_handle,
 
 
 static int _pepper_restart_handler(uint16_t conn_handle, uint16_t attr_handle,
-                                struct ble_gatt_access_ctxt *ctxt, void *arg)
+                                   struct ble_gatt_access_ctxt *ctxt, void *arg)
 {
     (void)conn_handle;
     (void)attr_handle;
@@ -315,7 +339,7 @@ static int _pepper_restart_handler(uint16_t conn_handle, uint16_t attr_handle,
     switch (ctxt->op) {
     case BLE_GATT_ACCESS_OP_WRITE_CHR:
         LOG_INFO("[pepper] gatt: restart ... ");
-            /* start pepper with default parameters */
+        /* start pepper with default parameters */
         pepper_start_params_t params = {
             .epoch_duration_s = CONFIG_EPOCH_DURATION_SEC,
             .epoch_iterations = 0,
@@ -348,6 +372,53 @@ static int _pepper_restart_handler(uint16_t conn_handle, uint16_t attr_handle,
 
     return rc;
 }
+
+#if IS_USED(MODULE_PEPPER_CURRENT_TIME)
+static int _pepper_current_time_handler(uint16_t conn_handle, uint16_t attr_handle,
+                                        struct ble_gatt_access_ctxt *ctxt, void *arg)
+{
+    (void)conn_handle;
+    (void)attr_handle;
+    (void)arg;
+    int rc = 0;
+
+    switch (ctxt->op) {
+
+    case BLE_GATT_ACCESS_OP_READ_CHR:
+        LOG_INFO("[pepper] gatt: epoch %" PRIu32 "\n", ztimer_now(ZTIMER_EPOCH));
+        uint8_t sys_epoch[sizeof(current_time_t)];
+        byteorder_htolebufl(sys_epoch, ztimer_now(ZTIMER_EPOCH));
+        rc = os_mbuf_append(ctxt->om, sys_epoch, sizeof(current_time_t));
+        break;
+    case BLE_GATT_ACCESS_OP_WRITE_CHR:
+        LOG_INFO("[pepper] gatt: cfg write new epoch...\n");
+        uint16_t om_len = OS_MBUF_PKTLEN(ctxt->om);
+        if (om_len > sizeof(current_time_t)) {
+            LOG_INFO("error, exceeded buffer size\n");
+            rc = 1;
+        }
+        else {
+            uint8_t sys_epoch[sizeof(current_time_t)];
+            rc = ble_hs_mbuf_to_flat(ctxt->om, sys_epoch,
+                                     sizeof(uint32_t),
+                                     &om_len);
+            current_time_update(byteorder_lebuftohl(sys_epoch));
+        }
+        break;
+    case BLE_GATT_ACCESS_OP_READ_DSC:
+        LOG_DEBUG("[pepper] gatt: cfg read from descriptor\n");
+        break;
+    case BLE_GATT_ACCESS_OP_WRITE_DSC:
+        LOG_DEBUG("[pepper] gatt: cfg write to descriptor\n");
+        break;
+    default:
+        LOG_WARNING("[pepper] gatt: cfg unhandled operation!\n");
+        rc = 1;
+        break;
+    }
+    return rc;
+}
+#endif
 
 void pepper_gatt_init(void)
 {

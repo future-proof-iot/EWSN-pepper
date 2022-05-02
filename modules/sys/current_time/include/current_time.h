@@ -31,6 +31,7 @@ extern "C" {
 #endif
 
 #define CURRENT_TIME_SERVICE_UUID16         0x3333
+#define CURRENT_TIME_UUID16                 0x3332
 
 /**
  * @brief   Acceptable offset between current and received time in seconds
