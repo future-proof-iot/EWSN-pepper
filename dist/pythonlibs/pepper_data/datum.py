@@ -136,7 +136,9 @@ class UWBDatum:
                     uwb.d_cm = datum.value(idx)
                 if datum.name(idx) == "los":
                     uwb.los = datum.value(idx)
-        raise ValueError("not UWBDatum")
+            return uwb
+        else:
+            raise ValueError("not UWBDatum")
 
     @classmethod
     def from_json_str(cls, json_string: str):
@@ -176,7 +178,8 @@ class BLEDatum:
             for idx, _ in enumerate(datum.meas):
                 ble.rssi = datum.value(idx) if datum.name(idx) == "rssi" else None
             return ble
-        raise ValueError("not BLEDatum")
+        else:
+            raise ValueError("not BLEDatum")
 
     @classmethod
     def from_json_str(cls, json_string: str):

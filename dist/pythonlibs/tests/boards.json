@@ -1,23 +1,25 @@
-[
-    {
-        "env": {
-            "BOARD": "dwm1001"
+{
+    "boards": [
+        {
+            "env": {
+                "BOARD": "dwm1001"
+            },
+            "position": [
+                0,
+                0,
+                0
+            ]
         },
-        "position": [
-            0,
-            0,
-            0
-        ]
-    },
-    {
-        "env": {
-            "BOARD": "iotlab-m3",
-            "DEBUG_ADAPTER_ID": 12345678
-        },
-        "position": [
-            1,
-            2,
-            3
-        ]
-    }
-]
+        {
+            "env": {
+                "BOARD": "iotlab-m3",
+                "DEBUG_ADAPTER_ID": 12345678
+            },
+            "position": [
+                1,
+                2,
+                3
+            ]
+        }
+    ]
+}

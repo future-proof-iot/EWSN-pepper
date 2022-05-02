@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from contextlib import ContextDecorator
+from distutils.command.config import config
 from turtle import position
 from riotctrl.ctrl import RIOTCtrlBoardFactory
 from iotlab import IoTLABExperiment
@@ -74,10 +75,10 @@ class FileCtrlEnvFactory(ContextDecorator):
         """
         :params boards_file: a yaml or json file
         """
-        envs = []
+        config = []
         with open(boards_file, "r") as stream:
-            envs = yaml.safe_load(stream)
-        return envs
+            config = yaml.safe_load(stream)
+        return config["boards"]
 
     def __enter__(self):
         return self
