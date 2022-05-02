@@ -25,6 +25,7 @@
 #include "ed.h"
 #include "ed_shared.h"
 
+#include "fmt.h"
 #include "timex.h"
 #include "board.h"
 
@@ -256,6 +257,7 @@ void ed_list_finish(ed_list_t *list)
 void ed_list_clear(ed_list_t *list)
 {
     unsigned state = irq_disable();
+
     while (list->list.next) {
         ed_memory_manager_free(list->manager, (ed_t *)clist_lpop(&list->list));
     }
@@ -276,4 +278,114 @@ void ed_memory_manager_free(ed_memory_manager_t *manager, ed_t *ed)
 ed_t *ed_memory_manager_calloc(ed_memory_manager_t *manager)
 {
     return memarray_calloc(&manager->mem);
+}
+
+size_t ed_serialize_uwb_ble_csv(ed_uwb_data_t *uwb, ed_ble_data_t *ble, const char *bn, char *buf)
+{
+    int size = 0;
+
+    if (bn) {
+        size += fmt_str(buf + size, bn);
+        size += fmt_char(buf + size, ',');
+    }
+    if (uwb) {
+        size += fmt_bytes_hex(buf + size, (uint8_t *)&uwb->cid, sizeof(uint32_t));
+        size += fmt_char(buf + size, ',');
+        size += fmt_u32_dec(buf + size, uwb->time);
+        size += fmt_char(buf + size, ',');
+    }
+    else if (ble) {
+        size += fmt_bytes_hex(buf + size, (uint8_t *)&ble->cid, sizeof(uint32_t));
+        size += fmt_char(buf + size, ',');
+        size += fmt_u32_dec(buf + size, ble->time);
+        size += fmt_char(buf + size, ',');
+    }
+
+    if (uwb) {
+        size += fmt_u32_dec(buf + size, uwb->d_cm);
+        size += fmt_char(buf + size, ',');
+#if IS_USED(MODULE_ED_UWB_LOS)
+        size += fmt_u32_dec(buf + size, uwb->los);
+#else
+        size += fmt_str(buf + size, "NULL");
+#endif
+        size += fmt_char(buf + size, ',');
+#if IS_USED(MODULE_ED_UWB_RSSI)
+        size += fmt_float(buf + size, uwb->rssi, 2);
+#else
+        size += fmt_str(buf + size, "NULL");
+#endif
+        size += fmt_char(buf + size, ',');
+    }
+    else {
+        size += fmt_str(buf + size, "NULL");
+        size += fmt_char(buf + size, ',');
+        size += fmt_str(buf + size, "NULL");
+        size += fmt_char(buf + size, ',');
+        size += fmt_str(buf + size, "NULL");
+        size += fmt_char(buf + size, ',');
+    }
+    if (ble) {
+        size += fmt_float(buf + size, ble->rssi, 2);
+        size += fmt_char(buf + size, ',');
+    }
+    else {
+        size += fmt_str(buf + size, "NULL");
+        size += fmt_char(buf + size, ',');
+    }
+
+    return size;
+}
+
+void ed_serialize_uwb_ble_printf_csv(ed_uwb_data_t *uwb, ed_ble_data_t *ble, const char *bn)
+{
+    if (bn) {
+        print_str(bn);
+        print_str(",");
+    }
+    if (uwb) {
+        print_bytes_hex((uint8_t *)&uwb->cid, sizeof(uint32_t));
+        print_str(",");
+        print_u32_dec(uwb->time);
+        print_str(",");
+    }
+    else {
+        print_bytes_hex((uint8_t *)&ble->cid, sizeof(uint32_t));
+        print_str(",");
+        print_u32_dec(ble->time);
+        print_str(",");
+    }
+    if (uwb) {
+        print_u32_dec(uwb->d_cm);
+        print_str(",");
+#if IS_USED(MODULE_ED_UWB_LOS)
+        print_u32_dec(uwb->los);
+#else
+        print_str("NULL");
+#endif
+        print_str(",");
+#if IS_USED(MODULE_ED_UWB_RSSI)
+        print_float(uwb->rssi, 2);
+#else
+        print_str("NULL");
+#endif
+        print_str(",");
+    }
+    else {
+        print_str("NULL");
+        print_str(",");
+        print_str("NULL");
+        print_str(",");
+        print_str("NULL");
+        print_str(",");
+    }
+    if (ble) {
+        print_float(ble->rssi, 2);
+        print_str(",");
+    }
+    else {
+        print_str("NULL");
+        print_str(",");
+    }
+    print_str("\n");
 }
