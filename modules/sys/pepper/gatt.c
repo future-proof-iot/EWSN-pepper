@@ -27,6 +27,7 @@
 #include "host/util/util.h"
 #include "net/bluetil/ad.h"
 
+#include "xfa.h"
 #include "services/gap/ble_svc_gap.h"
 #include "services/gatt/ble_svc_gatt.h"
 
@@ -81,87 +82,82 @@ static int _pepper_current_time_handler(uint16_t conn_handle, uint16_t attr_hand
                                         struct ble_gatt_access_ctxt *ctxt, void *arg);
 #endif
 
-/* define the bluetooth services for our device */
-/* GATT service definitions */
-static const struct ble_gatt_svc_def gatt_svr_svcs[] =
-{
-    {
-        /* Device Information Service */
-        .type = BLE_GATT_SVC_TYPE_PRIMARY,
-        .uuid = BLE_UUID16_DECLARE(BLE_GATT_SVC_DEVINFO),
-        .characteristics = (struct ble_gatt_chr_def[]) {
-            {
-                .uuid = BLE_UUID16_DECLARE(BLE_GATT_CHAR_MANUFACTURER_NAME),
-                .access_cb = _devinfo_handler,
-                .flags = BLE_GATT_CHR_F_READ,
-            },
-            {
-                .uuid = BLE_UUID16_DECLARE(BLE_GATT_CHAR_MODEL_NUMBER_STR),
-                .access_cb = _devinfo_handler,
-                .flags = BLE_GATT_CHR_F_READ,
-            },
-            {
-                0, /* no more characteristics in this service */
-            },
-        }
-    },
-    {
-        /* PEPPER Information Service */
-        .type = BLE_GATT_SVC_TYPE_PRIMARY,
-        .uuid = (ble_uuid_t *)&gatt_svr_svc_pepper_uuid.u,
-        .characteristics = (struct ble_gatt_chr_def[]) {
-            {
-                /* Characteristic: Read/Write PEPPER config */
-                .uuid = (ble_uuid_t *)&gatt_svr_chr_pepper_config_uuid.u,
-                .access_cb = _pepper_cfg_handler,
-                .flags = BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_WRITE,
-            },
-            {
-                /* Characteristic: Start PEPPER */
-                .uuid = (ble_uuid_t *)&gatt_svr_chr_pepper_start_uuid.u,
-                .access_cb = _pepper_start_handler,
-                .flags =  BLE_GATT_CHR_F_WRITE,
-            },
-            {
-                /* Characteristic: Stop PEPPER */
-                .uuid = (ble_uuid_t *)&gatt_svr_chr_pepper_stop_uuid.u,
-                .access_cb = _pepper_stop_handler,
-                .flags = BLE_GATT_CHR_F_WRITE,
-            },
-            {
-                /* Characteristic: retart PEPPER */
-                .uuid = (ble_uuid_t *)&gatt_svr_chr_pepper_restart_uuid.u,
-                .access_cb = _pepper_restart_handler,
-                .flags =  BLE_GATT_CHR_F_WRITE,
-            },
-            {
-                0,     /* No more characteristics in this service */
-            },
-        }
-    },
-#if IS_USED(MODULE_PEPPER_CURRENT_TIME)
-    {
-        /* Service: Device Information */
-        .type = BLE_GATT_SVC_TYPE_PRIMARY,
-        .uuid = BLE_UUID16_DECLARE(CURRENT_TIME_SERVICE_UUID16),
-        .characteristics = (struct ble_gatt_chr_def[]) { {
-                                                             /* Characteristic: * Manufacturer name */
-                                                             .uuid = BLE_UUID16_DECLARE(
-                                                                 CURRENT_TIME_UUID16),
-                                                             .access_cb =
-                                                                 _pepper_current_time_handler,
-                                                             .flags = BLE_GATT_CHR_F_READ |
-                                                                      BLE_GATT_CHR_F_WRITE,
-                                                         },
-                                                         {
-                                                             0, /* No more characteristics in this service */
-                                                         }, }
-    },
-#endif
-    {
-        0,     /* No more services */
-    },
+XFA_USE_CONST(struct ble_gatt_svc_def, gatt_svr_svcs);
+XFA_CONST(gatt_svr_svcs, 0) struct ble_gatt_svc_def _gatt_svr_pepper = {
+    /* PEPPER Information Service */
+    .type = BLE_GATT_SVC_TYPE_PRIMARY,
+    .uuid = (ble_uuid_t *)&gatt_svr_svc_pepper_uuid.u,
+    .characteristics = (struct ble_gatt_chr_def[]) {
+        {
+            /* Characteristic: Read/Write PEPPER config */
+            .uuid = (ble_uuid_t *)&gatt_svr_chr_pepper_config_uuid.u,
+            .access_cb = _pepper_cfg_handler,
+            .flags = BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_WRITE,
+        },
+        {
+            /* Characteristic: Start PEPPER */
+            .uuid = (ble_uuid_t *)&gatt_svr_chr_pepper_start_uuid.u,
+            .access_cb = _pepper_start_handler,
+            .flags =  BLE_GATT_CHR_F_WRITE,
+        },
+        {
+            /* Characteristic: Stop PEPPER */
+            .uuid = (ble_uuid_t *)&gatt_svr_chr_pepper_stop_uuid.u,
+            .access_cb = _pepper_stop_handler,
+            .flags = BLE_GATT_CHR_F_WRITE,
+        },
+        {
+            /* Characteristic: retart PEPPER */
+            .uuid = (ble_uuid_t *)&gatt_svr_chr_pepper_restart_uuid.u,
+            .access_cb = _pepper_restart_handler,
+            .flags =  BLE_GATT_CHR_F_WRITE,
+        },
+        {
+            0,         /* No more characteristics in this service */
+        },
+    }
 };
+XFA_CONST(gatt_svr_svcs, 0) struct ble_gatt_svc_def _gatt_svr_devinfo = {
+    /* Device Information Service */
+    .type = BLE_GATT_SVC_TYPE_PRIMARY,
+    .uuid = BLE_UUID16_DECLARE(BLE_GATT_SVC_DEVINFO),
+    .characteristics = (struct ble_gatt_chr_def[]) {
+        {
+            .uuid = BLE_UUID16_DECLARE(BLE_GATT_CHAR_MANUFACTURER_NAME),
+            .access_cb = _devinfo_handler,
+            .flags = BLE_GATT_CHR_F_READ,
+        },
+        {
+            .uuid = BLE_UUID16_DECLARE(BLE_GATT_CHAR_MODEL_NUMBER_STR),
+            .access_cb = _devinfo_handler,
+            .flags = BLE_GATT_CHR_F_READ,
+        },
+        {
+            0,     /* no more characteristics in this service */
+        },
+    }
+};
+#if IS_USED(MODULE_PEPPER_CURRENT_TIME)
+XFA_CONST(gatt_svr_svcs, 0) struct ble_gatt_svc_def _gatt_svr_current_time = {
+    /* Service: Device Information */
+    .type = BLE_GATT_SVC_TYPE_PRIMARY,
+    .uuid = BLE_UUID16_DECLARE(CURRENT_TIME_SERVICE_UUID16),
+    .characteristics = (struct ble_gatt_chr_def[]) {
+        {
+            /* Characteristic: * Manufacturer name */
+            .uuid = BLE_UUID16_DECLARE(
+                CURRENT_TIME_UUID16),
+            .access_cb =
+                _pepper_current_time_handler,
+            .flags = BLE_GATT_CHR_F_READ |
+                     BLE_GATT_CHR_F_WRITE,
+        },
+        {
+            0,                                                  /* No more characteristics in this service */
+        },
+    }
+};
+#endif
 
 static const char *_manufacturer = "RIOT";
 static const char *_model_number = RIOT_BOARD ":" RIOT_MCU;
