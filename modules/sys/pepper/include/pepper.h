@@ -382,7 +382,7 @@ int pepper_set_serializer_bn(char *base_name);
  *
  * @return  the basename
  */
-char *pepper_get_serializer_bn(void);
+const char *pepper_get_serializer_bn(void);
 #else
 static inline int pepper_set_serializer_bn(char *base_name)
 {

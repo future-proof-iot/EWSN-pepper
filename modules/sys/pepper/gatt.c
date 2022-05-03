@@ -213,13 +213,14 @@ static int _pepper_cfg_handler(uint16_t conn_handle, uint16_t attr_handle,
             rc = 1;
         }
         else {
-            rc = ble_hs_mbuf_to_flat(ctxt->om, pepper_get_serializer_bn(),
+            char new_name[CONFIG_PEPPER_BASE_NAME_BUFFER + 1];
+            rc = ble_hs_mbuf_to_flat(ctxt->om, new_name,
                                      CONFIG_PEPPER_BASE_NAME_BUFFER,
                                      &om_len);
             /* we need to null-terminate the received string */
-            char *bn = pepper_get_serializer_bn();
-            bn[om_len] = '\0';
-            LOG_INFO("bn=(\"%s\")\n", bn);
+            new_name[om_len] = '\0';
+            pepper_set_serializer_bn(new_name);
+            LOG_INFO("bn=(\"%s\")\n", pepper_get_serializer_bn());
         }
         break;
     case BLE_GATT_ACCESS_OP_READ_DSC:

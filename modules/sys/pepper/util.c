@@ -74,7 +74,7 @@ int pepper_set_serializer_bn(char *base_name)
     return 0;
 }
 
-char *pepper_get_serializer_bn(void)
+const char *pepper_get_serializer_bn(void)
 {
     return _base_name;
 }
