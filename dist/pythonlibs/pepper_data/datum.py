@@ -113,8 +113,8 @@ class UWBDatum:
     cid: str
     time: int
     node_id: str
-    d_cm: Optional[Union[float, int]] = None
     tag: Optional[str] = ""
+    d_cm: Optional[Union[float, int]] = None
     rssi: Optional[Union[float, int]] = None
     los: Optional[Union[float, int]] = None
 
@@ -127,7 +127,10 @@ class UWBDatum:
     def from_datum(cls, datum: Datums):
         if datum.tag_type == "uwb":
             uwb = UWBDatum(
-                cid=datum.cid, time=datum.base.timestamp, node_id=datum.node_id
+                cid=datum.cid,
+                time=datum.base.timestamp,
+                node_id=datum.node_id,
+                tag=datum.tag,
             )
             for idx, _ in enumerate(datum.meas):
                 if datum.name(idx) == "rssi":
@@ -162,6 +165,7 @@ class BLEDatum:
     cid: str
     time: int
     node_id: str
+    tag: Optional[str] = ""
     rssi: Optional[Union[float, int]] = None
 
     @property
@@ -173,7 +177,10 @@ class BLEDatum:
     def from_datum(cls, datum: Datums):
         if datum.tag_type == "ble":
             ble = BLEDatum(
-                cid=datum.cid, time=datum.base.timestamp, node_id=datum.node_id
+                cid=datum.cid,
+                time=datum.base.timestamp,
+                node_id=datum.node_id,
+                tag=datum.tag,
             )
             for idx, _ in enumerate(datum.meas):
                 ble.rssi = datum.value(idx) if datum.name(idx) == "rssi" else None
