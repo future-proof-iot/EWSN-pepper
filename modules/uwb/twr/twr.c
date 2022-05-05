@@ -219,8 +219,6 @@ void twr_init(event_queue_t *queue)
     }
     /* set event queue */
     _twr_queue = queue;
-    /* enable by default */
-    twr_enable();
 }
 
 void twr_set_complete_cb(twr_callback_t callback)
@@ -333,6 +331,9 @@ int twr_schedule_listen_managed(uint16_t addr, uint16_t offset)
 
     if (!event) {
         LOG_ERROR("[twr]: error, no lst event\n");
+        if (IS_ACTIVE(CONFIG_TWR_RESET_ON_LOCK)) {
+            twr_reset();
+        }
         return -ENOMEM;
     }
     _twr_schedule_listen(event, offset, _twr_rng_listen_managed);
@@ -403,6 +404,9 @@ int twr_schedule_request_managed(uint16_t dest, uint16_t offset)
 
     if (!event) {
         LOG_ERROR("[twr]: error, no req event\n");
+        if (IS_ACTIVE(CONFIG_TWR_RESET_ON_LOCK)) {
+            twr_reset();
+        }
         return -ENOMEM;
     }
     _twr_schedule_request(event, dest, offset, _twr_rng_request_managed);
@@ -462,7 +466,6 @@ void twr_disable(void)
 
 void twr_reset(void)
 {
-    _enabled = false;
     _status = TWR_RNG_IDLE;
     uwb_phy_forcetrxoff(_udev);
     if (dpl_sem_get_count(&_rng->sem) == 0) {

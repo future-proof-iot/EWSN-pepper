@@ -111,6 +111,13 @@ extern "C" {
 #ifndef CONFIG_TWR_EVENT_ALGO_DEFAULT
 #define CONFIG_TWR_EVENT_ALGO_DEFAULT   (UWB_DATA_CODE_SS_TWR_ONE)
 #endif
+/**
+ * @brief   Set to 1 to reset TWR if locked (uwb_rng_request is not thread safe...)
+ */
+#ifndef CONFIG_TWR_RESET_ON_LOCK
+#define CONFIG_TWR_RESET_ON_LOCK        1
+#endif
+
 
 typedef enum {
     TWR_RNG_IDLE,
