@@ -65,7 +65,7 @@ void ble_scanner_register(ble_scan_listener_t *listener)
         clist_rpush(&_list.list_node, &listener->list_node);
     }
     irq_restore(state);
-    if (_enabled && ble_gap_disc_active()) {
+    if (_enabled) {
         LOG_INFO("[ble_scanner]: new listener re-start\n");
         nimble_scanner_start();
     }
@@ -139,22 +139,27 @@ void ble_scanner_start(int32_t scan_duration_ms)
 {
     _enabled = true;
 
-    LOG_INFO("[ble_scanner]: start for ");
+    LOG_INFO("[ble_scanner]: enable");
     if (scan_duration_ms == BLE_HS_FOREVER) {
-        LOG_INFO("forever\n");
+        LOG_INFO("until stopped\n");
     }
     else {
-        LOG_INFO("%" PRIi32 "\n", scan_duration_ms);
+        LOG_INFO("for %" PRIi32 "\n", scan_duration_ms);
     }
     /* stop previous ongoing scan if any */
     nimble_scanner_stop();
     /* set scan duration */
     nimble_scanner_set_scan_duration(scan_duration_ms);
     /* start scanning */
-    int ret = nimble_scanner_start();
-
-    assert(ret == 0);
-    (void)ret;
+    if (clist_count(&_list.list_node)) {
+        LOG_INFO("[ble_scanner]: start scanner\n");
+        int ret = nimble_scanner_start();
+        assert(ret == 0);
+        (void)ret;
+    }
+    else {
+        LOG_INFO("[ble_scanner]: no listeneres\n");
+    }
 }
 
 void ble_scanner_stop(void)
