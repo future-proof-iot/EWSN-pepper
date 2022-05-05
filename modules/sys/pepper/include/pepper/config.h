@@ -26,7 +26,7 @@ extern "C" {
 #endif
 
 /**
- * @brief   The default EBID slice rotation period in secondS
+ * @brief   The default EBID slice rotation period in seconds
  *
  */
 #ifndef CONFIG_ADV_PER_SLICE
@@ -61,10 +61,10 @@ extern "C" {
  * @{
  */
 #ifndef CONFIG_BLE_SCAN_ITVL_MS
-#define CONFIG_BLE_SCAN_ITVL_MS        (4096U)  /* 4096ms */
+#define CONFIG_BLE_SCAN_ITVL_MS        (5120U)  /* 5120ms */
 #endif
 #ifndef CONFIG_BLE_SCAN_WIN_MS
-#define CONFIG_BLE_SCAN_WIN_MS         (1024U)  /* 1024ms */
+#define CONFIG_BLE_SCAN_WIN_MS         (1280U)  /* 1280ms */
 #endif
 
 #ifndef CONFIG_BLE_SCAN_PARAMS

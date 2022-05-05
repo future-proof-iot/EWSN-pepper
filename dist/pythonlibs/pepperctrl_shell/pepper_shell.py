@@ -30,8 +30,8 @@ class PepperParams:
     duration: int = 900
     adv_itvl: int = 1000
     advs_slice: int = 20
-    scan_itvl: int = 4096
-    scan_win: int = 1024
+    scan_itvl: int = 5120
+    scan_win: int = 1280
     align_start: bool = False
     align_end: bool = False
 
