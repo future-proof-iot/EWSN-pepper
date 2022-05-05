@@ -140,7 +140,7 @@ extern "C" {
  *          to that neighbor on an advertisement completed event.
  */
 #ifndef CONFIG_MIA_TIME_S
-#define CONFIG_MIA_TIME_S               (30LU)
+#define CONFIG_MIA_TIME_S               (60LU)
 #endif
 
 /**
@@ -209,11 +209,23 @@ extern "C" {
 #endif
 
 /**
+ * @brief    UWB TWR exchange backoff
+ *
+ * After a successfull TWR exchange backoff from feature exchanges for
+ * @ref CONFIG_PEPPER_TWR_BACK_OFF_S
+ *
+ */
+#ifndef CONFIG_PEPPER_TWR_BACK_OFF_S
+#define CONFIG_PEPPER_TWR_BACK_OFF_S                (0LU)
+#endif
+
+/**
  * @brief   TWR correction offsets
  */
 typedef struct twr_params {
     int16_t rx_offset_ticks;    /* rx/listen event correction */
     int16_t tx_offset_ticks;    /* tx/request event correction */
+    uint16_t backoff;           /* twr backoff */
 } twr_params_t;
 
 /**
@@ -365,6 +377,20 @@ int16_t pepper_twr_get_rx_offset(void);
  * @return  the configured offset
  */
 int16_t pepper_twr_get_tx_offset(void);
+
+/**
+ * @brief   Returns the configured backoff
+ *
+ * @return  the configured backoff
+ */
+uint16_t pepper_twr_get_backoff(void);
+
+/**
+ * @brief   Configure a backoff for twr ranging
+ *
+ * @param   backoff     backodd
+ */
+void pepper_twr_set_backoff(uint16_t backoff);
 
 #if IS_USED(MODULE_PEPPER_UTIL)
 /**

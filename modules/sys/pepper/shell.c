@@ -43,11 +43,13 @@ static void _print_usage(void)
     puts("\tpepper get uid: returns unique identifier");
 #if IS_USED(MODULE_TWR)
     puts("\tpepper twr get win: returns the listen window in us");
+    puts("\tpepper twr get backoff: returns backoff in seconds");
     puts("\tpepper twr set <win_us>: sets listen window in us, win_us < UINT16_MAX");
     printf("\tpepper twr set rx_off <offset ticks>: offset > -%" PRIu32 "\n",
            CONFIG_TWR_MIN_OFFSET_TICKS);
     printf("\tpepper twr set tx_off <offset ticks>: offset > -%" PRIu32 "\n",
            CONFIG_TWR_MIN_OFFSET_TICKS);
+    puts("\tpepper twr set backoff <backoff in seconds>");
 #endif
 }
 
@@ -78,6 +80,10 @@ static int _twr_handler(int argc, char **argv)
                 pepper_twr_set_tx_offset(atoi(argv[3]));
                 return 0;
             }
+            if (!strcmp(argv[2], "backoff")) {
+                pepper_twr_set_backoff(atoi(argv[3]));
+                return 0;
+            }
         }
         _print_usage();
         return -1;
@@ -95,6 +101,10 @@ static int _twr_handler(int argc, char **argv)
             }
             if (!strcmp(argv[2], "tx_off")) {
                 printf("twr tx offset: %d\n", pepper_twr_get_tx_offset());
+                return 0;
+            }
+            if (!strcmp(argv[2], "backoff")) {
+                printf("[pepper]: backoff %"PRIu16"\n", pepper_twr_get_backoff());
                 return 0;
             }
         }

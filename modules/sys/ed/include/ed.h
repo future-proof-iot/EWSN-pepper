@@ -83,17 +83,6 @@ extern "C" {
 #define CONFIG_ED_BLE_RX_COMPENSATION_GAIN      (0U)
 #endif
 
-/**
- * @brief    UWB TWR exchange backoff
- *
- * After a successfull TWR exchange backoff from feature exchanges for
- * @ref CONFIG_ED_UWB_BACK_OFF_S
- *
- */
-#ifndef CONFIG_ED_UWB_BACK_OFF_S
-#define CONFIG_ED_UWB_BACK_OFF_S                (0LU)
-#endif
-
 #if IS_USED(MODULE_ED_UWB_STATS)
 /**
  * @brief   UWB encounter statistics

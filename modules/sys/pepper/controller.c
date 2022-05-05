@@ -61,18 +61,18 @@ static controller_t _controller = {
 
 static uint32_t pepper_sec_since_start(void)
 {
+
     return ztimer_now(ZTIMER_SEC) - _controller.start_time;
 }
-
 #if IS_USED(MODULE_TWR)
 static bool _twr_should_listen(uint32_t timestamp, ed_t *ed)
 {
-    /* check if no successfull TWR exchange in last CONFIG_ED_UWB_BACK_OFF_S */
-    if (ed->uwb.seen_last_rx_s + CONFIG_ED_UWB_BACK_OFF_S <= timestamp) {
-        return true;
+    /* check if no successfull TWR exchange in last CONFIG_PEPPER_TWR_BACK_OFF_S */
+    if (ed->uwb.seen_last_rx_s + _controller.twr_params.backoff <= timestamp) {
+            return true;
     }
-    LOG_DEBUG("[ble/uwb]: skip, successfull twr < %" PRIu32 "s\n",
-              CONFIG_ED_UWB_BACK_OFF_S);
+    LOG_DEBUG("[ble/uwb]: skip, successfull twr < %" PRIu16 "s\n",
+              _controller.twr_params.backoff);
     return false;
 }
 
@@ -81,13 +81,13 @@ static bool _twr_should_request(uint32_t timestamp, ed_t *ed)
     if (ed->ebid.status.status == EBID_HAS_ALL) {
         /* 1. check if advertisement where received from neighbor in last CONFIG_MIA_TIME_S */
         if (ed->seen_last_s + CONFIG_MIA_TIME_S > timestamp) {
-            /* 1.1 check if no successfull TWR exchange in last CONFIG_ED_UWB_BACK_OFF_S */
-            if (ed->uwb.seen_last_s + CONFIG_ED_UWB_BACK_OFF_S <= timestamp) {
+            /* 1.1 check if no successfull TWR exchange in last CONFIG_PEPPER_TWR_BACK_OFF_S */
+            if (ed->uwb.seen_last_s + _controller.twr_params.backoff <= timestamp) {
                 return true;
             }
             else {
-                LOG_DEBUG("[ble/uwb]: skip, successfull twr < %" PRIu32 "s\n",
-                          CONFIG_ED_UWB_BACK_OFF_S);
+                LOG_DEBUG("[ble/uwb]: skip, successfull twr < %" PRIu16 "s\n",
+                          _controller.twr_params.backoff);
             }
         }
         else {
@@ -258,6 +258,7 @@ static void _scan_cb(uint32_t ticks, const ble_addr_t *addr, int8_t rssi,
         }
 #endif
     }
+#if IS_USED(MODULE_ED_BLE_COMMON)
     if (LOG_LEVEL == LOG_DEBUG || IS_ACTIVE(CONFIG_PEPPER_LOG_BLE)) {
         ed_ble_data_t ble_data = {
             .rssi = rssi,
@@ -275,6 +276,7 @@ static void _scan_cb(uint32_t ticks, const ble_addr_t *addr, int8_t rssi,
         }
 #endif
     }
+#endif
 
 }
 
@@ -625,6 +627,23 @@ int16_t pepper_twr_get_tx_offset(void)
     return _controller.twr_params.tx_offset_ticks;
 #else
     return 0;
+#endif
+}
+
+uint16_t pepper_twr_get_backoff(void)
+{
+#if IS_USED(MODULE_TWR)
+    return _controller.twr_params.backoff;
+#else
+    return 0;
+#endif
+}
+
+void pepper_twr_set_backoff(uint16_t backoff)
+{
+    (void)backoff;
+#if IS_USED(MODULE_TWR)
+    _controller.twr_params.backoff = backoff;
 #endif
 }
 
