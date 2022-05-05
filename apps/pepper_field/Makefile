@@ -34,15 +34,15 @@ FEATURES_REQUIED += periph_gpio_irq
 USEMODULE += twr_sleep
 ## Switch off leds
 CFLAGS += -DMYNEWT_VAL_DW1000_RXTX_LEDS=0
-## Configure backoff < 10s
+## Configure backoff to 0
 CFLAGS += -DCONFIG_ED_UWB_BACK_OFF_S=0LU
 
 # Change default timings
-ADV_PER_SLICE ?= 1            # 1 advertisements per slice
+ADV_PER_SLICE ?= 10           # 10 advertisements per slice
 CFLAGS += -DCONFIG_ADV_PER_SLICE=$(ADV_PER_SLICE)
-EPOCH_DURATION_SEC ?= 120     # 2min
+EPOCH_DURATION_SEC ?= 900     # 15min
 CFLAGS += -DCONFIG_EPOCH_DURATION_SEC=$(EPOCH_DURATION_SEC)
-MIN_EXPOSURE_TIME_S ?= 10
+MIN_EXPOSURE_TIME_S ?= 120
 CFLAGS+=-DMIN_EXPOSURE_TIME_S=$(MIN_EXPOSURE_TIME_S)
 MAX_DISTANCE_CM ?= 1000       # 10m so everything is logged
 CFLAGS += -DMAX_DISTANCE_CM=$(MAX_DISTANCE_CM)
