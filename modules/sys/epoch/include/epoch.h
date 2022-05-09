@@ -41,7 +41,7 @@ extern "C" {
 /**
  * @brief   Step between windows in seconds
  */
-#ifndef CONFIF_EPOCH_MAX_ENOCUNTERS
+#ifndef CONFIG_EPOCH_MAX_ENCOUNTERS
 #define CONFIG_EPOCH_MAX_ENCOUNTERS                     8
 #endif
 
