@@ -66,7 +66,7 @@ static int _add_to_top_list(clist_node_t *node, void *arg)
     uint16_t duration = ed_max_exposure_time((ed_t *)node);
 
     /* if still space in list simply insert */
-    if (list->count < 8) {
+    if (list->count < CONFIG_EPOCH_MAX_ENCOUNTERS) {
         /* update the minimum value index if needed */
         if (list->top[list->min].duration > duration) {
             list->min = list->count;

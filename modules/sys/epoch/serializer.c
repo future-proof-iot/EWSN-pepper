@@ -160,82 +160,80 @@ void contact_data_serialize_all_printf(epoch_data_t *epoch, const char *prefix)
     turo_u32(&ctx, epoch->timestamp);
     turo_dict_key(&ctx, "pets");
     turo_array_open(&ctx);
-    for (uint8_t i = 0; i < CONFIG_EPOCH_MAX_ENCOUNTERS; i++) {
-        if (epoch_valid_contact(&epoch->contacts[i])) {
-            turo_dict_open(&ctx);
-            turo_dict_key(&ctx, "pet");
-            turo_dict_open(&ctx);
-            turo_dict_key(&ctx, "etl");
-            turo_hexarray(&ctx, epoch->contacts[i].pet.et, PET_SIZE);
-            turo_dict_key(&ctx, "rtl");
-            turo_hexarray(&ctx, epoch->contacts[i].pet.rt, PET_SIZE);
+    for (uint8_t i = 0; i < epoch_contacts(epoch); i++) {
+        turo_dict_open(&ctx);
+        turo_dict_key(&ctx, "pet");
+        turo_dict_open(&ctx);
+        turo_dict_key(&ctx, "etl");
+        turo_hexarray(&ctx, epoch->contacts[i].pet.et, PET_SIZE);
+        turo_dict_key(&ctx, "rtl");
+        turo_hexarray(&ctx, epoch->contacts[i].pet.rt, PET_SIZE);
 #if IS_USED(MODULE_ED_UWB)
-            turo_dict_key(&ctx, "uwb");
-            turo_dict_open(&ctx);
-            turo_dict_key(&ctx, "exposure");
-            turo_u32(&ctx, epoch->contacts[i].uwb.exposure_s);
+        turo_dict_key(&ctx, "uwb");
+        turo_dict_open(&ctx);
+        turo_dict_key(&ctx, "exposure");
+        turo_u32(&ctx, epoch->contacts[i].uwb.exposure_s);
 #if IS_USED(MODULE_ED_UWB_STATS)
-            turo_dict_key(&ctx, "lst_scheduled");
-            turo_u32(&ctx, epoch->contacts[i].uwb.stats.lst.scheduled);
-            turo_dict_key(&ctx, "lst_aborted");
-            turo_u32(&ctx, epoch->contacts[i].uwb.stats.lst.aborted);
-            turo_dict_key(&ctx, "lst_timeout");
-            turo_u32(&ctx, epoch->contacts[i].uwb.stats.lst.timeout);
-            turo_dict_key(&ctx, "req_scheduled");
-            turo_u32(&ctx, epoch->contacts[i].uwb.stats.req.scheduled);
-            turo_dict_key(&ctx, "req_aborted");
-            turo_u32(&ctx, epoch->contacts[i].uwb.stats.req.aborted);
-            turo_dict_key(&ctx, "req_timeout");
-            turo_u32(&ctx, epoch->contacts[i].uwb.stats.req.timeout);
+        turo_dict_key(&ctx, "lst_scheduled");
+        turo_u32(&ctx, epoch->contacts[i].uwb.stats.lst.scheduled);
+        turo_dict_key(&ctx, "lst_aborted");
+        turo_u32(&ctx, epoch->contacts[i].uwb.stats.lst.aborted);
+        turo_dict_key(&ctx, "lst_timeout");
+        turo_u32(&ctx, epoch->contacts[i].uwb.stats.lst.timeout);
+        turo_dict_key(&ctx, "req_scheduled");
+        turo_u32(&ctx, epoch->contacts[i].uwb.stats.req.scheduled);
+        turo_dict_key(&ctx, "req_aborted");
+        turo_u32(&ctx, epoch->contacts[i].uwb.stats.req.aborted);
+        turo_dict_key(&ctx, "req_timeout");
+        turo_u32(&ctx, epoch->contacts[i].uwb.stats.req.timeout);
 #endif
-            turo_dict_key(&ctx, "req_count");
-            turo_u32(&ctx, epoch->contacts[i].uwb.req_count);
-            turo_dict_key(&ctx, "avg_d_cm");
-            turo_u32(&ctx, epoch->contacts[i].uwb.avg_d_cm);
+        turo_dict_key(&ctx, "req_count");
+        turo_u32(&ctx, epoch->contacts[i].uwb.req_count);
+        turo_dict_key(&ctx, "avg_d_cm");
+        turo_u32(&ctx, epoch->contacts[i].uwb.avg_d_cm);
 #if IS_USED(MODULE_ED_UWB_LOS)
-            turo_dict_key(&ctx, "avg_los");
-            turo_u32(&ctx, epoch->contacts[i].uwb.avg_los);
+        turo_dict_key(&ctx, "avg_los");
+        turo_u32(&ctx, epoch->contacts[i].uwb.avg_los);
 #endif
 #if IS_USED(MODULE_ED_UWB_RSSI)
-            turo_dict_key(&ctx, "avg_rssi");
-            turo_float(&ctx, epoch->contacts[i].uwb.avg_rssi);
+        turo_dict_key(&ctx, "avg_rssi");
+        turo_float(&ctx, epoch->contacts[i].uwb.avg_rssi);
 #endif
-            turo_dict_close(&ctx);
+        turo_dict_close(&ctx);
 #endif
 #if IS_USED(MODULE_ED_BLE)
-            turo_dict_key(&ctx, "ble");
-            turo_dict_open(&ctx);
-            turo_dict_key(&ctx, "exposure");
-            turo_u32(&ctx, epoch->contacts[i].ble.exposure_s);
-            turo_dict_key(&ctx, "scan_count");
-            turo_u32(&ctx, epoch->contacts[i].ble.scan_count);
-            turo_dict_key(&ctx, "avg_rssi");
-            turo_float(&ctx, epoch->contacts[i].ble.avg_rssi);
-            turo_dict_key(&ctx, "avg_d_cm");
-            turo_u32(&ctx, epoch->contacts[i].ble.avg_d_cm);
-            turo_dict_close(&ctx);
+        turo_dict_key(&ctx, "ble");
+        turo_dict_open(&ctx);
+        turo_dict_key(&ctx, "exposure");
+        turo_u32(&ctx, epoch->contacts[i].ble.exposure_s);
+        turo_dict_key(&ctx, "scan_count");
+        turo_u32(&ctx, epoch->contacts[i].ble.scan_count);
+        turo_dict_key(&ctx, "avg_rssi");
+        turo_float(&ctx, epoch->contacts[i].ble.avg_rssi);
+        turo_dict_key(&ctx, "avg_d_cm");
+        turo_u32(&ctx, epoch->contacts[i].ble.avg_d_cm);
+        turo_dict_close(&ctx);
 #endif
 #if IS_USED(MODULE_ED_BLE_WIN)
-            turo_dict_key(&ctx, "ble_win");
+        turo_dict_key(&ctx, "ble_win");
+        turo_dict_open(&ctx);
+        turo_dict_key(&ctx, "exposure");
+        turo_u32(&ctx, epoch->contacts[i].ble_win.exposure_s);
+        turo_dict_key(&ctx, "wins");
+        turo_array_open(&ctx);
+        for (uint8_t j = 0; j < WINDOWS_PER_EPOCH; j++) {
             turo_dict_open(&ctx);
-            turo_dict_key(&ctx, "exposure");
-            turo_u32(&ctx, epoch->contacts[i].ble_win.exposure_s);
-            turo_dict_key(&ctx, "wins");
-            turo_array_open(&ctx);
-            for (uint8_t j = 0; j < WINDOWS_PER_EPOCH; j++) {
-                turo_dict_open(&ctx);
-                turo_dict_key(&ctx, "samples");
-                turo_u32(&ctx, epoch->contacts[i].ble_win.wins[j].samples);
-                turo_dict_key(&ctx, "rssi");
-                turo_float(&ctx, epoch->contacts[i].ble_win.wins[j].avg);
-                turo_dict_close(&ctx);
-            }
-            turo_array_close(&ctx);
-            turo_dict_close(&ctx);
-#endif
-            turo_dict_close(&ctx);
+            turo_dict_key(&ctx, "samples");
+            turo_u32(&ctx, epoch->contacts[i].ble_win.wins[j].samples);
+            turo_dict_key(&ctx, "rssi");
+            turo_float(&ctx, epoch->contacts[i].ble_win.wins[j].avg);
             turo_dict_close(&ctx);
         }
+        turo_array_close(&ctx);
+        turo_dict_close(&ctx);
+#endif
+        turo_dict_close(&ctx);
+        turo_dict_close(&ctx);
     }
     turo_array_close(&ctx);
     turo_dict_close(&ctx);
