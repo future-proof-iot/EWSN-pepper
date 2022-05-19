@@ -41,7 +41,7 @@
 #include "desire_ble_adv.h"
 #include "desire_ble_scan.h"
 #ifndef LOG_LEVEL
-#define LOG_LEVEL   LOG_INFO
+#define LOG_LEVEL   LOG_WARNING
 #endif
 #include "log.h"
 
@@ -68,11 +68,13 @@ static uint32_t pepper_sec_since_start(void)
 static bool _twr_should_listen(uint32_t timestamp, ed_t *ed)
 {
     /* check if no successfull TWR exchange in last CONFIG_PEPPER_TWR_BACK_OFF_S */
-    if (ed->uwb.seen_last_rx_s + _controller.twr_params.backoff <= timestamp) {
-            return true;
+    if ((ed->uwb.seen_last_rx_s + _controller.twr_params.backoff <= timestamp) ||
+        ed->uwb.seen_last_rx_s == 0) {
+        return true;
     }
-    LOG_DEBUG("[ble/uwb]: skip, successfull twr < %" PRIu16 "s\n",
-              _controller.twr_params.backoff);
+    LOG_INFO("[pepper]: lst skip 0x%04" PRIx16 ", %" PRIu32 "s < %" PRIu16 "s\n",
+             ed_get_short_addr(
+                 ed), timestamp - ed->uwb.seen_last_rx_s, _controller.twr_params.backoff);
     return false;
 }
 
@@ -82,16 +84,19 @@ static bool _twr_should_request(uint32_t timestamp, ed_t *ed)
         /* 1. check if advertisement where received from neighbor in last CONFIG_MIA_TIME_S */
         if (ed->seen_last_s + CONFIG_MIA_TIME_S > timestamp) {
             /* 1.1 check if no successfull TWR exchange in last CONFIG_PEPPER_TWR_BACK_OFF_S */
-            if (ed->uwb.seen_last_s + _controller.twr_params.backoff <= timestamp) {
+            if ((ed->uwb.seen_last_s + _controller.twr_params.backoff <= timestamp + 1) ||
+                ed->uwb.seen_last_s == 0) {
                 return true;
             }
             else {
-                LOG_DEBUG("[ble/uwb]: skip, successfull twr < %" PRIu16 "s\n",
-                          _controller.twr_params.backoff);
+                LOG_INFO(
+                    "[pepper]: req skip 0x%04" PRIx16 ": %" PRIu32 "s < %" PRIu16 "s\n",
+                    ed_get_short_addr(
+                        ed), timestamp + 1 - ed->uwb.seen_last_s, _controller.twr_params.backoff);
             }
         }
         else {
-            LOG_DEBUG("[ble/uwb]: skip encounter, missing over BLE\n");
+            LOG_WARNING("[pepper]: req skip encounter, missing over BLE\n");
         }
     }
     return false;
@@ -169,16 +174,18 @@ static void _twr_timeout_cb(twr_event_data_t *data, twr_status_t status)
 #if IS_USED(MODULE_ED_UWB_STATS)
     ed_t *ed = ed_list_get_by_short_addr(&_controller.ed_list, data->addr);
     if (status == TWR_RNG_INITIATOR) {
+        LOG_DEBUG("[pepper]: req timeout 0x%04" PRIx16 "\n", data->addr);
         ed->uwb.stats.req.timeout++;
     }
     else {
+        LOG_DEBUG("[pepper]: lst timeout 0x%04" PRIx16 "\n", data->addr);
         ed->uwb.stats.lst.timeout++;
     }
 #endif
 }
 
 /**
- * @brief Called when a TWR exchange timeouts
+ * @brief Called when a TWR exchange succeeds
  */
 static void _twr_rx_cb(twr_event_data_t *data, twr_status_t status)
 {
@@ -248,6 +255,7 @@ static void _scan_cb(uint32_t ticks, const ble_addr_t *addr, int8_t rssi,
 #if IS_USED(MODULE_ED_UWB_STATS)
             ed->uwb.stats.lst.scheduled++;
 #endif
+            /* compensate for delay in scheduling listen */
             /* 3.3 schedule a twr listen event at an EBID based offset */
             if (twr_schedule_listen_managed(ed_get_short_addr(ed),
                                             _get_twr_rx_offset(&_controller.ebid))) {
@@ -299,7 +307,7 @@ static void _adv_cb(uint32_t advs, void *arg)
     /* for all registered neighbors that have been seen over BLE recently schedule
        a TWR exchange request at an offset based on theire EBID */
     if (!next) {
-        LOG_DEBUG("[ble/uwb]: no neighbors\n");
+        LOG_DEBUG("[pepper]: no neighbors\n");
         return;
     }
     do {
@@ -319,6 +327,8 @@ static void _adv_cb(uint32_t advs, void *arg)
                 next->uwb.stats.req.aborted++;
 #endif
             }
+            LOG_INFO("[pepper]: adv delay: %" PRIu16 ", offset: %" PRIu16 "\n",
+                     delay, _get_twr_tx_offset(&next->ebid));
         }
     } while (next != (ed_t *)_controller.ed_list.list.next);
 #endif
@@ -386,6 +396,8 @@ static event_t _start_epoch = { .handler = _epoch_start };
 static void _epoch_end(void *arg)
 {
     (void)arg;
+    /* first thing disable ble/uwb */
+    pepper_core_disable();
     /* update controller status */
     mutex_lock(&_controller.lock);
     LOG_INFO("[pepper]: end of uwb_epoch\n");
@@ -394,7 +406,6 @@ static void _epoch_end(void *arg)
         pepper_controller_set_status(PEPPER_STOPPED);
     }
     mutex_unlock(&_controller.lock);
-    pepper_core_disable();
     /* process uwb_epoch data */
     LOG_INFO("[pepper]: process all uwb_epoch data\n");
     ed_list_finish(&_controller.ed_list);
@@ -465,7 +476,6 @@ void pepper_init(void)
     ed_memory_manager_init(&_controller.ed_mem);
     ed_list_init(&_controller.ed_list, &_controller.ed_mem, &_controller.ebid);
     /* setup end of uwb_epoch timeout event */
-    /* TODO: move this to a different event queue, use defines to force it */
     event_periodic_init(&_end_epoch, ZTIMER_EPOCH, CONFIG_PEPPER_EVENT_PRIO,
                         &_end_of_epoch.super);
     /* set static cid if requested */
@@ -489,6 +499,8 @@ void pepper_start(pepper_start_params_t *params)
     /* stop previous advertisements */
     pepper_stop();
     mutex_lock(&_controller.lock);
+    /* clear encounter list */
+    ed_list_clear(&_controller.ed_list);
     pepper_controller_set_status(PEPPER_RUNNING);
     /* set advertisement parameters */
     _controller.adv.itvl_ms = params->adv_itvl_ms;
@@ -544,7 +556,6 @@ void pepper_stop(void)
     pepper_controller_set_status(PEPPER_STOPPED);
     event_periodic_stop(&_end_epoch);
     pepper_core_disable();
-    ed_list_clear(&_controller.ed_list);
     mutex_unlock(&_controller.lock);
 }
 

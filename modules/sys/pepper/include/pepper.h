@@ -79,12 +79,15 @@ extern "C" {
 
 /**
  * @brief   The following event priorities are defined in a way that:
- *              - epoch state machine event come before any other events
+ *              - disabling ble and uwb has the higest priority
  *              - uwb & ble events have same priority
  *              - serialization events are handled last
  */
+#ifndef CONFIG_PEPPER_HIGH_EVENT_PRIO
+#define CONFIG_PEPPER_HIGH_EVENT_PRIO   (EVENT_PRIO_HIGHEST)
+#endif
 #ifndef CONFIG_PEPPER_EVENT_PRIO
-#define CONFIG_PEPPER_EVENT_PRIO        (EVENT_PRIO_HIGHEST)
+#define CONFIG_PEPPER_EVENT_PRIO        (EVENT_PRIO_MEDIUM)
 #endif
 #ifndef CONFIG_PEPPER_LOW_EVENT_PRIO
 #define CONFIG_PEPPER_LOW_EVENT_PRIO    (EVENT_PRIO_LOWEST)
