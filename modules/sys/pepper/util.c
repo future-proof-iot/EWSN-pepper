@@ -38,15 +38,26 @@ static char _base_name[PEPPER_UID_STRLEN + 1 + CONFIG_PEPPER_BASE_NAME_BUFFER + 
 
 void pepper_uid_init(void)
 {
-#ifndef BOARD_NATIVE
+#if !defined(BOARD_NATIVE)
     luid_get(_uid, PEPPER_UID_LEN);
+#else
+    _uid[0] = 0x34;
+    _uid[1] = 0x12;
+#endif
     _uid_str[0] = 'D';
     _uid_str[1] = 'W';
-    fmt_bytes_hex(&_uid_str[2], _uid, PEPPER_UID_LEN);
+    if (PEPPER_UID_LEN == 2) {
+        uint16_t _suid = byteorder_bebuftohs(_uid);
+        fmt_bytes_hex(&_uid_str[2], (uint8_t*) &_suid, PEPPER_UID_LEN);
+    }
+    else if (PEPPER_UID_LEN == 4) {
+        uint32_t _suid = byteorder_bebuftohl(_uid);
+        fmt_bytes_hex(&_uid_str[2], (uint8_t*) &_suid, PEPPER_UID_LEN);
+    }
+    else {
+        fmt_bytes_hex(&_uid_str[2], _uid, PEPPER_UID_LEN);
+    }
     _uid_str[PEPPER_UID_STRLEN] = '\0';
-#else
-    memcpy(_uid_str, "DW1234", sizeof("DW1234"));
-#endif
     /* set initial base name to node uid */
     memcpy(_base_name, _uid_str, sizeof(_uid_str));
 }
