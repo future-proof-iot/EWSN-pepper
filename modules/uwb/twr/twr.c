@@ -170,7 +170,7 @@ static bool _rx_timeout_cb(struct uwb_dev *inst, struct uwb_mac_interface *cbs)
 {
     (void)cbs;
     (void)inst;
-    LOG_DEBUG("[twr]: rx_timeout\n");
+    LOG_DEBUG("[twr]: rx_timeout 0x%04"PRIx16"\n", _other_short_addr);
     if (_usr_rx_timeout_cb) {
         twr_event_data_t data = { .addr = _other_short_addr };
         _usr_rx_timeout_cb(&data, _status);
