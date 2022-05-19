@@ -131,7 +131,7 @@ int ed_add_slice(ed_t *ed, uint16_t time, const uint8_t *slice, uint8_t part)
             #endif
             #if IS_USED(MODULE_ED_UWB)
             ed->uwb.seen_first_s = time;
-            ed->uwb.seen_last_s = time;
+            /* for uwb seen_last_s is set after first successful TWR */
             #endif
             LOG_INFO("[discovery]: saw new ebid t=(%" PRIu16 "s):\n\t", time);
             for (uint8_t i = 0; i < EBID_SIZE; i++) {
