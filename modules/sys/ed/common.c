@@ -133,7 +133,9 @@ int ed_add_slice(ed_t *ed, uint16_t time, const uint8_t *slice, uint8_t part)
             ed->uwb.seen_first_s = time;
             /* for uwb seen_last_s is set after first successful TWR */
             #endif
-            LOG_INFO("[discovery]: saw new ebid t=(%" PRIu16 "s):\n\t", time);
+            LOG_WARNING("[ed]: encountered 0x%04" PRIx16 " at t=(%" PRIu16 "s)\n",
+                        ed_get_short_addr(ed), time);
+            LOG_INFO("\n\tEBID: ");
             for (uint8_t i = 0; i < EBID_SIZE; i++) {
                 if ((i + 1) % 8 == 0 && i != (EBID_SIZE - 1)) {
                     LOG_INFO("0x%02x\n\t", ed->ebid.parts.ebid.u8[i]);
