@@ -117,7 +117,7 @@ int ed_add_slice(ed_t *ed, uint16_t time, const uint8_t *slice, uint8_t part)
                ignore first 4 bytes:
                https://gitlab.inria.fr/aboutet1/test-bluetooth/-/blob/master/app/src/main/java/fr/inria/desire/ble/models/AdvPayload.kt#L54
              */
-            slice += EBID_SLICE_SIZE_PAD;
+            slice += EBID_SLICE_SIZE_LONG - EBID_SLICE_SIZE_SHORT;
         }
         ebid_set_slice(&ed->ebid, slice, part);
         if (ebid_reconstruct(&ed->ebid) == 0) {

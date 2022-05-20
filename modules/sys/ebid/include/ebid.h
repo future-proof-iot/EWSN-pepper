@@ -32,10 +32,19 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#include "kernel_defines.h"
 #include "crypto_manager.h"
 
 #ifdef __cplusplus
 extern "C" {
+#endif
+
+/**
+ * @brief   EBID slice leaving an empty byte
+ *
+ */
+#ifndef CONFIG_EBID_V2
+#define CONFIG_EBID_V2                  0
 #endif
 
 /**
@@ -49,18 +58,26 @@ extern "C" {
  *
  * A 32 byte EBID is divided in two 12byte slices and one 8byte slice
  */
+#if IS_ACTIVE(CONFIG_EBID_V2)
+#define EBID_SLICE_SIZE_LONG            11
+#else
 #define EBID_SLICE_SIZE_LONG            12
+#endif
 /**
  * @brief   EBID short slice size padding
  *
  */
-#define EBID_SLICE_SIZE_PAD       4
+#define EBID_SLICE_SIZE_PAD             4
 /**
  * @brief   EBID short slice size
  *
  * A 32 byte EBID is divided in two 12byte slices and one 8byte slice
  */
+#if IS_ACTIVE(CONFIG_EBID_V2)
+#define EBID_SLICE_SIZE_SHORT          10
+#else
 #define EBID_SLICE_SIZE_SHORT           8
+#endif
 
 /**
  * @name EBID status flags

@@ -223,8 +223,8 @@ static void _ebid_slice_rotate(adv_mgr_t *mgr)
         /* DESIRE sends the third slice with front padding so ignore first 4 bytes:
            https://gitlab.inria.fr/aboutet1/test-bluetooth/-/blob/master/app/src/main/java/fr/inria/desire/ble/models/AdvPayload.kt#L54
          */
-        memset(slice, '\0', EBID_SLICE_SIZE_PAD);
-        memcpy(slice + EBID_SLICE_SIZE_PAD, ebid_get_slice3(mgr->ebid), EBID_SLICE_SIZE_SHORT);
+        memset(slice, '\0', EBID_SLICE_SIZE_LONG - EBID_SLICE_SIZE_SHORT);
+        memcpy(slice + EBID_SLICE_SIZE_LONG - EBID_SLICE_SIZE_SHORT, ebid_get_slice3(mgr->ebid), EBID_SLICE_SIZE_SHORT);
         break;
     default:
         assert(false);
