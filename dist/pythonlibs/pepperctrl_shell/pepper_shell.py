@@ -88,7 +88,7 @@ class PepperCmd(ShellInteraction):
     ):
         if timeout is None:
             if params.iterations != 0:
-                timeout = params.duration * params.iterations * 1.1 + 3
+                timeout = params.duration * params.iterations * 1.1 + 30
             else:
                 timeout = -1
 
@@ -110,8 +110,14 @@ class PepperCmd(ShellInteraction):
     def pepper_set(self, key, value, timeout=-1, async_=False):
         return self.pepper_cmd(args=("set", key, value), timeout=timeout, async_=async_)
 
+    def pepper_twr_set(self, key, value, timeout=-1, async_=False):
+        return self.pepper_cmd(args=("twr", "set", key, value), timeout=timeout, async_=async_)
+
     def pepper_get(self, key, timeout=-1, async_=False):
         return self.pepper_cmd(args=("get", key), timeout=timeout, async_=async_)
+
+    def pepper_twr_get(self, key, timeout=-1, async_=False):
+        return self.pepper_cmd(args=("twr", "get", key), timeout=timeout, async_=async_)
 
     def pepper_status(self, timeout=-1, async_=False):
         return self.pepper_cmd(args=("status",), timeout=timeout, async_=async_)
