@@ -67,6 +67,16 @@ extern "C" {
 #define CONFIG_BLE_ADV_STATIC_CID       0
 #endif
 
+/**
+ * @brief   Use a random value for advertisement seed
+ *
+ * @note    This value is used to generate a TWR rendez-vous, unused if TWR is
+ *          not used
+ */
+#ifndef CONFIG_BLE_ADV_SEED_RANDOM
+#define CONFIG_BLE_ADV_SEED_RANDOM      0
+#endif
+
 #if IS_USED(MODULE_DESIRE_ADVERTISER_THREADED)
 /**
  * @brief   The advertisement thread stacksize

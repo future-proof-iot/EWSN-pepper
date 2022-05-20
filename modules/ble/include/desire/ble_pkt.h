@@ -57,8 +57,13 @@ typedef union __attribute__((packed)) {
         uint32_t sid_cid;
         // Payload
         uint8_t ebid_slice[EBID_SLICE_SIZE_LONG];
+#if IS_ACTIVE(CONFIG_EBID_V2)
+        uint32_t seed;
+        uint8_t md_version;
+#else
         // Footer little endian
         uint32_t md_version;
+#endif
     } data;
     uint8_t bytes[DESIRE_ADV_PAYLOAD_SIZE];
 } desire_ble_adv_payload_t;
@@ -99,10 +104,14 @@ static inline uint32_t encode_sid_cid(uint8_t sid, uint32_t cid)
  */
 static inline void desire_ble_adv_payload_build(
     desire_ble_adv_payload_t *adv_payload, uint8_t sid, uint32_t cid,
-    const uint8_t *ebid_slice)
+    const uint8_t *ebid_slice, uint32_t seed)
 {
+    (void)seed;
     adv_payload->data.service_uuid_16 = DESIRE_SERVICE_UUID16;
     adv_payload->data.sid_cid = encode_sid_cid(sid, cid);                   // header
+#if IS_ACTIVE(CONFIG_EBID_V2)
+    adv_payload->data.seed = seed;
+#endif
     memcpy(adv_payload->data.ebid_slice, ebid_slice, EBID_SLICE_SIZE_LONG); // payload
     adv_payload->data.md_version = MD_VERSION;                              // footer
 }

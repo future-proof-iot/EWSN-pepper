@@ -102,10 +102,10 @@ static bool _twr_should_request(uint32_t timestamp, ed_t *ed)
     return false;
 }
 
-static uint16_t _get_twr_offset(ebid_t *ebid)
+static uint16_t _get_twr_offset(ebid_t *ebid, uint16_t seed)
 {
     /* last two bytes of the EBID */
-    uint32_t offset_ms = ebid->parts.ebid.u8[0] + (ebid->parts.ebid.u8[1] << 8);
+    uint32_t offset_ms = (ebid->parts.ebid.u8[0] + (ebid->parts.ebid.u8[1] << 8)) ^ seed;
 
     /* add a minimum offset and a random EBID based one */
     offset_ms = (offset_ms % CONFIG_BLE_ADV_ITVL_MS) + CONFIG_TWR_MIN_OFFSET_MS;
@@ -113,14 +113,14 @@ static uint16_t _get_twr_offset(ebid_t *ebid)
     return os_cputime_usecs_to_ticks(offset_ms * US_PER_MS);
 }
 
-static uint16_t _get_twr_rx_offset(ebid_t *ebid)
+static uint16_t _get_twr_rx_offset(ebid_t *ebid, uint16_t seed)
 {
-    return _get_twr_offset(ebid) + _controller.twr_params.rx_offset_ticks;
+    return _get_twr_offset(ebid, seed) + _controller.twr_params.rx_offset_ticks;
 }
 
-static uint16_t _get_twr_tx_offset(ebid_t *ebid)
+static uint16_t _get_twr_tx_offset(ebid_t *ebid, uint16_t seed)
 {
-    return _get_twr_offset(ebid) + _controller.twr_params.tx_offset_ticks;
+    return _get_twr_offset(ebid, seed) + _controller.twr_params.tx_offset_ticks;
 }
 
 /**
@@ -230,6 +230,11 @@ static void _scan_cb(uint32_t ticks, const ble_addr_t *addr, int8_t rssi,
     /* timestamp relative to beginning of epoch */
     uint32_t timestamp = pepper_sec_since_start();
 
+#if IS_ACTIVE(CONFIG_EBID_V2)
+    uint16_t seed = adv_payload->data.seed;
+#else
+    uint16_t seed = 0;
+#endif
     /* 1. process the incoming slice */
     decode_sid_cid(adv_payload->data.sid_cid, &part, &cid);
     ed_t *ed = ed_list_process_slice(&_controller.ed_list, cid, timestamp,
@@ -257,12 +262,14 @@ static void _scan_cb(uint32_t ticks, const ble_addr_t *addr, int8_t rssi,
 #endif
             /* compensate for delay in scheduling listen */
             /* 3.3 schedule a twr listen event at an EBID based offset */
-            if (twr_schedule_listen_managed(ed_get_short_addr(ed),
-                                            _get_twr_rx_offset(&_controller.ebid))) {
+            uint16_t offset = _get_twr_rx_offset(&_controller.ebid, seed);
+            if (twr_schedule_listen_managed(ed_get_short_addr(ed), offset)) {
 #if IS_USED(MODULE_ED_UWB_STATS)
                 ed->uwb.stats.lst.aborted++;
 #endif
             }
+            LOG_DEBUG("[pepper]: 0x04%" PRIx16 " rx offset %" PRIu16 "\n", ed_get_short_addr(
+                       ed), offset);
         }
 #endif
     }
@@ -285,7 +292,6 @@ static void _scan_cb(uint32_t ticks, const ble_addr_t *addr, int8_t rssi,
 #endif
     }
 #endif
-
 }
 
 /**
@@ -296,7 +302,13 @@ static void _adv_cb(uint32_t advs, void *arg)
 {
     (void)arg;
     (void)advs;
+
 #if IS_USED(MODULE_TWR)
+#if IS_ACTIVE(CONFIG_EBID_V2)
+    uint16_t seed = advs;
+#else
+    uint16_t seed = 0;
+#endif
     ed_t *next = (ed_t *)_controller.ed_list.list.next;
 
     /* timestamp relative to beginning of epoch */
@@ -320,15 +332,16 @@ static void _adv_cb(uint32_t advs, void *arg)
 #if IS_USED(MODULE_ED_UWB_STATS)
             next->uwb.stats.req.scheduled++;
 #endif
-            if (twr_schedule_request_managed(
-                    ed_get_short_addr(next), _get_twr_tx_offset(
-                        &next->ebid) - delay)) {
+            uint16_t offset = _get_twr_tx_offset(&next->ebid, seed);
+            if (twr_schedule_request_managed(ed_get_short_addr(next), offset - delay)) {
 #if IS_USED(MODULE_ED_UWB_STATS)
                 next->uwb.stats.req.aborted++;
 #endif
             }
+           LOG_DEBUG("[pepper]: 0x04%" PRIx16 " tx offset %" PRIu16 "\n", ed_get_short_addr(
+                       next), offset);
             LOG_INFO("[pepper]: adv delay: %" PRIu16 ", offset: %" PRIu16 "\n",
-                     delay, _get_twr_tx_offset(&next->ebid));
+                     delay, _get_twr_tx_offset(&next->ebid, seed));
         }
     } while (next != (ed_t *)_controller.ed_list.list.next);
 #endif

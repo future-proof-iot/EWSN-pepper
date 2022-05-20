@@ -77,6 +77,7 @@ typedef struct {
     uint32_t advs;                              /**< current event count */
     uint32_t advs_max;                          /**< the total amount of advertisements */
     uint32_t advs_slice;                        /**< number of advertisements per slice */
+    uint32_t seed;                              /**< random seed value */
 } adv_mgr_t;
 static adv_mgr_t _adv_mgr;
 
@@ -100,7 +101,7 @@ static int _gap_event_cb(struct ble_gap_event *event, void *arg)
         if (_adv_cb) {
             /* timestamping at this stage does not make sense, there is in any
                case already an OS delay of at least 100us */
-            _adv_cb(mgr->advs, _adv_cb_arg);
+            _adv_cb(mgr->seed, _adv_cb_arg);
         }
         break;
     default:
@@ -231,8 +232,13 @@ static void _ebid_slice_rotate(adv_mgr_t *mgr)
         LOG_ERROR("[adv] error: this should never happen\n");
         break;
     }
-
-    desire_ble_adv_payload_build(&mgr->ble_adv_payload, slice_id, mgr->cid, slice);
+    if (IS_ACTIVE(CONFIG_BLE_ADV_SEED_RANDOM)) {
+        mgr->seed = random_uint32();
+    }
+    else {
+        mgr->seed = mgr->advs;
+    }
+    desire_ble_adv_payload_build(&mgr->ble_adv_payload, slice_id, mgr->cid, slice, mgr->seed);
 }
 
 static void _adv_mgr_init(ebid_t *ebid, uint32_t itvl_ms, uint32_t advs_max,
@@ -269,14 +275,13 @@ static void _desire_advertiser_handler(void *arg)
         LOG_DEBUG("[adv]: last adv of %" PRIu32 " advertisements\n", mgr->advs);
     }
 
-    /* advertise once */
-    _advertise_once(&mgr->ble_adv_payload);
-
     /* rotate payload if needed, this applies to next advertisement */
     if (mgr->advs % mgr->advs_slice == 0) {
         _ebid_slice_rotate(mgr);
     }
 
+    /* advertise once */
+    _advertise_once(&mgr->ble_adv_payload);
 }
 
 void desire_ble_adv_init(event_queue_t *queue)
