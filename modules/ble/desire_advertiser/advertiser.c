@@ -77,7 +77,7 @@ typedef struct {
     uint32_t advs;                              /**< current event count */
     uint32_t advs_max;                          /**< the total amount of advertisements */
     uint32_t advs_slice;                        /**< number of advertisements per slice */
-    uint32_t seed;                              /**< random seed value */
+    uint16_t seed;                              /**< random seed value */
 } adv_mgr_t;
 static adv_mgr_t _adv_mgr;
 
@@ -233,10 +233,10 @@ static void _ebid_slice_rotate(adv_mgr_t *mgr)
         break;
     }
     if (IS_ACTIVE(CONFIG_BLE_ADV_SEED_RANDOM)) {
-        mgr->seed = random_uint32();
+        mgr->seed = (uint16_t)random_uint32();
     }
     else {
-        mgr->seed = mgr->advs;
+        mgr->seed = (uint16_t)mgr->advs;
     }
     desire_ble_adv_payload_build(&mgr->ble_adv_payload, slice_id, mgr->cid, slice, mgr->seed);
 }

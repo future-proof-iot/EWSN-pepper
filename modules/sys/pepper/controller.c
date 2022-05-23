@@ -229,12 +229,11 @@ static void _scan_cb(uint32_t ticks, const ble_addr_t *addr, int8_t rssi,
     uint8_t part;
     /* timestamp relative to beginning of epoch */
     uint32_t timestamp = pepper_sec_since_start();
-
-#if IS_ACTIVE(CONFIG_EBID_V2)
-    uint16_t seed = adv_payload->data.seed;
-#else
-    uint16_t seed = 0;
+    /* seed for offset */
+#if IS_USED(MODULE_TWR)
+    uint16_t seed = adv_payload->data.reserved.seed;
 #endif
+
     /* 1. process the incoming slice */
     decode_sid_cid(adv_payload->data.sid_cid, &part, &cid);
     ed_t *ed = ed_list_process_slice(&_controller.ed_list, cid, timestamp,
@@ -269,7 +268,7 @@ static void _scan_cb(uint32_t ticks, const ble_addr_t *addr, int8_t rssi,
 #endif
             }
             LOG_DEBUG("[pepper]: 0x04%" PRIx16 " rx offset %" PRIu16 "\n", ed_get_short_addr(
-                       ed), offset);
+                          ed), offset);
         }
 #endif
     }
@@ -304,12 +303,10 @@ static void _adv_cb(uint32_t advs, void *arg)
     (void)advs;
 
 #if IS_USED(MODULE_TWR)
-#if IS_ACTIVE(CONFIG_EBID_V2)
-    uint16_t seed = advs;
-#else
-    uint16_t seed = 0;
-#endif
     ed_t *next = (ed_t *)_controller.ed_list.list.next;
+
+    /* seed for offset */
+    uint16_t seed = advs;
 
     /* timestamp relative to beginning of epoch */
     uint32_t timestamp = pepper_sec_since_start();
@@ -338,8 +335,8 @@ static void _adv_cb(uint32_t advs, void *arg)
                 next->uwb.stats.req.aborted++;
 #endif
             }
-           LOG_DEBUG("[pepper]: 0x04%" PRIx16 " tx offset %" PRIu16 "\n", ed_get_short_addr(
-                       next), offset);
+            LOG_DEBUG("[pepper]: 0x04%" PRIx16 " tx offset %" PRIu16 "\n", ed_get_short_addr(
+                          next), offset);
             LOG_INFO("[pepper]: adv delay: %" PRIu16 ", offset: %" PRIu16 "\n",
                      delay, _get_twr_tx_offset(&next->ebid, seed));
         }

@@ -74,7 +74,7 @@ extern "C" {
  *          not used
  */
 #ifndef CONFIG_BLE_ADV_SEED_RANDOM
-#define CONFIG_BLE_ADV_SEED_RANDOM      0
+#define CONFIG_BLE_ADV_SEED_RANDOM      1
 #endif
 
 #if IS_USED(MODULE_DESIRE_ADVERTISER_THREADED)
