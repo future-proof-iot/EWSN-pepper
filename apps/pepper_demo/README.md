@@ -1,6 +1,8 @@
-# PEPPPER Demo
+# PEPPER Demo
 
-This application runs PEPPER (PrEcise Privacy-PresERving Proximity Tracing) and adding the required futures to run with [desire CoAP server](https://gitlab.inria.fr/pepper/desire-coap-server) in non-secured mode.
+This application runs PEPPER (PrEcise Privacy-PresERving Proximity Tracing) and
+adding the required futures to run with [desire CoAP server](https://gitlab.inria.fr/pepper/desire-coap-server)
+in non-secured mode.
 
 In a nutshell devices advertise unique identifiers over BLE
 and scan looking for other nodes performing those advertisements. Once a node
@@ -16,9 +18,9 @@ epoch ends. At the end of an epoch all EBID seen for more than `MIN_EXPOSURE_TIM
 (default `150s`) and under `MAX_DISTANCE_CM` (default 200cm) trigger PET
 calculation.
 
-Different than the base application `pepper_srv_coap`, which adds IPV6 connectivity allowing
-devices to offload the ERTL tables as well as notify and get information on
-their infection/exposure status.
+Different than [pepper_simple](../pepper_simple/README.md) `pepper_srv_coap`, which adds
+IPV6 connectivity is included, allowing devices to offload the ERTL tables as well
+as notify and get information on their infection/exposure status.
 
 | ![](../../static/pepper-demo-overview.png) |
 |:-------------------------------------------------------------------------------:|
@@ -97,7 +99,6 @@ rtt min/avg/max/mdev = 0.992/1.289/1.839/0.388 ms
 ```
 
 * Deploy the CoAP server
-
 
 
 ```
@@ -200,4 +201,3 @@ The exposed device:
 ```
 [exposure_status]: COVID contact!
 ```
-

@@ -1,19 +1,10 @@
 # PEPPER experience
 
-This implements PEPPER (PrEcise Privacy-PresERving Proximity Tracing). The
-application is controlled via shell commands.
+Similar to [pepper_simple](./../pepper_simple/README.md) but adding BLE and UWB
+contact metrics (`ed_ble`) and logging UWB and BLE data (`PEPPER_LOG_BLE=1` and
+`PEPPER_LOG_UWB=1`). It also logs per encounter TWR exchanges statistics.
 
-This application is also enabling logging UWB `los` information through the
-`ed_uwb_los` module as well as logging epoch data to an attached sd-card, if
-any is present.
-
-It's very similar to `pepper_iotlab` application but without tunning some
-configurations values to expect many neighbors in the vicinity.
-
-Currently devices are not time synchronized so if the `MIN_EXPOSE_TIME_S`
-is too large with respect to `CONFIG_EPOCH_DURATION_SEC` they might miss each
-other. A BLE time advertiser can be set up to synchronize devices. See
-[../../tests/time_server/README.md].
+It also adds a shell command to set the device time.
 
 ## PRE-requisites
 
@@ -49,7 +40,6 @@ $ pepper start
 # Run the application for only 5 epochs, shorten advertisement intervals to
 # 500ms, and rotate the EBID slice on every advertisement
 $ pepper start -c 5 -i 500 -r 1
-TODO: update logs
 ```
 
 To modify more parameters take a look at the `help` command:

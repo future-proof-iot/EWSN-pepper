@@ -24,11 +24,8 @@ USEMODULE += pepper_current_time
 USEMODULE += pepper_shell
 USEMODULE += pepper_util
 USEMODULE += ed_uwb
-## Include all debug data
+## Include UWB stats
 USEMODULE += ed_uwb_stats
-USEMODULE += ed_uwb_los
-USEMODULE += ed_uwb_rssi
-USEMODULE += ed_ble
 ## Add leds
 USEMODULE += ed_leds
 ## Include current_time_shell
@@ -42,11 +39,11 @@ USEMODULE += ps
 # Change default timings for faster demo behaviout
 ADV_PER_SLICE ?= 10           # 10 advertisements per slice
 CFLAGS += -DCONFIG_ADV_PER_SLICE=$(ADV_PER_SLICE)
-EPOCH_DURATION_SEC ?= 150     # 5min
+EPOCH_DURATION_SEC ?= 900     # 5min
 CFLAGS += -DCONFIG_EPOCH_DURATION_SEC=$(EPOCH_DURATION_SEC)
-MIN_EXPOSURE_TIME_S ?= 30
+MIN_EXPOSURE_TIME_S ?= 100
 CFLAGS+=-DMIN_EXPOSURE_TIME_S=$(MIN_EXPOSURE_TIME_S)
-MAX_DISTANCE_CM ?= 1000       # 10m so everything is logged
+MAX_DISTANCE_CM ?= 2000       # 20m so everything is logged
 CFLAGS += -DMAX_DISTANCE_CM=$(MAX_DISTANCE_CM)
 TWR_LISTEN_WINDOW_US ?= 2000  # 2ms listen windows
 CFLAGS += -DCONFIG_TWR_LISTEN_WINDOW_US=$(TWR_LISTEN_WINDOW_US)
@@ -59,10 +56,10 @@ CFLAGS += -DCONFIG_SHELL_NO_ECHO=1
 CFLAGS += -DCONFIG_PEPPER_SHELL_BLOCKING=1
 
 # Log BLE scan information over serial
-PEPPER_LOG_BLE ?= 1
+PEPPER_LOG_BLE ?= 0
 CFLAGS += -DCONFIG_PEPPER_LOG_BLE=$(PEPPER_LOG_BLE)
 # Log UWB scan information over serial
-PEPPER_LOG_UWB ?= 1
+PEPPER_LOG_UWB ?= 0
 CFLAGS += -DCONFIG_PEPPER_LOG_UWB=$(PEPPER_LOG_UWB)
 
 # The event thread will handle:
@@ -78,9 +75,15 @@ CFLAGS += -DISR_STACKSIZE=1024
 
 # Use a different PANID
 CFLAGS += -DMYNEWT_VAL_PANID=0xcafe
+# Use static CID
+STATIC_CID ?= 1
+CFLAGS += -DCONFIG_BLE_ADV_STATIC_CID=$(STATIC_CID)
 
 # Increase memory buffers to account for more neighbors
-CFLAGS += -DCONFIG_TWR_EVENT_BUF_SIZE=40
-CFLAGS += -DCONFIG_ED_BUF_SIZE=20
+CFLAGS += -DCONFIG_TWR_EVENT_BUF_SIZE=50
+CFLAGS += -DCONFIG_ED_BUF_SIZE=25
+
+# Increase max encounters
+CFLAGS += -DCONFIG_EPOCH_MAX_ENCOUNTERS=16
 
 include $(RIOTBASE)/Makefile.include

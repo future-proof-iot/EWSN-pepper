@@ -1,20 +1,8 @@
-# PEPPER
+# PEPPER PM
 
-This implements PEPPER (PrEcise Privacy-PresERving Proximity Tracing). The
-application is controlled via shell commands. Et the beginning of every
-epoch (`CONFIG_EPOCH_DURATION_SEC` (default `15*60s`)) ephemeral unique
-identifiers are generated and advertised over BLE. At the same time
-devices scan for neighboring advertisements.
-
-When advertisements are received a TWR exchange can optionally be initiated
-between the scanner and advertiser.
-
-At the end of of an epoch information on the encounters is logged over serial.
-
-Currently devices are not time synchronized so if the `MIN_EXPOSE_TIME_S`
-is too large with respect to `CONFIG_EPOCH_DURATION_SEC` they might miss each
-other. A BLE time advertiser can be set up to synchronize devices. See
-[../../tests/time_server/README.md].
+Similar to [pepper_simple](./../pepper_simple/README.md) but it also enables
+`twr_sleep` putting the UWB radio to sleep when unused. `twr_gpio` is also enabled which toggles
+a GPIO when a TWR exchange begins an ends (different GPIO when responder/initiator)
 
 ## PRE-requisites
 
@@ -50,7 +38,6 @@ $ pepper start
 # Run the application for only 5 epochs, shorten advertisement intervals to
 # 500ms, and rotate the EBID slice on every advertisement
 $ pepper start -c 5 -i 500 -r 1
-TODO: update logs
 ```
 
 To modify more parameters take a look at the `help` command:

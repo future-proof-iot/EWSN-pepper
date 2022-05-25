@@ -1,4 +1,4 @@
-APPLICATION = pepper_simple
+APPLICATION = pepper_pm
 
 BOARD ?= dwm1001
 

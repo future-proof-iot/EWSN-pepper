@@ -1,4 +1,4 @@
-APPLICATION = pepper_pm
+APPLICATION = pepper_field
 
 BOARD ?= dwm1001
 
@@ -34,8 +34,6 @@ FEATURES_REQUIED += periph_gpio_irq
 USEMODULE += twr_sleep
 ## Switch off leds
 CFLAGS += -DMYNEWT_VAL_DW1000_RXTX_LEDS=0
-## Configure backoff to 0
-CFLAGS += -DCONFIG_PEPPER_TWR_BACK_OFF_S=0LU
 
 # Change default timings
 ADV_PER_SLICE ?= 10           # 10 advertisements per slice

@@ -1,9 +1,7 @@
 # PEPPER IoT-LAB Application
 
-This implements PEPPER (PrEcise Privacy-PresERving Proximity Tracing). The
-application is controlled via shell commands.
-
-Some of the default parameters have been toggled to run better on IoT-LAB
+Similar to [pepper_simple](./../pepper_simple/README.md) but where some of
+the default parameters have been toggled to run better on IoT-LAB
 when many devices are active and to perform as read-eval-print-loops.
 
 - shell echo is disabled: `CFLAGS=-DCONFIG_SHELL_NO_ECHO=1`
@@ -14,16 +12,10 @@ when many devices are active and to perform as read-eval-print-loops.
 - `current_time_shell`: module is included to set the current time for the
   devices and have accurate EPOCH based timestamps.
 
-By default UWB and BLE data is logged, but if running the experiment with
-many nodes its better to disable it since it might overload the state machine.
-(compile with `PEPPER_LOG_BLE=0 & PEPPER_LOG_UWB=0`).
+By default UWB and BLE data is noy logged, since it might overload the state machine.
+(compiled with `PEPPER_LOG_BLE=0 & PEPPER_LOG_UWB=0`).
 
 At the end of of an epoch information on the encounters is logged over serial.
-
-Currently devices are not time synchronized so if the `MIN_EXPOSE_TIME_S`
-is too large with respect to `CONFIG_EPOCH_DURATION_SEC` they might miss each
-other. A BLE time advertiser can be set up to synchronize devices. See
-[../../tests/time_server/README.md].
 
 ## PRE-requisites
 

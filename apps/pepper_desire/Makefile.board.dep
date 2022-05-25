@@ -1,4 +1,5 @@
 ifneq (,$(filter dwm1001,$(BOARD)))
+  # Include uwb-core to set radio in sleep mode
   USEPKG += uwb-core
   USEPKG += uwb-dw1000
   DISABLE_MODULE += auto_init_uwb-core

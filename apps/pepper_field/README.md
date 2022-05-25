@@ -1,33 +1,30 @@
 # PEPPER Low Power Application
 
-This implements PEPPER (PrEcise Privacy-PresERving Proximity Tracing) in a headless manner leveraging the `pepper_gatt` module to configure and start
-PEPPER.
+This implements PEPPER (PrEcise Privacy-PresERving Proximity Tracing) in a headless
+manner leveraging the `pepper_gatt` module to configure and start PEPPER.
 
-At the end of of an epoch information on the encounters is logged over serial.
-
-This application is also enabling logging UWB `los` information through the
-`ed_uwb_los` module as well as logging epoch data to an attached sd-card, if
-any is present.
+At the end of of an epoch information on the encounters is logged over serial
+or to an attached SDCARD, if any is present.
 
 Additionally it enables `twr_sleep` putting the UWB radio to sleep when unused.
-It also configures UWB back-off to only attempt TWR exchanges 10s after a
-successful previous exchange.
 
 Its also making the `dwm1001` devices user button stop/start  advertising
 its GATT services.
 
-To easily identify exchanges static CID can be used by adding `CFLAGS=-DCONFIG_BLE_ADV_STATIC_CID=1`
+To easily identify exchanges static CID are used it can be overridden
+in the application [Makefile](Makefile) or at compile time by setting `STATIC_CID`
+to 0 or 1.
 
 ## PRE-requisites
 
 - [DWM1001 Development Board](https://www.decawave.com/product/dwm1001-development-board/)
 - Install [nRF Connect For Mobile](https://www.nordicsemi.com/Products/Development-tools/nRF-Connect-for-mobile/GetStarted)
-- Hooked up SD-CARD, suggested to use this [SD Breakout]()
+- Hooked up SD-CARD, suggested to use this [SD Breakout](https://gitlab.inria.fr/pepper/dwm1001_sdcard_bb)
 
 ## Optional PRE-requisites
 
 - Battery: [Accu LiPo 3,7 Vcc 250 mAh PR382527](https://www.gotronic.fr/art-accu-lipo-3-7-vcc-250-mah-pr382527-30027.htm)
-- [DWM1001 Development Board Case]()
+- [DWM1001 Development Board Case](https://gitlab.com/Inria-Chile/Atelier-Inria/dwm-rtls/-/tree/master/enclosures)
 
 Currently devices are not time synchronized so if the `MIN_EXPOSE_TIME_S`
 is too large with respect to `CONFIG_EPOCH_DURATION_SEC` they might miss each
