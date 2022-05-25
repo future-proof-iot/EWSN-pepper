@@ -13,14 +13,24 @@ build:
   stage: build
   script:
     - make -j
+  only:
+    - master
+    - merge_requests
 
 test:
   stage: test
   script:
     - make test -j
+  only:
+    - master
+    - merge_requests
 
 cppcheck:
   stage: static-checks
   allow_failure: true
   script:
     - cppcheck --enable=style --quiet ./modules/ ./tests/
+  only:
+    - master
+    - merge_requests
+

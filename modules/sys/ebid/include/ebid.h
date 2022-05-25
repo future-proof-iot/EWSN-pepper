@@ -32,10 +32,19 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#include "kernel_defines.h"
 #include "crypto_manager.h"
 
 #ifdef __cplusplus
 extern "C" {
+#endif
+
+/**
+ * @brief   EBID slice leaving an empty byte
+ *
+ */
+#ifndef CONFIG_EBID_V2
+#define CONFIG_EBID_V2                  0
 #endif
 
 /**
@@ -49,18 +58,26 @@ extern "C" {
  *
  * A 32 byte EBID is divided in two 12byte slices and one 8byte slice
  */
+#if IS_ACTIVE(CONFIG_EBID_V2)
+#define EBID_SLICE_SIZE_LONG            11
+#else
 #define EBID_SLICE_SIZE_LONG            12
+#endif
 /**
  * @brief   EBID short slice size padding
  *
  */
-#define EBID_SLICE_SIZE_PAD       4
+#define EBID_SLICE_SIZE_PAD             4
 /**
  * @brief   EBID short slice size
  *
  * A 32 byte EBID is divided in two 12byte slices and one 8byte slice
  */
+#if IS_ACTIVE(CONFIG_EBID_V2)
+#define EBID_SLICE_SIZE_SHORT          10
+#else
 #define EBID_SLICE_SIZE_SHORT           8
+#endif
 
 /**
  * @name EBID status flags
@@ -80,13 +97,16 @@ extern "C" {
 /** @} */
 
 /**
- * @name EBID parts defines
+ * @name EBID parts enum
  * @{
  */
-#define EBID_SLICE_1        (0U)
-#define EBID_SLICE_2        (1U)
-#define EBID_SLICE_3        (2U)
-#define EBID_XOR            (3U)
+enum {
+    EBID_SLICE_1        = 0U,
+    EBID_SLICE_2        = 1U,
+    EBID_SLICE_3        = 2U,
+    EBID_XOR            = 3U,
+    EBID_PARTS,
+};
 /** @} */
 
 /**
@@ -151,6 +171,15 @@ void ebid_init(ebid_t* ebid);
  *
  */
 void ebid_generate(ebid_t* ebid, crypto_manager_keys_t *keys);
+
+/**
+ * @brief       Generates an EBID from a public key
+ *
+ * @param[inout]    ebid    The preallocated EBID structure to initialize
+ * @param[in]       pk      A EBID_SIZE public key
+ *
+ */
+void ebid_generate_from_pk(ebid_t* ebid, uint8_t* pk);
 
 /**
  * @brief       Reconstruct an EBID when a slice or the xor of the slices is
@@ -234,6 +263,32 @@ static inline uint8_t* ebid_get_slice3(ebid_t* ebid)
 static inline uint8_t* ebid_get_xor(ebid_t* ebid)
 {
     return ebid->parts.ebid_xor;
+}
+
+/**
+ * @brief       Returns the the EBID slice or xor
+ *
+ * @param[in]       ebid        The ebid
+ * @param[in]       idx         The slice idx to get
+ *
+ * @return      pointer to matching slice
+ */
+static inline uint8_t* ebid_get_slice(ebid_t* ebid, uint8_t idx)
+{
+    switch (idx)
+    {
+    case EBID_SLICE_1:
+        return ebid_get_slice1(ebid);
+    case EBID_SLICE_2:
+        return ebid_get_slice2(ebid);
+    case EBID_SLICE_3:
+        return ebid_get_slice3(ebid);
+    case EBID_XOR:
+        return ebid_get_xor(ebid);
+
+    default:
+        return NULL;
+    }
 }
 
 /**

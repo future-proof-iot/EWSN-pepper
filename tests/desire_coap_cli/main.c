@@ -4,20 +4,20 @@
 #include "shell.h"
 #include "shell_commands.h"
 
-#include "state_manager.h"
+#include "pepper_srv_utils.h"
 #include "coap/utils.h"
-#include "net/coap.h"
 #include "net/sock/udp.h"
 
-#include "nanocbor/nanocbor.h"
 #include "msg.h"
 
-#if IS_USED(MODULE_DESIRE_SCANNER_NETIF)
-#include "desire_ble_scan.h"
-#include "desire_ble_scan_params.h"
+#if IS_USED(MODULE_BLE_SCANNER_NETIF)
+#include "ble_scanner.h"
+#include "ble_scanner_params.h"
+#include "ble_scanner_netif_params.h"
+#endif
 
-/* default scan duration (20s) */
-#define DEFAULT_DURATION_MS       (20 * MS_PER_SEC)
+#ifndef CONFIG_PEPPER_SERVER_ADDR
+#define CONFIG_PEPPER_SERVER_ADDR               "fd00:dead:beef::1"
 #endif
 
 #define MAIN_QUEUE_SIZE     (8)
@@ -25,30 +25,32 @@ static msg_t _main_msg_queue[MAIN_QUEUE_SIZE];
 
 /* dummy ertl cbor data */
 static uint8_t ertl[] = {
-    0xd9, 0xca, 0xfe, 0x82, 0x19, 0x01, 0x4c, 0x82,
-    0x85, 0x58, 0x20, 0xbf, 0x0a, 0x8c, 0x1e, 0x3a,
-    0xe9, 0x62, 0xbb, 0xb7, 0xb3, 0x70, 0x61, 0x64,
-    0x9a, 0x8d, 0xa5, 0xdb, 0xfb, 0xc9, 0x54, 0xdc,
-    0xba, 0x4b, 0xfd, 0x8f, 0x6d, 0x8f, 0x34, 0x71,
-    0x33, 0x4a, 0x42, 0x58, 0x20, 0x50, 0x51, 0x93,
-    0x40, 0x2b, 0x31, 0xbb, 0x77, 0xfb, 0x97, 0x64,
-    0x2c, 0x2b, 0x0a, 0x67, 0x8a, 0x64, 0x96, 0xd6,
-    0xf7, 0xee, 0x04, 0x1a, 0x77, 0x0b, 0x60, 0xbc,
-    0xad, 0xd0, 0x26, 0x83, 0x5e, 0x19, 0x03, 0x0c,
-    0x19, 0x01, 0xb0, 0x18, 0x97, 0x85, 0x58, 0x20,
-    0xd8, 0x80, 0xc6, 0x76, 0x69, 0xcb, 0x97, 0x62,
-    0x43, 0x05, 0x1c, 0x5f, 0x8d, 0x5b, 0x02, 0xe4,
-    0xc3, 0x2a, 0x31, 0xd0, 0x35, 0x94, 0x68, 0xe5,
-    0xab, 0x35, 0x23, 0x9e, 0x59, 0x92, 0xf4, 0x4c,
-    0x58, 0x20, 0x10, 0x37, 0xc5, 0xc7, 0xec, 0x40,
-    0x5e, 0xbb, 0x00, 0x68, 0x82, 0x5a, 0x35, 0xb5,
-    0x20, 0x75, 0x51, 0x5f, 0xd1, 0x64, 0xe4, 0xb5,
-    0x92, 0x22, 0xc8, 0x9c, 0x33, 0x84, 0x5e, 0xdd,
-    0xa8, 0x14, 0x19, 0x02, 0x80, 0x19, 0x01, 0x43,
-    0x18, 0x47
+    0xd9, 0x45, 0x44, 0x82, 0x18, 0x46, 0x82, 0x83,
+    0x58, 0x20, 0xbf, 0x0a, 0x8c, 0x1e, 0x3a, 0xe9,
+    0x62, 0xbb, 0xb7, 0xb3, 0x70, 0x61, 0x64, 0x9a,
+    0x8d, 0xa5, 0xdb, 0xfb, 0xc9, 0x54, 0xdc, 0xba,
+    0x4b, 0xfd, 0x8f, 0x6d, 0x8f, 0x34, 0x71, 0x33,
+    0x4a, 0x42, 0x58, 0x20, 0x50, 0x51, 0x93, 0x40,
+    0x2b, 0x31, 0xbb, 0x77, 0xfb, 0x97, 0x64, 0x2c,
+    0x2b, 0x0a, 0x67, 0x8a, 0x64, 0x96, 0xd6, 0xf7,
+    0xee, 0x04, 0x1a, 0x77, 0x0b, 0x60, 0xbc, 0xad,
+    0xd0, 0x26, 0x83, 0x5e, 0xd9, 0x45, 0x00, 0x83,
+    0x19, 0x03, 0x0c, 0x19, 0x01, 0xb0, 0x18, 0x97,
+    0x83, 0x58, 0x20, 0xd8, 0x80, 0xc6, 0x76, 0x69,
+    0xcb, 0x97, 0x62, 0x43, 0x05, 0x1c, 0x5f, 0x8d,
+    0x5b, 0x02, 0xe4, 0xc3, 0x2a, 0x31, 0xd0, 0x35,
+    0x94, 0x68, 0xe5, 0xab, 0x35, 0x23, 0x9e, 0x59,
+    0x92, 0xf4, 0x4c, 0x58, 0x20, 0x10, 0x37, 0xc5,
+    0xc7, 0xec, 0x40, 0x5e, 0xbb, 0x00, 0x68, 0x82,
+    0x5a, 0x35, 0xb5, 0x20, 0x75, 0x51, 0x5f, 0xd1,
+    0x64, 0xe4, 0xb5, 0x92, 0x22, 0xc8, 0x9c, 0x33,
+    0x84, 0x5e, 0xdd, 0xa8, 0x14, 0xd9, 0x45, 0x00,
+    0x83, 0x19, 0x02, 0x80, 0x19, 0x01, 0x43, 0x18,
+    0x47
 };
 
 static bool infected = false;
+static bool esr = false;
 
 static sock_udp_ep_t remote;
 static coap_block_ctx_t block_ctx;
@@ -99,13 +101,7 @@ int _cmd_post_infected(int argc, char **argv)
     (void)argv;
     uint8_t buf[8];
 
-    nanocbor_encoder_t enc;
-    nanocbor_encoder_init(&enc, buf, sizeof(buf));
-    nanocbor_fmt_tag(&enc, 0xCAFA);
-    nanocbor_fmt_array(&enc, 1);
-    nanocbor_fmt_bool(&enc, infected);
-    size_t len = nanocbor_encoded_len(&enc);
-
+    size_t len = pepper_srv_infected_serialize_cbor(buf, sizeof(buf), infected);
     coap_post(&remote, NULL, buf, len, "/DW0456/infected",
               COAP_FORMAT_CBOR, COAP_TYPE_CON);
 
@@ -116,9 +112,9 @@ void _get_callback(int ret, void *data, size_t len, void *arg)
 {
     (void)ret;
     (void)arg;
-    bool status = state_manager_get_esr();
-    state_manager_esr_load_cbor(data, len);
-    printf("state_old=(%d), state_new=(%d)\n", status, state_manager_get_esr());
+    bool old_esr = esr;
+    pepper_srv_esr_load_cbor(data, len, &esr);
+    printf("state_old=(%d), state_new=(%d)\n", old_esr, esr);
 }
 
 int _cmd_get_esr(int argc, char **argv)
@@ -142,55 +138,12 @@ int _cmd_coap_srv(int argc, char **argv)
     return 0;
 }
 
-#if IS_USED(MODULE_DESIRE_SCANNER_NETIF)
-/* Dummy detection callback */
-void detection_cb(uint32_t ts,
-                  const ble_addr_t *addr, int8_t rssi,
-                  const desire_ble_adv_payload_t *adv_payload)
-{
-    (void)ts;
-    (void)addr;
-    (void)rssi;
-    (void)adv_payload;
-}
-
-int _cmd_desire_scan(int argc, char **argv)
-{
-    uint32_t duration = DEFAULT_DURATION_MS;
-
-    if ((argc == 2) && (memcmp(argv[1], "help", 4) == 0)) {
-        printf("usage: %s [duration in ms]\n", argv[0]);
-        return 0;
-    }
-    if (argc >= 2) {
-        duration = (uint32_t)(atoi(argv[1]));
-    }
-    printf("Scanning for %" PRIu32 "\n", duration);
-    desire_ble_scan_start(duration);
-
-    return 0;
-}
-
-int _cmd_desire_stop(int argc, char **argv)
-{
-    desire_ble_scan_stop();
-
-    (void)argc;
-    (void)argv;
-    return 0;
-}
-#endif
-
 static const shell_command_t _commands[] = {
     { "ertl", "POST a static ertl payload", _cmd_post_ertl },
     { "infected", "POST infection status", _cmd_post_infected },
     { "status", "sets infection status", _cmd_set_infected },
     { "esr", "GET exposure boolean ", _cmd_get_esr },
     { "server", "get/sets the coap server host and port", _cmd_coap_srv },
-#if IS_USED(MODULE_DESIRE_SCANNER_NETIF)
-    { "scan", "trigger a BLE scan of Desire packets", _cmd_desire_scan },
-    { "stops", "stops scanning of Desire packets", _cmd_desire_stop },
-#endif
     { NULL, NULL, NULL }
 };
 
@@ -203,8 +156,11 @@ int main(void)
 {
     puts("Desire COAP Client Test Application");
 
-#if IS_USED(MODULE_DESIRE_SCANNER_NETIF)
-    desire_ble_scan_init(&desire_ble_scanner_params, detection_cb);
+#if IS_USED(MODULE_BLE_SCANNER_NETIF)
+    /* initialize the desire scanner */
+    ble_scanner_init(&ble_scan_params[1]);
+    /* initializer netif scanner */
+    ble_scanner_netif_init();
 #endif
 
     if (BOARD_NATIVE) {
@@ -215,14 +171,10 @@ int main(void)
         coap_init_remote(&remote, "2001:db8::1", 5683);
     }
     else {
-        coap_init_remote(&remote, "fd00:dead:beef::1", 5683);
+        coap_init_remote(&remote, CONFIG_PEPPER_SERVER_ADDR, 5683);
     }
     msg_init_queue(_main_msg_queue, MAIN_QUEUE_SIZE);
     /* initialize the coap client */
-
-    /* init state manager */
-    state_manager_init();
-    state_manager_set_esr(true);
 
     /* start shell */
     char line_buf[SHELL_DEFAULT_BUFSIZE];

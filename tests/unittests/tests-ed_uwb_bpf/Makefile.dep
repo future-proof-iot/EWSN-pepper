@@ -1,0 +1,3 @@
+USEMODULE += ed
+USEMODULE += ed_uwb
+USEMODULE += ed_uwb_bpf

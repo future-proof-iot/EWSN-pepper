@@ -20,7 +20,7 @@ static uint16_t data_ts[TEST_VALUES_NUMOF] = {
 };
 
 static float data_rssi[TEST_VALUES_NUMOF] = {
-    -80, -70, -50, -10, -20, -30, -40, -75, -25, -35,
+    -72, -70, -50, -10, -20, -30, -40, -75, -25, -35,
 };
 
 static int expected_samples[WINDOWS_PER_EPOCH] = {
@@ -36,7 +36,7 @@ static float expected_avg[WINDOWS_PER_EPOCH] = {
 
 static float _2_dec_round(float value)
 {
-    return round(100 * value) / 100;
+    return round(100 * value);
 }
 
 static void setUp(void)

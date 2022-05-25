@@ -1,0 +1,4 @@
+## Use VFS
+USEMODULE += vfs
+USEMODULE += vfs_default
+USEMODULE += vfs_auto_format

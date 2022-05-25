@@ -9,6 +9,7 @@ USEMODULE += ztimer_periph_timer
 USEMODULE += ztimer_usec
 USEMODULE += ztimer_msec
 USEMODULE += random
+USEMODULE += printf_float
 DEFAULT_MODULE += test_utils_interactive_sync
 
 include $(RIOTBASE)/Makefile.include

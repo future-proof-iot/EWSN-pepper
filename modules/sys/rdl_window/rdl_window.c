@@ -52,7 +52,7 @@ void rdl_windows_finalize(rdl_windows_t *wins)
     if (IS_ACTIVE(ENABLE_DEBUG)) {
         for (uint8_t i = 0; i < WINDOWS_PER_EPOCH; i++) {
             DEBUG("[rdl_windows]: window[%d] avg: %0.10lf\n", i,
-                  wins->wins[i].avg)
+                  wins->wins[i].avg);
         }
     }
 
@@ -62,7 +62,7 @@ void rdl_windows_finalize(rdl_windows_t *wins)
             float n_avg = wins->wins[i].avg / wins->wins[i].samples;
             if (IS_ACTIVE(ENABLE_DEBUG)) {
                 DEBUG("[rdl_windows]: window[%d] normalized avg: %0.10lf\n", i,
-                      n_avg)
+                      n_avg);
             }
             wins->wins[i].avg = 10 * log10f(n_avg);
         }
@@ -72,7 +72,7 @@ void rdl_windows_finalize(rdl_windows_t *wins)
         for (uint8_t i = 0; i < WINDOWS_PER_EPOCH; i++) {
             DEBUG(
                 "[rdl_windows]: window[%d] avg after log convertion: %0.10lf\n",
-                i, wins->wins[i].avg)
+                i, wins->wins[i].avg);
         }
     }
 }

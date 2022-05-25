@@ -1,3 +1,0 @@
-USEMODULE += uwb_ed
-
-CFLAGS += -DLOG_LEVEL=LOG_ERROR

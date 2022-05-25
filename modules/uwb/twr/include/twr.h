@@ -16,6 +16,31 @@
  * @file
  *
  * @author      Francisco Molina <francois-xavier.molina@inria.fr>
+ *
+ * ### Radio Sleeping
+ *
+ * Sleep handling could be improved by saving information on the next to trigger
+ * event offset. I suspect that poor behaviour is because the radio is shutdown
+ * just before it should be configured to rx/tx, this leads to delays that at
+ * the end ruin synchronization.
+ *
+ * With information on the next to trigger two things can be done:
+ *  - schedule the wakeup of the radio just before the event actually triggers
+ *  - avoid putting the radio to sleep if an event is about to trigger
+ *
+ * Ideas:
+ *  - something like `evtimer` but with `ZTIMER_MSEC_BASE`, why? Because using
+ *    `ZTIMER_MSEC_BASE` gives more precise timestamping an accuracy for scheduled
+ *     events.
+ *  - add some kind of wakeup and sleep watchdog that are set/reset based on the
+ *    radio status and the next to trigger event.
+ *
+ * #### Current status
+ *
+ * It is enabled with `twr_sleep` module. What is usually seen is that if there
+ * are two nodes one will be able to perform ranging correctly while the second one
+ * will fail.
+ *
  */
 
 #ifndef TWR_H
@@ -27,22 +52,52 @@
 #include "event/callback.h"
 #include "uwb/uwb_ftypes.h"
 
+#include "board.h"
+#include "periph/gpio.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+/**
+ * @brief   LED to toggle when device is COVID-19 positive
+ *
+ */
+#ifndef CONFIG_TWR_RESPONDER_PIN
+#ifdef BOARD_DWM1001
+#define CONFIG_TWR_RESPONDER_PIN          GPIO_PIN(0,15)
+#else
+#define CONFIG_TWR_RESPONDER_PIN          GPIO_UNDEF
+#endif
+#endif
+
+/**
+ * @brief   LED to toggle when device is COVID-19 positive
+ *
+ */
+#ifndef CONFIG_TWR_INITIATOR_PIN
+#ifdef BOARD_DWM1001
+#define CONFIG_TWR_INITIATOR_PIN          GPIO_PIN(0,8)
+#else
+#define CONFIG_TWR_INITIATOR_PIN          GPIO_UNDEF
+#endif
+#endif
 
 /**
  * @brief   The time window for witch to switch on rng listening
  */
 #ifndef CONFIG_TWR_PAN_ID
-#define CONFIG_TWR_PAN_ID     (0xCAFE)
+#define CONFIG_TWR_PAN_ID               (0xCAFE)
 #endif
 /**
- * @brief   The time window for witch to switch on rng listening
+ * @brief   The time window for which to switch on rng listening, max UINT16MAX
+ *
+ * @note    From experimental measurement the time between advertisement
+ *          it ~600us, which means the start of the listening window can
+ *          be off to upto 1.2ms without considering OS delays.
  */
-#ifndef CONFIG_TWR_LISTEN_WINDOW_MS
-#define CONFIG_TWR_LISTEN_WINDOW_MS     (6)
+#ifndef CONFIG_TWR_LISTEN_WINDOW_US
+#define CONFIG_TWR_LISTEN_WINDOW_US     (2000U)
 #endif
 /**
  * @brief   TWR events to allocate, used to schedule rng_request/listen
@@ -54,8 +109,21 @@ extern "C" {
  * @brief   TWR rng_request default algorithm
  */
 #ifndef CONFIG_TWR_EVENT_ALGO_DEFAULT
-#define CONFIG_TWR_EVENT_ALGO_DEFAULT   (UWB_DATA_CODE_SS_TWR)
+#define CONFIG_TWR_EVENT_ALGO_DEFAULT   (UWB_DATA_CODE_SS_TWR_ONE)
 #endif
+/**
+ * @brief   Set to 1 to reset TWR if locked (uwb_rng_request is not thread safe...)
+ */
+#ifndef CONFIG_TWR_RESET_ON_LOCK
+#define CONFIG_TWR_RESET_ON_LOCK        1
+#endif
+
+
+typedef enum {
+    TWR_RNG_IDLE,
+    TWR_RNG_INITIATOR,
+    TWR_RNG_RESPONDER,
+} twr_status_t;
 
 /**
  * @brief   TWR event data type
@@ -63,13 +131,15 @@ extern "C" {
 typedef struct twr_data {
     uint16_t addr;          /**< the neighbour address */
     uint16_t range;         /**< the range value in cm */
+    uint16_t los;           /**< los as %*/
+    float rssi;             /**< rssi in dBm */
     uint32_t time;          /**< the measurement timestamp in msec */
 } twr_event_data_t;
 
 /**
  * @brief   TWR event type
  */
-typedef struct twr_req_event {
+typedef struct twr_event {
     event_timeout_t timeout;    /**< the event timeout */
     event_callback_t event;     /**< the event callback */
     uint16_t addr;              /**< the address of destination */
@@ -78,7 +148,7 @@ typedef struct twr_req_event {
 /**
  * @brief   Callback for ranging event notification
  */
-typedef void (*twr_callback_t)(twr_event_data_t *);
+typedef void (*twr_callback_t)(twr_event_data_t *, twr_status_t);
 
 /**
  * @brief
@@ -100,7 +170,28 @@ void twr_init(event_queue_t *queue);
  *
  * @param[in]   callback    the callback
  */
-void twr_register_rng_cb(twr_callback_t callback);
+void twr_set_complete_cb(twr_callback_t callback);
+
+/**
+ * @brief   Register a callback to be called on RX timeout event
+ *
+ * @param[in]   callback    the callback
+ */
+void twr_set_rx_timeout_cb(twr_callback_t callback);
+
+/**
+ * @brief   Register a callback to be called on RX callback (no errors)
+ *
+ * @param[in]   callback    the callback
+ */
+void twr_set_rx_cb(twr_callback_t callback);
+
+/**
+ * @brief   Register a callback to be called when failed to schedule an event
+ *
+ * @param[in]   callback    the callback
+ */
+void twr_set_busy_cb(twr_callback_t callback);
 
 /**
  * @brief   Set the UWB device short address
@@ -115,6 +206,20 @@ void twr_set_short_addr(uint16_t address);
  * @param[in]   pan_id     the pan_id
  */
 void twr_set_pan_id(uint16_t pan_id);
+
+/**
+ * @brief   Set the listen window
+ *
+ * @param[in]   time       listen window in us
+ */
+void twr_set_listen_window(uint16_t time);
+
+/**
+ * @brief   Return the listen window in us
+ *
+ * @return  listen window in us
+ */
+uint16_t twr_get_listen_window(void);
 
 /**
  * @brief   Schedule a uwb_rng_request at an offset
@@ -132,8 +237,10 @@ void twr_schedule_request(twr_event_t *event, uint16_t dest, uint16_t offset);
  *
  * @param[in]       dest    the destination short address
  * @param[in]       offset  the time offset at witch to send the rng_request
+ *
+ * @return  0 on success, -ENOMEM if no event available
  */
-void twr_schedule_request_managed(uint16_t dest, uint16_t offset);
+int twr_schedule_request_managed(uint16_t dest, uint16_t offset);
 
 /**
  *
@@ -151,8 +258,10 @@ void twr_schedule_listen(twr_event_t *event, uint16_t offset);
  * @pre     A initialized @ref twr_event_mem_manager, and twr_managed_set_manager()
  *
  * @param[in]       offset  the time offset at witch to start listening
+ *
+ * @return  0 on success, -ENOMEM if no event available
  */
-void twr_schedule_listen_managed(uint16_t offset);
+int twr_schedule_listen_managed(uint16_t addr, uint16_t offset);
 
 /**
  * @brief   Init the memory manager
@@ -185,6 +294,27 @@ twr_event_t *twr_event_mem_manager_calloc(twr_event_mem_manager_t *manager);
  * @param[in]       manager     the memory manager
  */
 void twr_managed_set_manager(twr_event_mem_manager_t *manager);
+/**
+ * @brief   Set the memory manager for manged requests/listen events
+ *
+ * @returns         a pointer to the memory manager
+ */
+twr_event_mem_manager_t *twr_managed_get_manager(void);
+
+/**
+ * @brief   Enable TWR activity, enabled by default on init
+ */
+void twr_enable(void);
+
+/**
+ * @brief   Disable TWR activity, incoming event are ignored
+ */
+void twr_disable(void);
+
+/**
+ * @brief   Reset twr
+ */
+void twr_reset(void);
 
 #ifdef __cplusplus
 }

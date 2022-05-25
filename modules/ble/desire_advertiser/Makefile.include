@@ -4,3 +4,6 @@ USEMODULE_INCLUDES += $(USEMODULE_INCLUDES_desire_advertiser)
 USEMODULE_INCLUDES += $(USEMODULE_INCLUDES_desire_advertiser)/../../include
 
 PSEUDOMODULES += desire_advertiser_threaded
+PSEUDOMODULES += desire_advertiser_shell
+
+$(eval $(call _add_ext_adv_instance,DESIRE_ADV_INST))

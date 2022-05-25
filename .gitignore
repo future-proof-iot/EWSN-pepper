@@ -63,3 +63,9 @@ modules/sys/edhoc_coap/*_keys.c
 # Include blebr binaries
 !/apps/blebr/usr/local/sbin
 !/tests/time_advertiser/usr/local/sbin
+
+# Ignore experimentation test logs
+*/testlogs/*
+
+# Ignore boards configurations
+.boards.yaml

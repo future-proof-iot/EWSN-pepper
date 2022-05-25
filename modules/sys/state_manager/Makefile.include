@@ -1,4 +1,0 @@
-USEMODULE_INCLUDES_state_manager := $(LAST_MAKEFILEDIR)/include
-USEMODULE_INCLUDES += $(USEMODULE_INCLUDES_state_manager)
-
-PSEUDOMODULES += state_manager_security

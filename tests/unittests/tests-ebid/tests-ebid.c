@@ -6,6 +6,8 @@
 #include "random.h"
 #include "crypto_manager.h"
 
+
+#if !IS_ACTIVE(CONFIG_EBID_V2)
 static const uint8_t desire_ebid_slice_1[EBID_SLICE_SIZE_LONG] = {
     0x20, 0x21, 0x22, 0x23,
     0x24, 0x25, 0x26, 0x27,
@@ -23,6 +25,38 @@ static const uint8_t desire_ebid_slice_3[EBID_SLICE_SIZE_SHORT] = {
     0x14, 0x15, 0x16, 0x17
 };
 
+static const uint8_t desire_ebid_xor[EBID_SLICE_SIZE_LONG] = {
+    0x20, 0x21, 0x22, 0x23,
+    0x24, 0x25, 0x26, 0x27,
+    0x30, 0x30, 0x00, 0xd0
+};
+#else
+static const uint8_t desire_ebid_slice_1[EBID_SLICE_SIZE_LONG] = {
+    0x20, 0x21, 0x22, 0x23,
+    0x24, 0x25, 0x26, 0x27,
+    0x28, 0x29, 0x20,
+};
+
+static const uint8_t desire_ebid_slice_2[EBID_SLICE_SIZE_LONG] = {
+    0x2e, 0x10, 0x11, 0x12,
+    0x13, 0x14, 0x15, 0x16,
+    0x17, 0x18, 0x19,
+};
+
+static const uint8_t desire_ebid_slice_3[EBID_SLICE_SIZE_SHORT] = {
+    0x20, 0xfe, 0x10, 0x11,
+    0x12, 0x13, 0x14, 0x15,
+    0x16, 0x17
+};
+
+static const uint8_t desire_ebid_xor[EBID_SLICE_SIZE_LONG] = {
+    0x2e, 0xcf, 0x23, 0x20,
+    0x25, 0x22, 0x27, 0x24,
+    0x29, 0x26, 0x39
+};
+
+#endif
+
 static const uint8_t desire_ebid[EBID_SIZE] = {
     0x20, 0x21, 0x22, 0x23, 0x24,
     0x25, 0x26, 0x27, 0x28, 0x29,
@@ -31,12 +65,6 @@ static const uint8_t desire_ebid[EBID_SIZE] = {
     0x18, 0x19, 0x20, 0xfe, 0x10,
     0x11, 0x12, 0x13, 0x14, 0x15,
     0x16, 0x17
-};
-
-static const uint8_t desire_ebid_xor[EBID_SLICE_SIZE_LONG] = {
-    0x20, 0x21, 0x22, 0x23,
-    0x24, 0x25, 0x26, 0x27,
-    0x30, 0x30, 0x00, 0xd0
 };
 
 static crypto_manager_keys_t keys = {
@@ -54,6 +82,8 @@ static crypto_manager_keys_t keys = {
     }
 };
 
+
+#if !IS_ACTIVE(CONFIG_EBID_V2)
 static const uint8_t ebid_slice_1[EBID_SLICE_SIZE_LONG] = {
     0x5c, 0x24, 0x4c, 0x6e,
     0xf9, 0x7a, 0x02, 0x9c,
@@ -76,6 +106,31 @@ static const uint8_t ebid_xor[EBID_SLICE_SIZE_LONG] = {
     0x53, 0x68, 0xcb, 0x41,
     0x28, 0x07, 0xc2, 0x14
 };
+#else
+static const uint8_t ebid_slice_1[EBID_SLICE_SIZE_LONG] = {
+    0x5c, 0x24, 0x4c, 0x6e,
+    0xf9, 0x7a, 0x02, 0x9c,
+    0x83, 0xe3, 0x67,
+};
+
+static const uint8_t ebid_slice_2[EBID_SLICE_SIZE_LONG] = {
+    0xac, 0x3c, 0x31, 0xd0,
+    0x20, 0x97, 0xdc, 0x59,
+    0xf8, 0xab, 0xe4,
+};
+
+static const uint8_t ebid_slice_3[EBID_SLICE_SIZE_SHORT] = {
+    0xa5, 0xb8, 0xf6, 0xd9,
+    0x07, 0x11, 0x3d, 0xce,
+    0x90, 0x25
+};
+
+static const uint8_t ebid_xor[EBID_SLICE_SIZE_LONG] = {
+    0x55, 0xa0, 0x8b, 0x67,
+    0xde, 0xfc, 0xe3, 0x0b,
+    0xeb, 0x6d, 0x83
+};
+#endif
 
 static ebid_t ebid;
 
@@ -97,7 +152,7 @@ static void test_ebid_generate(void)
     TEST_ASSERT(memcmp(ebid_get_slice1(&ebid), ebid_slice_1, sizeof(EBID_SLICE_SIZE_LONG)) == 0);
     TEST_ASSERT(memcmp(ebid_get_slice2(&ebid), ebid_slice_2, sizeof(EBID_SLICE_SIZE_LONG)) == 0);
     TEST_ASSERT(memcmp(ebid_get_slice3(&ebid), ebid_slice_3, sizeof(EBID_SLICE_SIZE_SHORT)) == 0);
-    uint8_t zero_buffer[4] = {0};
+    uint8_t zero_buffer[EBID_SLICE_SIZE_LONG - EBID_SLICE_SIZE_SHORT] = {0};
     TEST_ASSERT(memcmp(&ebid.parts.ebid.slice.ebid_3[EBID_SLICE_SIZE_SHORT], zero_buffer, sizeof(zero_buffer)) == 0);
     TEST_ASSERT(memcmp(ebid_get_xor(&ebid), ebid_xor, sizeof(EBID_SLICE_SIZE_LONG)) == 0);
 }

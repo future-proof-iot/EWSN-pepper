@@ -65,8 +65,6 @@ static inline void dbg_print_ble_addr(const ble_addr_t *addr)
     printf("%s\n", dbg_parse_ble_addr_type(addr->type));
 }
 
-
-
 #ifdef __cplusplus
 }
 #endif

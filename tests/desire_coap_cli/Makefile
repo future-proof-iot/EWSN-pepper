@@ -19,18 +19,17 @@ USEMODULE += shell
 USEMODULE += shell_commands
 USEMODULE += ps
 
-# TODO: remove this should be in its own module abstracted from the app
-USEPKG += nanocbor
-
 # Include coap_utils module
 USEMODULE += coap_utils
-USEMODULE += state_manager
+USEMODULE += pepper_srv
+USEMODULE += pepper_srv_utils
+
 EXTERNAL_MODULE_DIRS += $(CURDIR)/../../modules/sys
 EXTERNAL_MODULE_DIRS += $(CURDIR)/../../modules/ble
 
 ifneq (native,$(BOARD))
-  USEMODULE += desire_scanner
-  USEMODULE += desire_scanner_netif
+  USEMODULE += ble_scanner
+  USEMODULE += ble_scanner_netif
 endif
 
 # Comment this out to disable code in RIOT that does safety checking

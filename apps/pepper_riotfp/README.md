@@ -205,7 +205,7 @@ $ aiocoap-fileserver coaproot --bind [fd00:dead:beef::1]:5684
 Now new firmware can be deployed and pushed to the devices, e.g: change the relevant distance threshold:
 
 ```
- BPF_CFLAGS=-DMAX_DISTANCE_CM=50 make -C apps/pepper_riotfp/ suit/publish
+ F12R_CFLAGS=-DMAX_DISTANCE_CM=50 make -C apps/pepper_riotfp/ suit/publish
 Warning! EXTERNAL_MODULE_DIRS is a search folder since 2021.07-branch, see https://doc.riot-os.org/creating-modules.html#modules-outside-of-riotbase
 rm -f /home/francisco/workspace/pepper/desire/modules/sys/uwb_ed/bpf/contact_filter.o /home/francisco/workspace/pepper/desire/modules/sys/uwb_ed/bpf/contact_filter.bin
 published "/home/francisco/workspace/pepper/desire/apps/pepper_riotfp/bin/dwm1001/pepper_driotfp-riot.suit.1629124780.bin"

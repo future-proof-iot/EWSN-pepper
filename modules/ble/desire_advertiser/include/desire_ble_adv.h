@@ -33,66 +33,173 @@
 #endif
 
 #include "ebid.h"
-#include "desire_ble_pkt.h"
+#include "desire/ble_pkt.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#ifndef CONFIG_SLICE_ROTATION_T_S
-#define CONFIG_SLICE_ROTATION_T_S 20
-#endif
-#ifndef CONFIG_EBID_ROTATION_T_S
-#define CONFIG_EBID_ROTATION_T_S (15 * SEC_PER_MIN)
+/**
+ * @brief   The preffered advertisement TX power
+ */
+#ifndef CONFIG_BLE_ADV_TX_POWER
+#define CONFIG_BLE_ADV_TX_POWER         (127)
 #endif
 
 /**
- * @brief       Initialize the advertising module internal structure
+ * @brief   The Advertiser Instance
+ */
+#ifndef CONFIG_DESIRE_ADV_INST
+#define CONFIG_DESIRE_ADV_INST          (0)
+#endif
+
+/**
+ * @brief   The advertisement interval in milliseconds
+ */
+#ifndef CONFIG_BLE_ADV_ITVL_MS
+#define CONFIG_BLE_ADV_ITVL_MS      (1LU * MS_PER_SEC)
+#endif
+
+/**
+ * @brief   The static CID value
+ */
+#ifndef CONFIG_BLE_ADV_STATIC_CID
+#define CONFIG_BLE_ADV_STATIC_CID       0
+#endif
+
+/**
+ * @brief   Use a random value for advertisement seed
  *
- * @param[in]   Receives an already initialized event_queue_t to handler the advertisment
- *              events
+ * @note    This value is used to generate a TWR rendez-vous, unused if TWR is
+ *          not used
+ */
+#ifndef CONFIG_BLE_ADV_SEED_RANDOM
+#define CONFIG_BLE_ADV_SEED_RANDOM      1
+#endif
+
+#if IS_USED(MODULE_DESIRE_ADVERTISER_THREADED)
+/**
+ * @brief   The advertisement thread stacksize
+ */
+#ifndef CONFIG_BLE_ADV_THREAD_STACKSIZE
+#define CONFIG_BLE_ADV_THREAD_STACKSIZE (THREAD_STACKSIZE_DEFAULT)
+#endif
+
+/**
+ * @brief   The advertisement thread priority
+ */
+#ifndef CONFIG_BLE_ADV_THREAD_PRIO
+#define CONFIG_BLE_ADV_THREAD_PRIO       (THREAD_PRIORITY_MAIN - 4)
+#endif
+#endif
+
+/**
+ * @brief   The advertisement thread priority
+ */
+#ifndef CONFIG_BLE_ADV_SHELL_BLOCKING
+#define CONFIG_BLE_ADV_SHELL_BLOCKING     0
+#endif
+
+/**
+ * @brief   Advertise forever or until stopped manually
+ */
+#define BLE_ADV_TIMEOUT_NEVER           (UINT32_MAX)
+
+/**
+ * @brief   Advertising parameters structure
+ */
+typedef struct __attribute__((__packed__)) {
+    uint32_t itvl_ms;       /**< the advertisement interval in milliseconds */
+    int32_t advs_max;       /**< the amount of advertisement events */
+    int32_t advs_slice;     /**< the amount of advertisements by slice before rotation */
+} adv_params_t;
+
+/**
+ * @brief   Initialize the advertising module
+ *
+ * @param[in]   queue   The already initialized event queue to handle
+ *                      advertisement events
  */
 void desire_ble_adv_init(event_queue_t *queue);
 
 #if IS_USED(MODULE_DESIRE_ADVERTISER_THREADED)
 /**
- * @brief       Initialize the advertising module internal structure and advertising thread.
- *
+ * @brief   Initialize the advertising module internal structure and advertising
+ *          thread.
  */
 void desire_ble_adv_init_threaded(void);
 #endif
 
 /**
- * @brief       Advertises an EBID following Desire Carousel scheme.
+ * @brief   Starts advertising an EBID following Desire Carousel scheme.
  *
- * The EBID is split in 3 slices with an extra XOR slice. Each slice is advertised every second for a duration slice_adv_time_sec.
- * Advetisement stops after the tiemout in ebid_adv_time_sec. If called during an ongoing advertisement, it stops it first.
+ * The EBID is split in 3 slices with an extra XOR slice. Each slice is advertised
+ * every 'itvl_ms' milliseconds 'advs_slice' times.
  *
- * @param[in]       ebid                    The EBID to advertise
- * @param[in]       slice_adv_time_sec      The rotation period (default to use in @ref CONFIG_SLICE_ROTATION_T_S)
- * @param[in]       ebid_adv_time_sec       Interval in seconds for renewing the EBID (default to use in @ref CONFIG_EBID_ROTATION_T_S)
+ * @note If called while an advertisement procedure is ongoing it will stop the later
  *
+ * @param[in]       ebid         the EBID to advertise
  */
-void desire_ble_adv_start(ebid_t *ebid,
-                          uint16_t slice_adv_time_sec,
-                          uint16_t ebid_adv_time_sec);
+void desire_ble_adv_start(ebid_t *ebid, adv_params_t *params);
 
 /**
- * @brief       Stops the advertisement loop.
- *
+ * @brief   Stops current advertisements if any
  */
 void desire_ble_adv_stop(void);
 
-typedef void (*ble_adv_cb_t)(uint32_t, void*);
+/**
+ * @brief   Callback signature triggered after each advertisement
+ *
+ * @param[in] advs      current advertisement count since @desire_ble_adv_start
+ * @param[in] arg       optional user set argument, can be NULL
+ */
+typedef void (*ble_adv_cb_t)(uint32_t advs, void *arg);
 
 /**
- * @brief   Sets a callback or each discovered advertising Current Time Service packet
+ * @brief   Returns the current cid
  *
- * @param[in] usr_callback   user callback with decode time structure
+ * @return  the cid
+ */
+uint32_t desire_ble_adv_get_cid(void);
+
+/**
+ * @brief   Generates a valid cid
+ *
+ * @return  the cid
+ */
+uint32_t desire_ble_adv_gen_cid(void);
+
+/**
+ * @brief   Sets a new cid
+ *
+ * @note    If and advertisement procedure is ongoing this will only get
+ *          updated on the next slice rotation, should really only be used
+ *          for testing when CONFIG_BLE_ADV_STATIC_CID=1
+ *
+ * @param[in] cid       the cid to set
+ */
+void desire_ble_adv_set_cid(uint32_t cid);
+
+/**
+ * @brief   Sets a argument for callback called after every advertisement
+ *
+ * @param[in] arg       the callback argument
+ */
+
+void desire_ble_adv_set_cb_arg(void *arg);
+
+/**
+ * @brief   Sets a callback  to be called after every advertisement
+ *
+ * @param[in] cb        the callback
  */
 void desire_ble_adv_set_cb(ble_adv_cb_t cb);
 
-uint32_t desire_ble_adv_get_cid(void);
+/**
+ * @brief   Prints status information of the advertiser good to call
+ *          on the adv callback
+ */
+void desire_ble_adv_status_print(void);
 
 #ifdef __cplusplus
 }

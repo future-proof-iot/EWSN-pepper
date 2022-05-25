@@ -1,9 +1,11 @@
 USEMODULE += event
 USEMODULE += event_callback
-USEMODULE += event_timeout
+USEMODULE += event_timeout_ztimer
 USEMODULE += memarray
 
 USEPKG += uwb-core
 USEPKG += uwb-dw1000
+# Use event threads instead of a custom event queue
+USEMODULE += uwb-core_event_thread
 # Include SS TWR
-USEMODULE += uwb-core_twr_ss
+USEMODULE += uwb-core_twr_ss_one

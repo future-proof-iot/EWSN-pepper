@@ -22,10 +22,10 @@
 #include <assert.h>
 
 #include "irq.h"
-#include "epoch.h"
-#include "fmt.h"
-#include "log.h"
 #include "test_utils/result_output.h"
+
+#include "epoch.h"
+#include "ed.h"
 
 typedef struct top_ed {
     ed_t *ed;
@@ -38,13 +38,36 @@ typedef struct top_ed_list {
     uint8_t count;
 } top_ed_list_t;
 
-/* TODO: this is a ver bad search algorithm, improve later */
+static uint16_t ed_max_exposure_time(ed_t *ed)
+{
+    uint16_t exposure = 0;
+    uint16_t tmp_exposure = 0;
+    (void)tmp_exposure;
+    (void)ed;
+
+#if IS_USED(MODULE_ED_BLE)
+    tmp_exposure = ed->ble.seen_last_s - ed->ble.seen_first_s;
+    exposure = tmp_exposure > exposure ? tmp_exposure : exposure;
+#endif
+#if IS_USED(MODULE_ED_BLE_WIN)
+    tmp_exposure = ed->ble_win.seen_last_s - ed->ble_win.seen_first_s;
+    exposure = tmp_exposure > exposure ? tmp_exposure : exposure;
+#endif
+#if IS_USED(MODULE_ED_UWB)
+    tmp_exposure = ed->uwb.seen_last_s - ed->uwb.seen_first_s;
+    exposure = tmp_exposure > exposure ? tmp_exposure : exposure;
+#endif
+    return exposure;
+}
+
 static int _add_to_top_list(clist_node_t *node, void *arg)
 {
     top_ed_list_t *list = (top_ed_list_t *)arg;
-    uint16_t duration = ed_exposure_time((ed_t *)node);
+    uint16_t duration = ed_max_exposure_time((ed_t *)node);
 
-    if (list->count < 8) {
+    /* if still space in list simply insert */
+    if (list->count < CONFIG_EPOCH_MAX_ENCOUNTERS) {
+        /* update the minimum value index if needed */
         if (list->top[list->min].duration > duration) {
             list->min = list->count;
         }
@@ -53,12 +76,16 @@ static int _add_to_top_list(clist_node_t *node, void *arg)
         list->count++;
     }
     else {
+        /* if exposure is smaller than the minimum exposure in the list then
+           ignore it */
         if (duration <= list->top[list->min].duration) {
             return 0;
         }
         else {
+            /* replace the current minimum by the new encounter */
             list->top[list->min].ed = (ed_t *)node;
             list->top[list->min].duration = duration;
+            /* update the minimum exposure time */
             for (uint8_t i = 0; i < CONFIG_EPOCH_MAX_ENCOUNTERS; i++) {
                 if (list->top[i].duration < list->top[list->min].duration) {
                     list->min = i;
@@ -69,102 +96,107 @@ static int _add_to_top_list(clist_node_t *node, void *arg)
     return 0;
 }
 
-void epoch_init(epoch_data_t *epoch, uint16_t timestamp,
-                              crypto_manager_keys_t* keys)
+void epoch_init(epoch_data_t *epoch, uint32_t timestamp,
+                crypto_manager_keys_t *keys)
 {
     memset(epoch, '\0', sizeof(epoch_data_t));
     epoch->keys = keys;
     epoch->timestamp = timestamp;
-    crypto_manager_gen_keypair(keys);
+    if (keys) {
+        crypto_manager_gen_keypair(keys);
+    }
 }
 
 void epoch_finish(epoch_data_t *epoch, ed_list_t *list)
 {
     /* process all data */
     top_ed_list_t top;
+
     memset(&top, '\0', sizeof(top));
 
     /* finish list processing */
     clist_foreach(&list->list, _add_to_top_list, &top);
     for (uint8_t i = 0; i < CONFIG_EPOCH_MAX_ENCOUNTERS; i++) {
         if (top.top[i].duration != 0) {
-            epoch->contacts[i].duration = top.top[i].duration;
-            memcpy(epoch->contacts[i].wins, &top.top[i].ed->wins,
+#if IS_USED(MODULE_ED_UWB)
+            epoch->contacts[i].uwb.exposure_s = top.top[i].ed->uwb.seen_last_s -
+                                                top.top[i].ed->uwb.seen_first_s;
+            epoch->contacts[i].uwb.avg_d_cm = top.top[i].ed->uwb.cumulative_d_cm;
+#if IS_USED(MODULE_ED_UWB_LOS)
+            epoch->contacts[i].uwb.avg_los = top.top[i].ed->uwb.cumulative_los;
+#endif
+#if IS_USED(MODULE_ED_UWB_RSSI)
+            epoch->contacts[i].uwb.avg_rssi = top.top[i].ed->uwb.cumulative_rssi;
+#endif
+            epoch->contacts[i].uwb.req_count = top.top[i].ed->uwb.req_count;
+
+#if IS_USED(MODULE_ED_UWB_STATS)
+            memcpy(&epoch->contacts[i].uwb.stats, &top.top[i].ed->uwb.stats,
+                   sizeof(ed_uwb_stats_t));
+#endif
+#endif
+#if IS_USED(MODULE_ED_BLE)
+            epoch->contacts[i].ble.exposure_s = top.top[i].ed->ble.seen_last_s -
+                                                top.top[i].ed->ble.seen_first_s;
+            epoch->contacts[i].ble.avg_rssi = top.top[i].ed->ble.cumulative_rssi;
+            epoch->contacts[i].ble.avg_d_cm = top.top[i].ed->ble.cumulative_d_cm;
+            epoch->contacts[i].ble.scan_count = top.top[i].ed->ble.scan_count;
+#endif
+#if IS_USED(MODULE_ED_BLE_WIN)
+            epoch->contacts[i].ble_win.exposure_s = top.top[i].ed->ble_win.seen_last_s -
+                                                    top.top[i].ed->ble_win.seen_first_s;
+            memcpy(epoch->contacts[i].ble_win.wins, &top.top[i].ed->ble_win.wins,
                    sizeof(rdl_windows_t));
-            crypto_manager_gen_pets(epoch->keys,
-                                    top.top[i].ed->ebid.parts.ebid.u8,
+#endif
+            crypto_manager_gen_pets(epoch->keys, top.top[i].ed->ebid.parts.ebid.u8,
                                     &epoch->contacts[i].pet);
-            epoch->contacts[i].obf = top.top[i].ed->obf;
         }
     }
-
-    while (list->list.next) {
-        ed_memory_manager_free(list->manager, (ed_t *)clist_lpop(&list->list));
-    }
+    ed_list_clear(list);
 }
 
-static void turo_array_hex(turo_t *ctx, uint8_t *vals, size_t size)
+bool epoch_valid_contact(contact_data_t *data)
 {
-    if (ctx->state == 1) {
-        print_str(",");
-    }
-    ctx->state = 1;
-    print_str("\"");
-    while (size > 0) {
-       print_byte_hex(*vals);
-        vals++;
-        size--;
-    }
-    print_str("\"");
+    bool valid = false;
+    (void)data;
+
+#if IS_USED(MODULE_ED_BLE)
+    valid |= (data->ble.exposure_s != 0);
+#endif
+#if IS_USED(MODULE_ED_BLE_WIN)
+    valid |= (data->ble_win.exposure_s != 0);
+#endif
+#if IS_USED(MODULE_ED_UWB)
+    valid |= (data->uwb.exposure_s != 0);
+#endif
+    return valid;
 }
 
-void epoch_serialize_printf(epoch_data_t *epoch)
+uint8_t epoch_contacts(epoch_data_t *epoch)
 {
-    turo_t ctx;
+    uint8_t contacts = 0;
 
-    unsigned int state = irq_disable();
-    turo_init(&ctx);
-    turo_dict_open(&ctx);
-    turo_dict_key(&ctx, "epoch");
-    turo_u32(&ctx, epoch->timestamp);
-    turo_dict_key(&ctx, "pets");
-    turo_array_open(&ctx);
     for (uint8_t i = 0; i < CONFIG_EPOCH_MAX_ENCOUNTERS; i++) {
-        if (epoch->contacts[i].duration != 0) {
-            turo_dict_open(&ctx);
-            turo_dict_key(&ctx, "pet");
-            turo_dict_open(&ctx);
-            turo_dict_key(&ctx, "etl");
-            turo_array_hex(&ctx, epoch->contacts[i].pet.et, PET_SIZE);
-            turo_dict_key(&ctx, "rtl");
-            turo_array_hex(&ctx, epoch->contacts[i].pet.rt, PET_SIZE);
-            turo_dict_close(&ctx);
-            turo_dict_close(&ctx);
-            turo_dict_open(&ctx);
-            turo_dict_key(&ctx, "duration");
-            turo_u32(&ctx, epoch->contacts[i].duration);
-            turo_dict_close(&ctx);
-            turo_dict_open(&ctx);
-            turo_dict_key(&ctx, "Gtx");
-            turo_u32(&ctx, CONFIG_TX_COMPENSATION_GAIN - epoch->contacts[i].obf);
-            turo_dict_close(&ctx);
-            turo_dict_open(&ctx);
-            turo_dict_key(&ctx, "windows");
-            turo_array_open(&ctx);
-            for (uint8_t j = 0; j < WINDOWS_PER_EPOCH; j++) {
-                turo_dict_open(&ctx);
-                turo_dict_key(&ctx, "samples");
-                turo_u32(&ctx, epoch->contacts[i].wins[j].samples);
-                turo_dict_key(&ctx, "rssi");
-                turo_float(&ctx, epoch->contacts[i].wins[j].avg);
-                turo_dict_close(&ctx);
-            }
-            turo_array_close(&ctx);
-            turo_dict_close(&ctx);
+        if (epoch_valid_contact(&epoch->contacts[i])) {
+            contacts++;
         }
     }
-    turo_array_close(&ctx);
-    turo_dict_close(&ctx);
-    print_str("\n");
-    irq_restore(state);
+    return contacts;
+}
+
+void epoch_data_memory_manager_init(epoch_data_memory_manager_t *manager)
+{
+    memset(manager, '\0', sizeof(epoch_data_memory_manager_t));
+    memarray_init(&manager->mem, manager->buf, sizeof(epoch_data_t), CONFIG_EPOCH_DATA_BUF_SIZE);
+}
+
+void epoch_data_memory_manager_free(epoch_data_memory_manager_t *manager,
+                                    epoch_data_t *epoch_data)
+{
+    memarray_free(&manager->mem, epoch_data);
+}
+
+epoch_data_t *epoch_data_memory_manager_calloc(epoch_data_memory_manager_t *manager)
+{
+    return memarray_calloc(&manager->mem);
 }

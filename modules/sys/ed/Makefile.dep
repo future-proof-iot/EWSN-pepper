@@ -1,4 +1,25 @@
 USEMODULE += ebid
-USEMODULE += rdl_window
-
 USEMODULE += memarray
+
+USEMODULE += test_utils_result_output
+
+ifneq (,$(filter ed_uwb_bpf,$(USEMODULE)))
+  USEPKG += femto-container
+  ifneq (,$(filter ed_uwb_bpf_suit,$(USEMODULE)))
+    USEMODULE += suit
+    USEMODULE += suit_storage_ram
+    USEMODULE += suit_transport_coap
+    USEMODULE += gcoap
+  endif
+endif
+
+ifneq (,$(filter ed_ble%,$(USEMODULE)))
+  USEMODULE += ed_ble_common
+endif
+ifneq (,$(filter ed_ble_win,$(USEMODULE)))
+  USEMODULE += rdl_window
+endif
+ifneq (,$(filter ed_leds,$(USEMODULE)))
+  USEMODULE += ztimer_msec
+  USEMODULE += ztimer_periodic
+endif

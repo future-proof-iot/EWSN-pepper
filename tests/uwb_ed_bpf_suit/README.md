@@ -52,10 +52,10 @@ Initial result:
 uwb_ed_finish_bpf: d=(200), exposure=(601), valid=(1)
 ```
 
-Modify the threshold through `BPF_CFLAGS`:
+Modify the threshold through `F12R_CFLAGS`:
 
 ```
-BPF_CFLAGS=-DMAX_DISTANCE_CM=100 make suit/publish; make suit/notify
+F12R_CFLAGS=-DMAX_DISTANCE_CM=100 make suit/publish; make suit/notify
 ```
 
 Modified run result

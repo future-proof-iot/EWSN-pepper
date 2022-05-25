@@ -1,1 +1,0 @@
-KERNEL=="ttyACM[0-9]*", ATTRS{product}=="RIOTbletimeadv", SYMLINK+="riot/tty-bletimeadv"

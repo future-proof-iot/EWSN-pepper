@@ -5,8 +5,8 @@
 #include "shell.h"
 #include "shell_commands.h"
 
+#include "ble_scanner_params.h"
 #include "desire_ble_scan.h"
-#include "desire_ble_scan_params.h"
 #include "ble_pkt_dbg.h"
 
 /* default scan duration (20s) */
@@ -83,13 +83,10 @@ int _cmd_desire_scan(int argc, char **argv)
         duration = (uint32_t)(atoi(argv[1]));
     }
     printf("Scanning for %"PRIu32"\n", duration);
-    desire_ble_scan_start(duration);
+    ble_scan_params_t params = CONFIG_BLE_LOW_LATENCY_PARAMS;
+    desire_ble_scan_start(&params, duration);
 
     return 0;
-}
-
-void time_update_cb(const current_time_ble_adv_payload_t * time) {
-    dbg_print_curr_time_pkt(time);
 }
 
 int _cmd_desire_stop(int argc, char **argv)
@@ -111,8 +108,7 @@ int main(void)
     puts("Desire BLE Scanner Test Application");
 
     /* initialize the desire scanner */
-    desire_ble_scan_init(&desire_ble_scanner_params, detection_cb);
-    desire_ble_set_time_update_cb(time_update_cb);
+    desire_ble_scan_init(detection_cb);
     init_ebid_tracker(0);
 
     /* start shell */

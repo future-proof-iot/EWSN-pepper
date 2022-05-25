@@ -23,6 +23,7 @@
 #include "ebid.h"
 #include "crypto_manager.h"
 #include "kernel_defines.h"
+#include "random.h"
 
 void ebid_init(ebid_t* ebid)
 {
@@ -31,7 +32,12 @@ void ebid_init(ebid_t* ebid)
 
 void ebid_generate(ebid_t* ebid, crypto_manager_keys_t *keys)
 {
-    memcpy(ebid->parts.ebid.u8, keys->pk, C25519_KEY_SIZE);
+    ebid_generate_from_pk(ebid, keys->pk);
+}
+
+void ebid_generate_from_pk(ebid_t* ebid, uint8_t* pk)
+{
+    memcpy(ebid->parts.ebid.u8, pk, C25519_KEY_SIZE);
     for (uint8_t i = 0; i < EBID_SLICE_SIZE_LONG; i++) {
         ebid->parts.ebid_xor[i] = ebid->parts.ebid.slice.ebid_1[i] ^
                                   ebid->parts.ebid.slice.ebid_2[i] ^
