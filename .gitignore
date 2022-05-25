@@ -69,3 +69,7 @@ modules/sys/edhoc_coap/*_keys.c
 
 # Ignore boards configurations
 .boards.yaml
+
+# Ignore docs
+*docs/latex/*
+*docs/html/*
