@@ -74,6 +74,11 @@ class TestPepper(TestPepperBase):
         out = self.shell.pepper_stop()
         assert "[pepper] shell: stop proximity tracing" in out
 
+    def test_set_get_backoff(self):
+        for backoff in [0, 10, 30]:
+            self.shell.pepper_twr_set("backoff", backoff)
+            out = self.shell.pepper_twr_get("backoff")
+            assert f"[pepper]: backoff {backoff}" in out
 
 class TestCurrentTime(TestPepperBase):
     def test_set_get_time(self):
