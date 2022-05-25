@@ -24,7 +24,6 @@ USEMODULE += pepper_shell
 USEMODULE += pepper_util
 USEMODULE += ed_uwb
 USEMODULE += ed_uwb_stats
-USEMODULE += twr_shell
 USEMODULE += twr_gpio
 USEMODULE += twr_sleep
 

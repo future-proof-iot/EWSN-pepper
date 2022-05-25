@@ -24,7 +24,6 @@ USEMODULE += pepper_shell
 USEMODULE += pepper_util
 USEMODULE += ed_uwb
 USEMODULE += ed_ble
-USEMODULE += twr_shell
 
 # Include shell and, process information fonctionality
 USEMODULE += shell
