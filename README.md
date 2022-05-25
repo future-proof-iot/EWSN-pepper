@@ -1,12 +1,8 @@
-# riot-desire
+# PrEcise Privacy-PresERving Proximity Tracing or 'PEPPER'
 
-RIOT-based desire implementation.
+RIOT-based privacy preserving proximity tracing applications.
 
-## Modules
-
-Modules implementing the different Desire building blocks can be found in
-[modules](modules/README.md).
-## Make Targets
+There is [online documentation](https://pepper.gitlabpages.inria.fr/riot-desire) available.
 
 ### Initializing the repository:
 
