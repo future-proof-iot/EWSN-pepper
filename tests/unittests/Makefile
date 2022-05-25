@@ -1,4 +1,3 @@
-
 APPLICATION ?= tests_$(notdir $(patsubst %/,%,$(CURDIR)))
 
 ifneq (,$(wildcard $(CURDIR)/tests*/.))
