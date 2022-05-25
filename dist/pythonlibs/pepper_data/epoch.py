@@ -42,8 +42,8 @@ class Uwb:
 class PetPet:
     etl: str
     rtl: str
-    uwb: Uwb
-    ble: Ble
+    uwb: Optional[Uwb]
+    ble: Optional[Ble]
 
 
 @dataclass
