@@ -27,7 +27,13 @@ class RIOTCtrlAppFactory(RIOTCtrlBoardFactory, ContextDecorator):
         return False
 
     def get_ctrl(
-        self, app_dir=".", modules=None, cflags=None, env=None, flashfile=None
+        self,
+        app_dir=".",
+        modules=None,
+        cflags=None,
+        env=None,
+        flashfile=None,
+        flash=True,
     ):
         """Returns a RIOTCtrl with its terminal started, if no envs are
         available ot if no env matches the specified 'BOARD' nothing is
@@ -37,6 +43,7 @@ class RIOTCtrlAppFactory(RIOTCtrlBoardFactory, ContextDecorator):
         :param modules: extra modules to add to 'USEMODULE'
         :param cflags: optional 'CFLAGS'
         :param flashfile: FLASHFILE to use, will use 'flash-only' to flash if set
+        :param flash: flash ot not devices
         """
         the_env = dict()
         if env:
@@ -53,7 +60,8 @@ class RIOTCtrlAppFactory(RIOTCtrlBoardFactory, ContextDecorator):
             ctrl.FLASH_TARGETS = ["flash-only"]
         # append ctrl to list
         self.ctrl_list.append(ctrl)
-        ctrl.flash()
+        if flash:
+            ctrl.flash()
         ctrl.reset()
         ctrl.start_term()
         # return ctrl with started terminal

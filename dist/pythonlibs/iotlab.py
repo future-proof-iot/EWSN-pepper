@@ -6,7 +6,7 @@ from iotlabcli.rest import Api
 from iotlabcli.experiment import (submit_experiment, wait_experiment,
                                   stop_experiment, get_experiment,
                                   exp_resources, AliasNodes)
-
+from iotlabcli.node import node_command
 
 DEFAULT_SITE = 'lille'
 IOTLAB_DOMAIN = 'iot-lab.info'
@@ -140,6 +140,13 @@ class IoTLABExperiment:
                      .format(self.exp_id))
         self._wait()
         self._map_iotlab_nodes_to_riot_env(self._get_nodes())
+
+    def flash(self, fw):
+        """Submit an experiment, wait for it to be ready and map assigned
+        nodes"""
+        nodes = self._get_nodes()
+        logging.info(f"flash {nodes}")
+        node_command(Api(*self.user_credentials()), "flash", self.exp_id, nodes, fw)
 
     def get_nodes_position(self):
         info = list()
