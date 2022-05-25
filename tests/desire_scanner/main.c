@@ -36,7 +36,7 @@ void detection_cb(uint32_t ts,
     // dump
     printf(">> Desire packet (service_uuid_16=0x%X): ts=%"PRIu32", rssi=%d, ", adv_payload->data.service_uuid_16, ts, rssi);
     dbg_print_ble_addr(addr);
-    printf("\t sid = %d, cid=0x%lX, md_version=0x%"PRIX32"\n", sid, cid, adv_payload->data.md_version);
+    printf("\t sid = %d, cid=0x%lX, md_version=0x%02x\n", sid, cid, adv_payload->data.md_version);
     dbg_dump_buffer("\t ebid_slice = ", adv_payload->data.ebid_slice, EBID_SLICE_SIZE_LONG, '\n');
 
     // Reconstruct ebid when possible
