@@ -7,16 +7,24 @@
  */
 
 /**
- * @defgroup    sys_ebid Ephemeral Bluetooth Identifiers Generator
+ * @defgroup    sys_ebid Ephemeral Bluetooth Identifiers
  * @ingroup     sys
- * @brief       C25519 based Ephemeral Bluetooth Identifiers Generator (EBID)
+ * @brief       C25519 based Ephemeral Bluetooth Identifiers (EBID)
  *
- * All @ref ebid_t struct should be initialized by caling @ref ebid_init.
+ * This modules allows generating an Ephemeral Bluetooth Id from a given Curve25519
+ * public/secret key pair, see @ref sys_crypto_manager. It also handles slicing
+ * the EBID (for 12 bytes carrousel advertisement)
+ *
+ * @see <a href="http://pubs.opengroup.org/onlinepubs/9699919799/functions/bind.html">
+ *          DESIRE: Leveraging the best of centralized and decentralized contact tracing systems
+ *      </a>
+ *
+ * All @ref ebid_t struct should be initialized by calling @ref ebid_init.
  * Once initialized an ebid_t can be generated from a public/secret key pair
- * with @ref ebid_generate, or interatively loaded by use of the different
- * @ref ebid_set_slice1, ebid_set_slice2, etc. Once at least 3 out of
+ * with @ref ebid_generate, or iteratively loaded by use of the different
+ * @ref ebid_set_slice1, @ref ebid_set_slice2, etc. Once at least 3 out of
  * the 3 slices + xor are set the full ebid can be reconstructed with
- * @ref ebid_reconstruct
+ * @ref ebid_reconstruct.
  *
  * @{
  *
