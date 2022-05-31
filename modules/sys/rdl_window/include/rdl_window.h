@@ -61,7 +61,7 @@ typedef struct rdl_window {
     uint16_t samples;       /**< samples/messages per widnow */
 } rdl_window_t;
 
-/*
+/**
  * @brief   RDL windows
  */
 typedef struct rdl_windows {
@@ -70,8 +70,6 @@ typedef struct rdl_windows {
 
 /**
  * @brief   Initialize an rdl window list
- *
- * @note    Called by @ref rdl_windows_from_edl_list
  *
  * @param[inout]    wins        the windows
  */

@@ -139,6 +139,7 @@ void desire_ble_adv_init_threaded(void);
  * @note If called while an advertisement procedure is ongoing it will stop the later
  *
  * @param[in]       ebid         the EBID to advertise
+ * @param[in]       params       the advertisement parameters
  */
 void desire_ble_adv_start(ebid_t *ebid, adv_params_t *params);
 
@@ -150,7 +151,7 @@ void desire_ble_adv_stop(void);
 /**
  * @brief   Callback signature triggered after each advertisement
  *
- * @param[in] advs      current advertisement count since @desire_ble_adv_start
+ * @param[in] advs      current advertisement count since @ref desire_ble_adv_start
  * @param[in] arg       optional user set argument, can be NULL
  */
 typedef void (*ble_adv_cb_t)(uint32_t advs, void *arg);

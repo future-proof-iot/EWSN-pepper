@@ -47,6 +47,9 @@ extern "C" {
  */
 typedef void (*coap_req_cb_t)(int, void *, size_t, void *);
 
+/**
+ * @brief CoAP request context
+ */
 typedef struct coap_req_ctx {
     mutex_t resp_wait;          /**< locked when context is in use */
     coap_req_cb_t cb;           /**< req completion callback */
@@ -57,7 +60,7 @@ typedef struct coap_req_ctx {
  * @brief   Context for block transactions
  */
 typedef struct coap_block_ctx {
-    coap_req_ctx_t req_ctx;
+    coap_req_ctx_t req_ctx;     /**< CoAP request context */
     size_t last_blknum;         /**< last transmitted blknum */
     void *data;                 /**< pointer to data to transmit */
     size_t data_len;            /**< length of data to be transmitted */

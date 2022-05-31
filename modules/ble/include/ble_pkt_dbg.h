@@ -1,3 +1,22 @@
+/*
+ * Copyright (C) 2021 Inria
+ *
+ * This file is subject to the terms and conditions of the GNU Lesser
+ * General Public License v2.1. See the file LICENSE in the top level
+ * directory for more details.
+ */
+
+/**
+ * @defgroup    ble_pkt_dbg  BLE Packet Debug Utils
+ * @ingroup     ble_pkt
+ * @brief       BLE debug utilities
+ *
+ * @{
+ *
+ * @file
+ *
+ */
+
 #ifndef BLE_PKT_DBG_H
 #define BLE_PKT_DBG_H
 
@@ -7,6 +26,14 @@
 extern "C" {
 #endif
 
+/**
+ * @brief   Dump buffer in host order to stdio with optional prefix and suffix
+ *
+ * @param prefix    the prefix string
+ * @param buf       the buffer to dump
+ * @param size      size of buffer to dump
+ * @param suffix    the suffix string
+ */
 static inline void dbg_dump_buffer(const char *prefix, const uint8_t *buf,
                                    size_t size,
                                    char suffix)
@@ -21,6 +48,14 @@ static inline void dbg_dump_buffer(const char *prefix, const uint8_t *buf,
     }
 }
 
+/**
+ * @brief   Dump in network order
+ *
+ * @param prefix    the prefix string
+ * @param buf       the buffer to dump
+ * @param size      size of buffer to dump
+ * @param suffix    the suffix string
+ */
 static inline void dbg_reverse_dump_buffer(const char *prefix,
                                            const uint8_t *buf,
                                            size_t size,
@@ -36,6 +71,12 @@ static inline void dbg_reverse_dump_buffer(const char *prefix,
     }
 }
 
+/**
+ * @brief   Returns address type as astring
+ *
+ * @param   addr_type     the address type
+ * @return address type
+ */
 static inline char *dbg_parse_ble_addr_type(uint8_t addr_type)
 {
     switch (addr_type) {
@@ -47,6 +88,12 @@ static inline char *dbg_parse_ble_addr_type(uint8_t addr_type)
     }
 }
 
+/**
+ * @brief   Returns the advertisement type as a string
+ *
+ * @param   type    the type
+ * @return the advertisement type
+ */
 static inline char *dbg_parse_ble_adv_type(uint8_t type)
 {
     switch (type) {
@@ -59,6 +106,11 @@ static inline char *dbg_parse_ble_adv_type(uint8_t type)
     }
 }
 
+/**
+ * @brief   Prints a ble address
+ *
+ * @param   addr    the address
+ */
 static inline void dbg_print_ble_addr(const ble_addr_t *addr)
 {
     dbg_reverse_dump_buffer("ble_addr = ", addr->val, 6, ' ');

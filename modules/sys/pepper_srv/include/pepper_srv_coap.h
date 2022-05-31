@@ -28,14 +28,21 @@
 extern "C" {
 #endif
 
+/** @brief  PEPPER SRV CoAP endpoint */
 #ifndef CONFIG_PEPPER_SRV_COAP_HOST
 #define CONFIG_PEPPER_SRV_COAP_HOST         "fd00:dead:beef::1"
 #endif
-
+/** @brief  PEPPER SRV CoAP endpoint port */
 #ifndef CONFIG_PEPPER_SRV_COAP_PORT
 #define CONFIG_PEPPER_SRV_COAP_PORT         5683
 #endif
 
+/**
+ * @brief   Initialize the CoAP remote endpoint
+ *
+ * @param[in] addr_str      the address
+ * @param[in] port          the port
+ */
 void pepper_srv_coap_init_remote(char *addr_str, uint16_t port);
 
 /**

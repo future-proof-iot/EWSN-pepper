@@ -13,7 +13,7 @@
  *
  * Encounter data, rssi or range, is stored as a timped stamped linked list.
  * The linked list is assumed to be accurately ordered. If not it could be
- * ordered by calling @ref clist_sort, but this consists of O(NlogN) runtime
+ * ordered by calling clist_sort, but this consists of O(NlogN) runtime
  * cost.
  *
  * @{
@@ -124,16 +124,19 @@ typedef struct ed_uwb {
 } ed_uwb_t;
 #endif
 
+/**
+ * @brief   UWB encounter debug data
+ */
 typedef struct ed_uwb_data {
 #if IS_USED(MODULE_ED_UWB_RSSI)
-    float rssi;
+    float rssi;                 /**< UWB rssi value */
 #endif
-    uint16_t d_cm;
+    uint16_t d_cm;              /**< UWB distance value in cm */
 #if IS_USED(MODULE_ED_UWB_LOS)
-    uint16_t los;
+    uint16_t los;               /**< UWB line of sight estimator, 0-100 % */
 #endif
-    uint32_t time;
-    uint32_t cid;
+    uint32_t time;              /**< timestamp in ms */
+    uint32_t cid;               /**< the ed_t cid */
 } ed_uwb_data_t;
 
 #if IS_USED(MODULE_ED_BLE)
@@ -165,10 +168,14 @@ typedef struct ed_ble_win {
 } ed_ble_win_t;
 #endif
 
+
+/**
+ * @brief   BLE encounter debug data
+ */
 typedef struct ed_ble_data {
-    float rssi;
-    uint32_t time;
-    uint32_t cid;
+    float rssi;     /**< rssi value */
+    uint32_t time;  /**< timestamp in  ms */
+    uint32_t cid;   /**< the ed_t cid */
 } ed_ble_data_t;
 
 /**
@@ -234,7 +241,7 @@ static inline void ed_list_init(ed_list_t *ed_list,
  * @brief   Initialize an Encounter Data List
  *
  * @param[inout]    ed_list         the encounter data list to initialize
- * @param[in]       min_expsure_s   the minimum exposure time for a valid encounter
+ * @param[in]       min_exposure_s   the minimum exposure time for a valid encounter
  */
 static inline void ed_list_set_min_exposure(ed_list_t *ed_list, uint32_t min_exposure_s)
 {
@@ -353,7 +360,6 @@ void ed_serialize_uwb_ble_printf_csv(ed_uwb_data_t *uwb, ed_ble_data_t *ble, con
  * @param[in]       ble      ble data
  * @param[in]       bn       optional base name tag
  * @param[in]       buf      pointer to allocated encoding buffer
- * @param[in]       len      length of encoding buffer
 
  * @return  Encoded length
  */
@@ -548,8 +554,8 @@ void ed_list_clear(ed_list_t *list);
 /**
  * @brief   Finish processing of an encounter data
  *
- * @param[in]      list     the encounter data list
- * @param[in]      min_expsure_s   the minimum exposure time for a valid encounter
+ * @param[in]      ed              the encounter data
+ * @param[in]      min_exposure_s   the minimum exposure time for a valid encounter
  *
  * @return         true if valid encounter, false otherwise (can be discarded)
  */
@@ -624,12 +630,12 @@ void ed_memory_manager_free(ed_memory_manager_t *manager,
 ed_t *ed_memory_manager_calloc(ed_memory_manager_t *manager);
 
 /**
- * @brief   Process an encounter data, data validaton is done in a VM
+ * @brief   Process an encounter data, data validation is done in a VM
  *
  * This will calculate the average distance for the encounters in the list if
  * the EBID can be reconstructed and if the encounter time was enough.
  *
- * @param[in]      list     the encounter data list
+ * @param[in]      ed     the encounter data
  *
  * @return  true if valid encounter, false otherwise (can be discarded)
  */

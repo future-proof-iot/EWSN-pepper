@@ -65,7 +65,7 @@ int pepper_srv_init(event_queue_t *evt_queue);
 /**
  * @brief   Submit new epoch_data_t to the server broker
  *
- * @param[in]       epoch_data           Epoch data to offload to server
+ * @param[in]       data               Epoch data to offload to server
  *
  */
 void pepper_srv_data_submit(epoch_data_t *data);

@@ -7,14 +7,16 @@
  */
 
 /**
- * @defgroup    sys_edhoc_coap
+ * @defgroup    sys_edhoc_coap  EDHOC CoAP Utilities
  * @ingroup     sys
  * @brief       EDHOC CoAP based utilities
  *
+ * Utilities to initiate an EDHOC CoAP context and perform simple a key exchange
+ * (initiator side)
+ *
  * @{
  *
- * @file        Utilities to initiate an EDHOC CoAP context and perform simple
- *              a key exchange (initiator side)
+ * @file
  *
  * @author      Francisco Molina <francois-xavier.molina@inria.fr>
  */
@@ -78,7 +80,7 @@ int edhoc_coap_init(edhoc_coap_ctx_t *ctx, edhoc_role_t role, uint8_t *id,
  *
  * @param[in]       ctx     The edhoc context
  * @param[in]       remote  The remote endpoint
- * @param[in]       methog  The authentication method, only EDHOC_AUTH_SIGN_SIGN
+ * @param[in]       method  The authentication method, only EDHOC_AUTH_SIGN_SIGN
  *                          currently supported
  * @param[in]       suite   The cipher suit to use, only EDHOC_CIPHER_SUITE_0 is
  *                          supported

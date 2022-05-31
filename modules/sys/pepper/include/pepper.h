@@ -78,23 +78,29 @@ extern "C" {
 #endif
 
 /**
- * @brief   The following event priorities are defined in a way that:
- *              - disabling ble and uwb has the higest priority
+ * @name   The following event priorities are defined in a way that:
+ *              - disabling ble and uwb has the highest priority
  *              - uwb & ble events have same priority
  *              - serialization events are handled last
+ * @{
  */
+/** @brief Highest event priority */
 #ifndef CONFIG_PEPPER_HIGH_EVENT_PRIO
 #define CONFIG_PEPPER_HIGH_EVENT_PRIO   (EVENT_PRIO_HIGHEST)
 #endif
+/** @brief Event priority for PEPPER state machine */
 #ifndef CONFIG_PEPPER_EVENT_PRIO
 #define CONFIG_PEPPER_EVENT_PRIO        (EVENT_PRIO_MEDIUM)
 #endif
+/** @brief Lowest event priority */
 #ifndef CONFIG_PEPPER_LOW_EVENT_PRIO
 #define CONFIG_PEPPER_LOW_EVENT_PRIO    (EVENT_PRIO_LOWEST)
 #endif
+/** @brief Event priority for BLE/UWB state machine */
 #ifndef CONFIG_UWB_BLE_EVENT_PRIO
 #define CONFIG_UWB_BLE_EVENT_PRIO       (EVENT_PRIO_MEDIUM)
 #endif
+/** @} */
 
 /**
  * @brief   The minimum value for the the TWR offset in milliseconds
@@ -226,15 +232,15 @@ extern "C" {
  * @brief   TWR correction offsets
  */
 typedef struct twr_params {
-    int16_t rx_offset_ticks;    /* rx/listen event correction */
-    int16_t tx_offset_ticks;    /* tx/request event correction */
-    uint16_t backoff;           /* twr backoff */
+    int16_t rx_offset_ticks;    /**< rx/listen event correction */
+    int16_t tx_offset_ticks;    /**< tx/request event correction */
+    uint16_t backoff;           /**< twr backoff */
 } twr_params_t;
 
 /**
  * @brief   Epoch parameters
  */
-typedef struct __attribute__((__packed__)) {
+typedef struct __attribute__((__packed__)) epoch_params {
     uint32_t duration_s;            /**< epoch duration in seconds */
     uint32_t iterations;            /**< epoch iterations count */
 } epoch_params_t;
@@ -242,7 +248,7 @@ typedef struct __attribute__((__packed__)) {
 /**
  * @brief   PEPPER start parameters
  */
-typedef struct __attribute__((__packed__)) {
+typedef struct __attribute__((__packed__)) pepper_start_params {
     uint32_t epoch_duration_s;      /**< the epoch duration in s */
     uint32_t epoch_iterations;      /**< the epoch iterations, 0 to run forever */
     uint32_t advs_per_slice;        /**< number of advertisements per slice */
@@ -265,28 +271,28 @@ typedef enum {
  * @brief   PEPPER controller data
  */
 typedef struct controller {
-    ebid_t ebid;                        /**> the local EBID */
-    ed_list_t ed_list;                  /**> encounter data list */
-    ed_memory_manager_t ed_mem;         /**> encounter data memory manager */
+    ebid_t ebid;                        /**< the local EBID */
+    ed_list_t ed_list;                  /**< encounter data list */
+    ed_memory_manager_t ed_mem;         /**< encounter data memory manager */
 #if IS_USED(MODULE_TWR)
-    twr_event_mem_manager_t twr_mem;    /**> twr events memory manager */
-    twr_params_t twr_params;            /**> twr parameters */
+    twr_event_mem_manager_t twr_mem;    /**< twr events memory manager */
+    twr_params_t twr_params;            /**< twr parameters */
 #endif
-    crypto_manager_keys_t keys;         /**> current pub, priv key pair */
-    uint32_t start_time;                /**> time stamp of the current epoch
-                                             start time taken from ZTIMER_SEC */
-    epoch_data_t data;                  /**> epoch_data structure to populate at
-                                             the end of an epoch */
-    mutex_t lock;                       /**> lock to prevent multiple calls to
-                                             pepper_start */
-    epoch_params_t epoch;               /**> current epoch parameters */
+    crypto_manager_keys_t keys;         /**< current pub, priv key pair */
+    uint32_t start_time;                /**< time stamp of the current epoch
+                                            start time taken from ZTIMER_SEC */
+    epoch_data_t data;                  /**< epoch_data structure to populate at
+                                            the end of an epoch */
+    mutex_t lock;                       /**< lock to prevent multiple calls to
+                                            pepper_start */
+    epoch_params_t epoch;               /**< current epoch parameters */
 #if IS_USED(MODULE_DESIRE_ADVERTISER)
-    adv_params_t adv;                   /**> configured advertisement parameters */
+    adv_params_t adv;                   /**< configured advertisement parameters */
 #endif
 #if IS_USED(MODULE_DESIRE_SCANNER)
-    ble_scan_params_t scan;             /**> scan configuration */
+    ble_scan_params_t scan;             /**< scan configuration */
 #endif
-    controller_status_t status;         /**> controller status */
+    controller_status_t status;         /**< controller status */
 } controller_t;
 
 /**
@@ -395,7 +401,6 @@ uint16_t pepper_twr_get_backoff(void);
  */
 void pepper_twr_set_backoff(uint16_t backoff);
 
-#if IS_USED(MODULE_PEPPER_UTIL)
 /**
  * @brief   Configure the basename string to be added when serializing and logging
  *
@@ -405,19 +410,23 @@ void pepper_twr_set_backoff(uint16_t backoff);
  *
  * @return  0 on success, -1 if string length > CONFIG_PEPPER_BASE_NAME_BUFFER
  */
+#if IS_USED(MODULE_PEPPER_UTIL)
 int pepper_set_serializer_bn(char *base_name);
-/**
- * @brief   Returns the current basename
- *
- * @return  the basename
- */
-const char *pepper_get_serializer_bn(void);
 #else
 static inline int pepper_set_serializer_bn(char *base_name)
 {
     (void)base_name;
     return -1;
 }
+#endif
+/**
+ * @brief   Returns the current basename
+ *
+ * @return  the basename
+ */
+#if IS_USED(MODULE_PEPPER_UTIL)
+const char *pepper_get_serializer_bn(void);
+#else
 static inline char *pepper_get_serializer_bn(void)
 {
     return NULL;
