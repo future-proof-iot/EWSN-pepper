@@ -7,16 +7,24 @@
  */
 
 /**
- * @defgroup    sys_ebid Ephemeral Bluetooth Identifiers Generator
+ * @defgroup    sys_ebid Ephemeral Bluetooth Identifiers
  * @ingroup     sys
- * @brief       C25519 based Ephemeral Bluetooth Identifiers Generator (EBID)
+ * @brief       C25519 based Ephemeral Bluetooth Identifiers (EBID)
  *
- * All @ref ebid_t struct should be initialized by caling @ref ebid_init.
+ * This modules allows generating an Ephemeral Bluetooth Id from a given Curve25519
+ * public/secret key pair, see @ref sys_crypto_manager. It also handles slicing
+ * the EBID (for 12 bytes carrousel advertisement)
+ *
+ * @see <a href="http://pubs.opengroup.org/onlinepubs/9699919799/functions/bind.html">
+ *          DESIRE: Leveraging the best of centralized and decentralized contact tracing systems
+ *      </a>
+ *
+ * All @ref ebid_t struct should be initialized by calling @ref ebid_init.
  * Once initialized an ebid_t can be generated from a public/secret key pair
- * with @ref ebid_generate, or interatively loaded by use of the different
- * @ref ebid_set_slice1, ebid_set_slice2, etc. Once at least 3 out of
+ * with @ref ebid_generate, or iteratively loaded by use of the different
+ * @ref ebid_set_slice1, @ref ebid_set_slice2, etc. Once at least 3 out of
  * the 3 slices + xor are set the full ebid can be reconstructed with
- * @ref ebid_reconstruct
+ * @ref ebid_reconstruct.
  *
  * @{
  *
@@ -87,12 +95,18 @@ extern "C" {
  *
  * @{
  */
-#define EBID_HAS_SLICE_1          (1 << 0)  /**< first slice is set */
-#define EBID_HAS_SLICE_2          (1 << 1)  /**< second slice is set */
-#define EBID_HAS_SLICE_3          (1 << 2)  /**< third slice is set */
-#define EBID_HAS_XOR              (1 << 3)  /**< xor is set */
+/** @brief EBID first slice is set */
+#define EBID_HAS_SLICE_1          (1 << 0)
+/** @brief EBID second slice is set */
+#define EBID_HAS_SLICE_2          (1 << 1)
+  /** @brief EBID third slice is set */
+#define EBID_HAS_SLICE_3          (1 << 2)
+/** @brief EBID xor is set */
+#define EBID_HAS_XOR              (1 << 3)
+/** @brief EBID all set */
 #define EBID_HAS_ALL              (EBID_HAS_SLICE_1 | EBID_HAS_SLICE_2 | \
                                    EBID_HAS_SLICE_3 | EBID_HAS_XOR)
+/** @brief EBID is valid */
 #define EBID_VALID                (EBID_HAS_ALL)      /**< EBID is valid, all slices and XOR are set */
 /** @} */
 
@@ -120,7 +134,7 @@ typedef union __attribute__((packed)) {
             uint8_t ebid_3[EBID_SLICE_SIZE_SHORT];          /**< third 8 byte slice */
             uint8_t ebid_3_padded[EBID_SLICE_SIZE_LONG];    /**< third 8 byte slice, last 4 bytes are don't care */
         };
-    } slice;
+    } slice;                                        /**< ebid slice struct */
     uint8_t u8[EBID_SIZE];                          /**< the complete EBID in an uint8_t buffer */
 } ebid_values_t;
 
@@ -134,7 +148,7 @@ typedef union __attribute__((packed)) {
         uint8_t ebid_2_set:1;       /**< second slice is set */
         uint8_t ebid_3_set:1;       /**< third slice is set */
         uint8_t ebid_xor_set:1;     /**< xor is set */
-    } bit;
+    } bit;                          /**< bits */
 } ebid_status_t;
 
 /**
@@ -195,7 +209,7 @@ int ebid_reconstruct(ebid_t* ebid);
  * @brief       Compare if two EBID match
  *
  * @param[in]       ebid_1      The first ebid to compare
- * @param[in]       ebid_1      The second ebid to compare
+ * @param[in]       ebid_2      The second ebid to compare
  *
  * @return      0 on success or if all EBID are set, -1 otherwise
  */
@@ -297,7 +311,6 @@ static inline uint8_t* ebid_get_slice(ebid_t* ebid, uint8_t idx)
  * @param[inout]     ebid        The ebid
  * @param[in]        slice       The slice or xor
  * @param[in]        idx         The slice idx to set
- * @param[in]        len         Then len of the slice to set
  */
 
 static inline void ebid_set_slice(ebid_t* ebid, const uint8_t* slice,

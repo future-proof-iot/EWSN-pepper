@@ -60,19 +60,22 @@ extern "C" {
  * @note    Source: https://android.googlesource.com/platform/packages/apps/Bluetooth/+/master/src/com/android/bluetooth/gatt/ScanManager.java
  * @{
  */
+/** @brief BLE scan interval in ms */
 #ifndef CONFIG_BLE_SCAN_ITVL_MS
 #define CONFIG_BLE_SCAN_ITVL_MS        (5120U)  /* 5120ms */
 #endif
+/** @brief BLE scan window in ms */
 #ifndef CONFIG_BLE_SCAN_WIN_MS
 #define CONFIG_BLE_SCAN_WIN_MS         (1280U)  /* 1280ms */
 #endif
-
+/** @brief PEPPER Default BLE scan parameters */
 #ifndef CONFIG_BLE_SCAN_PARAMS
 #define CONFIG_BLE_SCAN_PARAMS                      \
     { .scan_itvl_ms = CONFIG_BLE_SCAN_ITVL_MS,      \
       .scan_win_ms = CONFIG_BLE_SCAN_WIN_MS,        \
     }
 #endif
+/** @} */
 
 #ifdef __cplusplus
 }

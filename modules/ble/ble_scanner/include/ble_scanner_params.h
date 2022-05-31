@@ -30,12 +30,20 @@ extern "C" {
  * @note    Source: https://android.googlesource.com/platform/packages/apps/Bluetooth/+/master/src/com/android/bluetooth/gatt/ScanManager.java
  * @{
  */
+/** @brief BLE low latency scan interval in ms */
 #ifndef CONFIG_BLE_LOW_LATENCY_SCAN_ITVL_MS
 #define CONFIG_BLE_LOW_LATENCY_SCAN_ITVL_MS        (4096U)          /* 4096ms */
 #endif
+/** @brief BLE low latency scan window in ms */
 #ifndef CONFIG_BLE_LOW_LATENCY_SCAN_WIN_MS
 #define CONFIG_BLE_LOW_LATENCY_SCAN_WIN_MS         (4096U)          /* 4096ms */
 #endif
+/** @brief BLE low latency scan parameters */
+#define CONFIG_BLE_LOW_LATENCY_PARAMS                     \
+    { .itvl_ms = CONFIG_BLE_LOW_LATENCY_SCAN_ITVL_MS,     \
+      .win_ms = CONFIG_BLE_LOW_LATENCY_SCAN_WIN_MS,       \
+    }
+/** @} */
 
 /**
  * @name    Low Power Scan Profile, 10%
@@ -43,12 +51,20 @@ extern "C" {
  * @note    Source: https://android.googlesource.com/platform/packages/apps/Bluetooth/+/master/src/com/android/bluetooth/gatt/ScanManager.java
  * @{
  */
+/** @brief BLE low power scan interval in ms */
 #ifndef CONFIG_BLE_LOW_POWER_SCAN_ITVL_MS
 #define CONFIG_BLE_LOW_POWER_SCAN_ITVL_MS          (5120U)          /* 5120ms */
 #endif
+/** @brief BLE low power scan window in ms */
 #ifndef CONFIG_BLE_LOW_POWER_SCAN_WIN_MS
 #define CONFIG_BLE_LOW_POWER_SCAN_WIN_MS            (512U)          /*  512ms */
 #endif
+/** @brief BLE low power scan parameters */
+#define CONFIG_BLE_LOW_POWER_PARAMS                       \
+    { .itvl_ms = CONFIG_BLE_LOW_POWER_SCAN_ITVL_MS,       \
+      .win_ms = CONFIG_BLE_LOW_POWER_SCAN_WIN_MS,         \
+    }
+/** @} */
 
 /**
  * @name    Balanced San Profile, 25%
@@ -56,27 +72,20 @@ extern "C" {
  * @note    Source: https://android.googlesource.com/platform/packages/apps/Bluetooth/+/master/src/com/android/bluetooth/gatt/ScanManager.java
  * @{
  */
+/** @brief BLE balanced scan interval in ms */
 #ifndef CONFIG_BLE_BALANCED_SCAN_ITVL_MS
 #define CONFIG_BLE_BALANCED_SCAN_ITVL_MS         (5120U)          /* 5120ms */
 #endif
+/** @brief BLE balanced scan window in ms */
 #ifndef CONFIG_BLE_BALANCED_SCAN_WIN_MS
 #define CONFIG_BLE_BALANCED_SCAN_WIN_MS          (1280U)          /* 1280ms */
 #endif
-
-#define CONFIG_BLE_LOW_LATENCY_PARAMS                     \
-    { .itvl_ms = CONFIG_BLE_LOW_LATENCY_SCAN_ITVL_MS,     \
-      .win_ms = CONFIG_BLE_LOW_LATENCY_SCAN_WIN_MS,       \
-    }
-
+/** @brief BLE balanced can parameters */
 #define CONFIG_BLE_BALANCED_PARAMS                        \
     { .itvl_ms = CONFIG_BLE_BALANCED_SCAN_ITVL_MS,        \
       .win_ms = CONFIG_BLE_BALANCED_SCAN_WIN_MS,          \
     }
-
-#define CONFIG_BLE_LOW_POWER_PARAMS                       \
-    { .itvl_ms = CONFIG_BLE_LOW_POWER_SCAN_ITVL_MS,       \
-      .win_ms = CONFIG_BLE_LOW_POWER_SCAN_WIN_MS,         \
-    }
+/** @} */
 
 /**
  * @brief   default scan configurations

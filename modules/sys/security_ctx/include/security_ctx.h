@@ -111,7 +111,6 @@ int security_ctx_key_gen(security_ctx_t *ctx, uint8_t *salt, size_t salt_len,
  * @param[in]       ctx         the ctx
  * @param[in]       ctx_id      the ctx id
  * @param[in]       ctx_id_len  the ctx id length
- * @param[in]       secret      the secret
  * @param[inout]    nonce       nonce buffer, must be SECURITY_CTX_NONCE_LEN
  *
  * @returns     0 if succeeded, <0 otherwise
@@ -123,8 +122,8 @@ void security_ctx_gen_nonce(security_ctx_t *ctx, uint8_t *ctx_id,
  * @brief   Encode data
  *
  * @param[in]       ctx         the ctx
- * @param[in]       in          data to encode
- * @param[in]       in_len      length of data to encode
+ * @param[in]       data        data to encode
+ * @param[in]       data_len    length of data to encode
  * @param[inout]    buf         encoding buffer
  * @param[in]       buf_len     length of encoding buffer
  * @param[inout]    out         pointer to encoded data location
@@ -143,7 +142,7 @@ int security_ctx_encode(security_ctx_t *ctx, uint8_t *data, size_t data_len,
  * @param[inout]    buf         decoding buffer for COSE intermediates
  * @param[in]       buf_len     length of decoding
  * @param[inout]    out         output buffer
- * @param[inout]    out_len     output buffer length, length of decoded data
+ * @param[inout]    olen        output buffer length, length of decoded data
  *
  * @return          length of encoded data, <0 on error
  */

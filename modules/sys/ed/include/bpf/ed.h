@@ -16,10 +16,13 @@
 extern "C" {
 #endif
 
+/**
+ * @brief   ed context for femto-container/bpf
+ */
 typedef struct {
-    uint16_t time;
-    uint16_t distance;
-    uint16_t req_count;
+    uint16_t time;      /**< exposure duration in s */
+    uint16_t distance;  /**< average distance in cm */
+    uint16_t req_count; /**< successful TWR request count */
 } ed_uwb_bpf_ctx_t;
 
 #ifdef __cplusplus

@@ -29,14 +29,12 @@
 extern "C" {
 #endif
 
-/**
- * @brief EPOCH CBOR tag
- * @{
- */
+/** @brief EPOCH CBOR tag */
 #define EPOCH_CBOR_TAG                      (0x4544)
+/** @brief UWB encounter data CBOR tag */
 #define ED_UWB_CBOR_TAG                     (0x4500)
+/** @brief BLE encounter data CBOR tag */
 #define ED_BLE_CBOR_TAG                     (0x4501)
-/** @} */
 
 /**
  * @brief   Step between windows in seconds
@@ -204,6 +202,7 @@ size_t contact_data_serialize_all_cbor(epoch_data_t *epoch, uint8_t *buf, size_t
  * @param[in]       epoch           the epoch data to serialize
  * @param[in]       buf             pointer to allocated encoding buffer
  * @param[in]       len             length of encoding buffer
+ * @param[in]       prefix          optional prefix for the data tag
  *
  * @return  Encoded length
  */
@@ -225,6 +224,7 @@ int contact_data_load_all_cbor(uint8_t *buf, size_t len, epoch_data_t *epoch);
  * @brief   Serialize (JSON) an print epoch data
  *
  * @param[in]       epoch       the epoch data to serialize
+ * @param[in]       prefix          optional prefix for the data tag
  */
 void contact_data_serialize_all_printf(epoch_data_t *epoch, const char *prefix);
 
@@ -263,40 +263,47 @@ void random_contact(contact_data_t *data);
 /**
  * @brief   Populates the epoch_data_t structure with random values
  *
- * @param[in]       epoch       the epoch data
+ * @param[in]       data       the epoch data
  */
 void random_epoch(epoch_data_t *data);
 
+/**
+ * @brief   Function to check if contact is valid
+ *
+ * @param           data      the contact data
+ *
+ * @return true if valid, false otherwise
+ */
 bool epoch_valid_contact(contact_data_t *data);
 
-typedef enum {
-    EPOCH_SERIALIZE_CBOR,
-    EPOCH_SERIALIZE_JSON,
-} epoch_serializer_type_t;
+// typedef enum {
+//     EPOCH_SERIALIZE_CBOR,
+//     EPOCH_SERIALIZE_JSON,
+// } epoch_serializer_type_t;
 
-typedef enum {
-    EPOCH_LABEL_EPOCH = 0,
-    EPOCH_LABEL_PETS,
-    EPOCH_LABEL_ET,
-    EPOCH_LABEL_RT,
-    EPOCH_LABEL_UWB,
-    EPOCH_LABEL_BLE,
-    EPOCH_LABEL_COUNT,
-    EPOCH_LABEL_DISTANCE,
-    EPOCH_LABEL_RSSI,
-    EPOCH_LABEL_EXPOSURE,
-} epoch_label_t;
+// typedef enum {
+//     EPOCH_LABEL_EPOCH = 0,
+//     EPOCH_LABEL_PETS,
+//     EPOCH_LABEL_ET,
+//     EPOCH_LABEL_RT,
+//     EPOCH_LABEL_UWB,
+//     EPOCH_LABEL_BLE,
+//     EPOCH_LABEL_COUNT,
+//     EPOCH_LABEL_DISTANCE,
+//     EPOCH_LABEL_RSSI,
+//     EPOCH_LABEL_EXPOSURE,
+// } epoch_label_t;
 
-#define EPOCH_LABEL_JSON_EPOCH       "epoch"
-#define EPOCH_LABEL_JSON_PETS        "pets"
-#define EPOCH_LABEL_JSON_ET          "et"
-#define EPOCH_LABEL_JSON_RT          "rt"
-#define EPOCH_LABEL_JSON_UWB         "uwb"
-#define EPOCH_LABEL_JSON_BLE         "ble"
-#define EPOCH_LABEL_JSON_COUNT       "count"
-#define EPOCH_LABEL_JSON_DISTANCE    "d_cm"
-#define EPOCH_LABEL_JSON_RSSI        "rssi"
-#define EPOCH_LABEL_JSON_EXPOSURE    "exp_s"
+// #define EPOCH_LABEL_JSON_EPOCH       "epoch"
+// #define EPOCH_LABEL_JSON_PETS        "pets"
+// #define EPOCH_LABEL_JSON_ET          "et"
+// #define EPOCH_LABEL_JSON_RT          "rt"
+// #define EPOCH_LABEL_JSON_UWB         "uwb"
+// #define EPOCH_LABEL_JSON_BLE         "ble"
+// #define EPOCH_LABEL_JSON_COUNT       "count"
+// #define EPOCH_LABEL_JSON_DISTANCE    "d_cm"
+// #define EPOCH_LABEL_JSON_RSSI        "rssi"
+// #define EPOCH_LABEL_JSON_EXPOSURE    "exp_s"
 
 #ifdef __cplusplus
 }

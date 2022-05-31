@@ -8,7 +8,7 @@
  */
 
 /**
- * @defgroup    sys_storage Storage Directories
+ * @defgroup    sys_storage_dirs Storage Directories
  * @ingroup     sys
  * @brief       Storage Abstraction
  *
@@ -17,7 +17,6 @@
  * @file
  *
  * @author      Koen Zandberg <koen@bergzand.net>
- * @author      Francisco Molina <francois-xavier.molina@inria.fr>
  */
 
 #ifndef STORAGE_DIRS_H
@@ -29,17 +28,38 @@
 extern "C" {
 #endif
 
+/**
+ * @brief   forward declaration for storage_dit_t
+ */
 typedef struct _storage_dir storage_dir_t;
 
+/**
+ * @brief   Storage directory tree structure definition
+ */
 struct _storage_dir {
-    const storage_dir_t *subdirs;
-    const char *name;
+    const storage_dir_t *subdirs;   /**< subdirectories */
+    const char *name;               /**< directory name */
 };
 
+/**
+ * @brief   Create storage directory from hierarchy
+ *
+ * @param hierarchy
+ * @param prefix
+ * @return
+ */
 int storage_dirs_create_hier(const storage_dir_t *hierarchy, const char *prefix);
+
+/**
+ * @brief
+ *
+ * @return int
+ */
 int storage_dirs_create_sys_hier(void);
+
 #ifdef __cplusplus
 }
 #endif
 
 #endif /* STORAGE_DIRS_H */
+/** @} */

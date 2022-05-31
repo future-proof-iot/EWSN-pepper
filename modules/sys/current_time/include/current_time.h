@@ -30,7 +30,13 @@
 extern "C" {
 #endif
 
+/**
+ * @brief   Current time service uid
+ */
 #define CURRENT_TIME_SERVICE_UUID16         0x3333
+/**
+ * @brief   Current time char uid
+ */
 #define CURRENT_TIME_UUID16                 0x3332
 
 /**
@@ -61,11 +67,14 @@ extern "C" {
  * @param[in]   offset  the time correction offset
  * @param[in]   arg     optional user arg
  */
-typedef void (*current_time_cb_t)(int32_t, void *);
+typedef void (*current_time_cb_t)(int32_t offset, void *arg);
 
+/**
+ * @brief   Current time epoch type
+ */
 typedef union __attribute__((packed)) current_time {
-    uint32_t epoch;
-    uint8_t bytes[4];
+    uint32_t epoch;     /**< epoch */
+    uint8_t bytes[4];   /**< epoch bytes */
 } current_time_t;
 
 /**

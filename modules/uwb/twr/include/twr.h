@@ -118,11 +118,13 @@ extern "C" {
 #define CONFIG_TWR_RESET_ON_LOCK        1
 #endif
 
-
+/**
+ * @brief   TWR status enum
+ */
 typedef enum {
-    TWR_RNG_IDLE,
-    TWR_RNG_INITIATOR,
-    TWR_RNG_RESPONDER,
+    TWR_RNG_IDLE,       /**< idle */
+    TWR_RNG_INITIATOR,  /**< initiated a TWR exchange */
+    TWR_RNG_RESPONDER,  /**< responding to a TWR exchange */
 } twr_status_t;
 
 /**
@@ -151,7 +153,7 @@ typedef struct twr_event {
 typedef void (*twr_callback_t)(twr_event_data_t *, twr_status_t);
 
 /**
- * @brief
+ * @brief   TWR event buffer memory manager
  */
 typedef struct twr_event_mem_manager {
     uint8_t buf[CONFIG_TWR_EVENT_BUF_SIZE * sizeof(twr_event_t)];   /**< event buffer */
@@ -257,7 +259,9 @@ void twr_schedule_listen(twr_event_t *event, uint16_t offset);
  *
  * @pre     A initialized @ref twr_event_mem_manager, and twr_managed_set_manager()
  *
+ * @param[in]       addr    the neighbor address to listen for requests
  * @param[in]       offset  the time offset at witch to start listening
+ *
  *
  * @return  0 on success, -ENOMEM if no event available
  */

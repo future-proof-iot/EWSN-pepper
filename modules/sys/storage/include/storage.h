@@ -33,6 +33,9 @@
 extern "C" {
 #endif
 
+/**
+ * @brief   Default VFS data storage path
+ */
 #ifdef MODULE_VFS_DEFAULT
 #include "vfs_default.h"
 #define VFS_STORAGE_DATA              VFS_DEFAULT_DATA
@@ -40,8 +43,29 @@ extern "C" {
 #define VFS_STORAGE_DATA              "/sda"
 #endif
 
+/**
+ * @brief   Initialize storage, mount and create directory hierarchy
+ *
+ * @return 0 on success, <0 otherwise
+ */
 int storage_init(void);
+
+/**
+ * @brief   De-initialize storage (unmount)
+ *
+ * @return 0 on success, <0 otherwise
+ */
 int storage_deinit(void);
+
+/**
+ * @brief   Log buffer to storage
+ *
+ * @param path      filesystem path to log the buffer data
+ * @param buffer    buffer holding data to log
+ * @param len       size of data to log
+ *
+ * @return 0 on success, <0 otherwise
+ */
 int storage_log(const char* path, uint8_t *buffer, size_t len);
 
 #ifdef __cplusplus
