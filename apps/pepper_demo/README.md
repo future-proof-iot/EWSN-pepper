@@ -12,11 +12,11 @@ determine their distance. If a device is seen for enough time and at a close
 enough distance then its determined to be a relevant encounter and PET (Private
 Encounter Tokens) are generated.
 
-The EBID slice is rotated according to `ADV_PER_SLICE` (default 10).
+The EBID slice is rotated according to `ADV_PER_SLICE` (default 5).
 Every `EPOCH_DURATION_SEC` (default `300s`) the EBID is reset and an
 epoch ends. At the end of an epoch all EBID seen for more than `MIN_EXPOSURE_TIME`
-(default `150s`) and under `MAX_DISTANCE_CM` (default 200cm) trigger PET
-calculation.
+(default `30s`) and under `MAX_DISTANCE_CM` (default 200cm) trigger PET
+calculation. For demo purposes devices are set to continuously SCAN.
 
 Different than [pepper_simple](../pepper_simple/README.md) `pepper_srv_coap`, which adds
 IPV6 connectivity is included, allowing devices to offload the ERTL tables as well
@@ -29,8 +29,7 @@ as notify and get information on their infection/exposure status.
 For the above:
 
 * a BLE border router needs to be deployed
-* a DESIRE CoAP server needs to be deployed and provisioned with EDHOC credentials
-(if used)
+* a DESIRE CoAP server needs to be deployed
 
 ## Setup
 
@@ -100,25 +99,39 @@ rtt min/avg/max/mdev = 0.992/1.289/1.839/0.388 ms
 
 * Deploy the CoAP server
 
-
 ```
 git clone https://gitlab.inria.fr/pepper/desire-coap-server.git
 cd desire-coap-server
-pip install -r requirements.txt
+pip install .
 ```
 
 Recover the devices identifiers (this can be done by flashing the devices
 and using the `id` shell command):
 
 ```
-> id
-dwm1001 id: DW5FC2
+> pepper get uid
+[pepper]: uid DW45ED
 ```
 
 Then start the coap server declaring all devices to enroll, eg:
 
 ```
-python desire_coap_srv.py --node-uid DW5FC2 DWED75
+python desire_coap_srv.py --node-uid DW45ED DW...
+```
+
+If your host supports has multiple IPV6 addresses then specify the address
+on which to bind:
+
+```
+python desire_coap_srv.py --node-uid DW45ED DW... --host "fd00:dead:beef::1"
+```
+
+If binding on a different address than `fd00:dead:beef::1"` (RIOTs border router
+tools assign this address to `lo`), then for the PEPPER devices change `CONFIG_PEPPER_SRV_COAP_HOST`
+accordingly.
+
+```
+CFLAGS='-DCONFIG_PEPPER_SRV_COAP_HOST=\"2001:660:3207:4bf::17\"' make -C apps/pepper_demo flash term
 ```
 
 ### Running the Demo
@@ -133,71 +146,72 @@ tables:
 On devices:
 
 ```
-[pepper_srv] coap: fetch esr at /DW5FC2/esr
-[pepper]: end of uwb_epoch
-[pepper]: process all uwb_epoch data
-[pepper]: new uwb_epoch t=246
+main(): This is RIOT! (Version: 2022.07-devel-665-gfa0cd8-pepper/develop)
+Pepper Demo Applicaiton, start with default parameters
+[pepper]: new uwb_epoch t=0
 [pepper]: new ebid generation
 [pepper]: local ebid:
-      0xa6 0x1e 0xbc 0xe5 0x84 0x54 0x12 0xde
-      0xbe 0xa0 0x90 0x05 0x4b 0xeb 0x32 0x44
-      0xa5 0x81 0xdb 0x27 0x6a 0x83 0x4e 0x90
-      0xc1 0xe8 0x37 0x61 0x86 0x93 0xc2 0x68
-[pepper]: start adv: 60 times with intervals of 1000 ms
-[pepper]: enable TWR with addr 0x41fdms
-[pepper]: start scanning for 60000ms
-[pepper_srv] coap: send ertl to /DW5FC2/ertl
+        0x59 0xf4 0x81 0xe4 0x0d 0xf6 0x00 0x3e
+        0x6a 0xe6 0x89 0x22 0x61 0x51 0x92 0x70
+        0x17 0x77 0x71 0x05 0x1b 0x49 0x0d 0xe0
+        0x5c 0xf8 0x71 0x28 0xd4 0xcf 0xc5 0x6f
+[pepper]: end of uwb_epoch
+[pepper]: process all uwb_epoch data
+...
+[pepper_srv] coap: send ertl to /DWDEAF/ertl
 ```
 
 On server:
 
 ```
-CoAP Server Start
-coap-server:resources - CoAP Server Start
-   coap-server - [exposure_status]: uid=DWAFDE is_exposed=(False)
-   coap-server - [exposure_status]: uid=DW5FC2 is_exposed=(False)
-   coap-server - [exposure_status]: uid=DWAFDE is_exposed=(False)
-   coap-server - [exposure_status]: uid=DW5FC2 is_exposed=(False)
-   coap-server - [pet_offloading]: received rtl from uid=DWAFDE
+coap-server - [pet_offloading]: received rtl from uid=DWDEAF
 {
-  "epoch": 188,
+  "epoch": 61,
   "pets": [
     {
       "pet": {
         "etl": "",
-        "rtl": "ZSg6zLibenDDN6co0sVXvYJmTJRHo9Mb3kfUsdLwKwg=",
+        "rtl": "OAJbuhDKq23Ae1uQ8Sqeg0ENOjTL4uuzf0rYHmpphyE=",
         "uwb": {
-          "exposure": 50,
-          "req_count": 31,
-          "avg_d_cm": 37
+          "exposure": 49,
+          "req_count": 39,
+          "avg_d_cm": 17
         }
       }
     }
   ]
 }
+
 ```
 
 If a device is declared positive (by pressing the user button) then the server is
 notified and then devices that where in contact should see this and change their
-status LED:
+status LED, this can also be done with a shell command:
+
+```
+> pepperd inf true
+pepperd inf true
+[pepper_srv] coap : serialize infected=true, len=(5)
+[infected_declaration]: COVID positive!
+```
 
 The infected device:
 
 ```
 [pepper_srv] coap : serialize infected=true, len=(5)
 [infected_declaration]: COVID positive!
-
 ```
 
 The server:
 
 ```
-   coap-server - [infected_declaration]: uid=DWAFDE is_infected=(True)
-   coap-server - [exposure_status]: uid=DW5FC2 is_exposed=(True)
+  coap-server - [infected_declaration]: uid=DWDEAF is_infected=(True)
+  coap-server - [exposure_status]: uid=DW75ED is_exposed=(True
 ```
 
 The exposed device:
 
 ```
+> [pepper_srv] coap: fetch esr at /DW75ED/esr
 [exposure_status]: COVID contact!
 ```

@@ -9,7 +9,7 @@
 #include "event/periodic.h"
 #include "msg.h"
 #include "shell.h"
-#include "shell_commands.h"
+#include "xfa.h"
 #include "ztimer.h"
 #include "timex.h"
 
@@ -74,6 +74,34 @@ static void _esr_handler(event_t *event)
         }
     }
 }
+
+#if !IS_USED(MODULE_PEPPER_SRV_SHELL)
+static int _pepperd_set_infected(int argc, char **argv)
+{
+    if (argc < 2) {
+        puts("Usage:");
+        puts("\tpepperd inf <true/false>: sets infection status");
+        return -1;
+    }
+    else {
+        if (!strcmp(argv[2], "true")) {
+            _state.infected = true;
+        }
+        else if (!strcmp(argv[2], "false")) {
+
+            _state.infected = false;
+        }
+        else {
+            puts("Usage:");
+            puts("\tpepperd inf <true/false>: sets infection status");
+            return -1;
+        }
+        event_post(EVENT_PRIO_LOWEST, &_infected_event.super);
+    }
+    return 0;
+}
+SHELL_COMMAND(pepperd, "Pepper Server interface (Shell mode)", _pepperd_set_infected);
+#endif
 
 int main(void)
 {

@@ -36,7 +36,7 @@ USEMODULE += twr_sleep
 CFLAGS += -DMYNEWT_VAL_DW1000_RXTX_LEDS=0
 
 # Change default timings
-ADV_PER_SLICE ?= 10           # 10 advertisements per slice
+ADV_PER_SLICE ?= 20           # 20 advertisements per slice
 CFLAGS += -DCONFIG_ADV_PER_SLICE=$(ADV_PER_SLICE)
 EPOCH_DURATION_SEC ?= 900     # 15min
 CFLAGS += -DCONFIG_EPOCH_DURATION_SEC=$(EPOCH_DURATION_SEC)

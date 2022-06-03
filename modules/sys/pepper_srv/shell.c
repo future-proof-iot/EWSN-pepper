@@ -54,13 +54,19 @@ int _shell_srv_notify_epoch_data(epoch_data_t *epoch_data)
 
 int _shell_srv_notify_uwb_data(ed_uwb_data_t *data)
 {
+    (void)data;
+#if IS_USED(MODULE_ED_UWB)
     ed_serialize_uwb_printf(data, pepper_get_serializer_bn());
+#endif
     return 0;
 }
 
 int _shell_srv_notify_ble_data(ed_ble_data_t *data)
 {
+    (void)data;
+#if IS_USED(MODULE_ED_BLE) || IS_USED(MODULE_ED_BLE_WIN)
     ed_serialize_ble_printf(data, pepper_get_serializer_bn());
+#endif
     return 0;
 }
 
