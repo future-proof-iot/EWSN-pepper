@@ -41,7 +41,7 @@
 #include "desire_ble_adv.h"
 #include "desire_ble_scan.h"
 #ifndef LOG_LEVEL
-#define LOG_LEVEL   LOG_WARNING
+#define LOG_LEVEL   LOG_INFO
 #endif
 #include "log.h"
 
@@ -337,7 +337,7 @@ static void _adv_cb(uint32_t advs, void *arg)
             }
             LOG_DEBUG("[pepper]: 0x04%" PRIx16 " tx offset %" PRIu16 "\n", ed_get_short_addr(
                           next), offset);
-            LOG_INFO("[pepper]: adv delay: %" PRIu16 ", offset: %" PRIu16 "\n",
+            LOG_DEBUG("[pepper]: adv delay: %" PRIu16 ", offset: %" PRIu16 "\n",
                      delay, _get_twr_tx_offset(&next->ebid, seed));
         }
     } while (next != (ed_t *)_controller.ed_list.list.next);
