@@ -10,6 +10,9 @@ stages:
   - test
 
 build:
+  tags:
+    - ci.inria.fr
+    - large
   stage: build
   script:
     - make -j
@@ -18,6 +21,9 @@ build:
     - merge_requests
 
 test:
+  tags:
+    - ci.inria.fr
+    - large
   stage: test
   script:
     - make test -j
@@ -26,6 +32,9 @@ test:
     - merge_requests
 
 cppcheck:
+  tags:
+    - ci.inria.fr
+    - small
   stage: static-checks
   allow_failure: true
   script:
@@ -36,6 +45,9 @@ cppcheck:
 
 pages:
   image: alpine
+  tags:
+    - ci.inria.fr
+    - small
   script:
   - apk update && apk add doxygen graphviz ttf-freefont
   - doxygen docs/Doxyfile
