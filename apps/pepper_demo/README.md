@@ -215,3 +215,37 @@ The exposed device:
 > [pepper_srv] coap: fetch esr at /DW75ED/esr
 [exposure_status]: COVID contact!
 ```
+
+### Contact Tracing Dashboard
+
+A contact tracing dashboard can also be added, its based on a `telegraph`+`influxdb`+`grafana`
+stack. An easy way to start is with the provided `docker-compose` file.
+
+1. Create a .env file and populate it with your UID and GUID
+
+```bash
+UUID=1001
+GID=1001
+```
+
+These are easy to obtain through `id -u` and `id -g`, then simply setup the dashboard.
+
+2. Start the dashboard
+
+```bash
+cd desire-coap-server/desire_dashboard docker-compose up
+```
+
+3. Restart the server specifying where to log contact tracing events:
+
+```bash
+desire-coap-server --node-uid DW75ED DW... --host "fd00:dead:beef::1" --event-log http://127.0.0.1:8080/telegraf
+```
+
+4. Go to http://localhost:3000/d/SG9hNcNnk/pepper-riot-fp-viz and visualize the devices:
+
+- exposure status
+- infection status
+- average distance to neighbors
+
+For more refer to the  [desire-dashboard documentation](https://gitlab.inria.fr/pepper/desire-coap-server/-/blob/master/desire_dashboard/README.md)
