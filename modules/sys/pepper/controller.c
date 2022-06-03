@@ -151,7 +151,7 @@ static void _twr_cb(twr_event_data_t *data, twr_status_t status)
             .cid = ed->cid,
         };
 
-#if IS_USED(MODULE_PEPPER_SRV)
+#if IS_USED(MODULE_PEPPER_SRV_STORAGE)
         pepper_srv_uwb_data_submit(&uwb_data);
 #else
         if (IS_ACTIVE(CONFIG_PEPPER_LOG_CSV)) {
@@ -279,7 +279,7 @@ static void _scan_cb(uint32_t ticks, const ble_addr_t *addr, int8_t rssi,
             .time = ztimer_now(ZTIMER_MSEC),
             .cid = cid,
         };
-#if IS_USED(MODULE_PEPPER_SRV)
+#if IS_USED(MODULE_PEPPER_SRV_STORAGE)
         pepper_srv_ble_data_submit(&ble_data);
 #else
         if (IS_ACTIVE(CONFIG_PEPPER_LOG_CSV)) {
