@@ -37,7 +37,7 @@ USEMODULE += shell_commands
 USEMODULE += ps
 
 # Change default timings for faster demo behaviout
-ADV_PER_SLICE ?= 10           # 10 advertisements per slice
+ADV_PER_SLICE ?= 20           # 20 advertisements per slice
 CFLAGS += -DCONFIG_ADV_PER_SLICE=$(ADV_PER_SLICE)
 EPOCH_DURATION_SEC ?= 900     # 5min
 CFLAGS += -DCONFIG_EPOCH_DURATION_SEC=$(EPOCH_DURATION_SEC)
