@@ -44,18 +44,29 @@ USEMODULE += ble_scanner
 USEMODULE += ble_scanner_netif
 
 # Change default timings for faster demo behaviout
-ADV_PER_SLICE ?= 10           # 10 advertisements per slice
+ADV_PER_SLICE ?= 5            # 5 advertisements per slice
 CFLAGS += -DCONFIG_ADV_PER_SLICE=$(ADV_PER_SLICE)
-EPOCH_DURATION_SEC ?= 120     # 5min
+EPOCH_DURATION_SEC ?= 120     # 2min
 CFLAGS += -DCONFIG_EPOCH_DURATION_SEC=$(EPOCH_DURATION_SEC)
-MAX_DISTANCE_CM ?= 200       # 10m so everything is logged
+MAX_DISTANCE_CM ?= 200        # 2m
 CFLAGS += -DMAX_DISTANCE_CM=$(MAX_DISTANCE_CM)
-MIN_EXPOSURE_TIME_S ?= 30
+MIN_EXPOSURE_TIME_S ?= 30     # 30s minimum exposure
 CFLAGS+=-DMIN_EXPOSURE_TIME_S=$(MIN_EXPOSURE_TIME_S)
 TWR_LISTEN_WINDOW_US ?= 2000  # 2ms listen windows
 CFLAGS += -DCONFIG_TWR_LISTEN_WINDOW_US=$(TWR_LISTEN_WINDOW_US)
 ADV_ITVL_MS ?= 1000           # 1 adv per second
 CFLAGS += -DCONFIG_BLE_ADV_ITVL_MS=$(ADV_ITVL_MS)
+SCAN_ITVL_MS ?= 1280          # scan all the time for the demo
+CFLAGS += -DCONFIG_BLE_SCAN_ITVL_MS=$(SCAN_ITVL_MS)
+SCAN_WIN_MS ?= 1280
+CFLAGS += -DCONFIG_BLE_SCAN_WIN_MS=$(SCAN_WIN_MS)
+
+# Log BLE scan information over serial
+PEPPER_LOG_BLE ?= 0
+CFLAGS += -DCONFIG_PEPPER_LOG_BLE=$(PEPPER_LOG_BLE)
+# Log UWB scan information over serial
+PEPPER_LOG_UWB ?= 0
+CFLAGS += -DCONFIG_PEPPER_LOG_UWB=$(PEPPER_LOG_UWB)
 
 # The event thread will handle:
 # * advertisement

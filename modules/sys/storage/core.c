@@ -90,7 +90,7 @@ int storage_init(void)
 int storage_deinit(void)
 {
     if (MTD_0) {
-        return vfs_umount_by_path(VFS_STORAGE_DATA);
+        return vfs_unmount_by_path(VFS_STORAGE_DATA);
     }
     else {
         return -1;

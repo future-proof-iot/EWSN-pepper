@@ -41,7 +41,7 @@
 #include "desire_ble_adv.h"
 #include "desire_ble_scan.h"
 #ifndef LOG_LEVEL
-#define LOG_LEVEL   LOG_WARNING
+#define LOG_LEVEL   LOG_INFO
 #endif
 #include "log.h"
 
@@ -151,7 +151,7 @@ static void _twr_cb(twr_event_data_t *data, twr_status_t status)
             .cid = ed->cid,
         };
 
-#if IS_USED(MODULE_PEPPER_SRV)
+#if IS_USED(MODULE_PEPPER_SRV_STORAGE)
         pepper_srv_uwb_data_submit(&uwb_data);
 #else
         if (IS_ACTIVE(CONFIG_PEPPER_LOG_CSV)) {
@@ -279,7 +279,7 @@ static void _scan_cb(uint32_t ticks, const ble_addr_t *addr, int8_t rssi,
             .time = ztimer_now(ZTIMER_MSEC),
             .cid = cid,
         };
-#if IS_USED(MODULE_PEPPER_SRV)
+#if IS_USED(MODULE_PEPPER_SRV_STORAGE)
         pepper_srv_ble_data_submit(&ble_data);
 #else
         if (IS_ACTIVE(CONFIG_PEPPER_LOG_CSV)) {
@@ -337,7 +337,7 @@ static void _adv_cb(uint32_t advs, void *arg)
             }
             LOG_DEBUG("[pepper]: 0x04%" PRIx16 " tx offset %" PRIu16 "\n", ed_get_short_addr(
                           next), offset);
-            LOG_INFO("[pepper]: adv delay: %" PRIu16 ", offset: %" PRIu16 "\n",
+            LOG_DEBUG("[pepper]: adv delay: %" PRIu16 ", offset: %" PRIu16 "\n",
                      delay, _get_twr_tx_offset(&next->ebid, seed));
         }
     } while (next != (ed_t *)_controller.ed_list.list.next);
