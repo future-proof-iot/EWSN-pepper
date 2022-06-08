@@ -13,7 +13,7 @@
  * @file
  * @brief       Shell-based local server implementation. Simulate a remote server using a CLI.
  *
- * @author      Roudy Dagher <roudy.dagher@inria.fr>
+ * @author      Anonymous
  *
  * @}
  */

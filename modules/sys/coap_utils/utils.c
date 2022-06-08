@@ -13,7 +13,7 @@
  * @file
  * @brief       CoAP utility functions
  *
- * @author      Francisco Molina <francois-xavier.molina@inria.fr>
+ * @author      Anonymous
  *
  * @}
  */

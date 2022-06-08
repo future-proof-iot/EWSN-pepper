@@ -13,7 +13,7 @@
  * @file
  * @brief       DESIRE based ble advertisement module shell commands
  *
- * @author      Francisco Molina <francois-xavier.molina@inria.fr>
+ * @author      Anonymous
  *
  * @}
  */

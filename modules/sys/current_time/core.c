@@ -13,7 +13,7 @@
  * @file
  * @brief       BLE Time Service Client implementation
  *
- * @author      Francisco Molina <francois-xavier.molina@inria.fr>
+ * @author      Anonymous
  *
  * @}
  */

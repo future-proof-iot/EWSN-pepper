@@ -13,7 +13,7 @@
  * @file
  * @brief       Windowed BLE specific Encounter Data
  *
- * @author      Francisco Molina <francois-xavier.molina@inria.fr>
+ * @author      Anonymous
  *
  * @}
  */

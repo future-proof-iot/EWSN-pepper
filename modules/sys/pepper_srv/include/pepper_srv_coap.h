@@ -15,7 +15,7 @@
  *
  * @file
  *
- * @author      Roudy Dagher <roudy.dagher@inria.fr>
+ * @author      Anonymous
  */
 
 #ifndef PEPPER_SERVER_COAP_H

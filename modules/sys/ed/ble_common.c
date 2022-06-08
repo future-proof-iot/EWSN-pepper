@@ -13,7 +13,7 @@
  * @file
  * @brief       Common BLE Encounter Data code
  *
- * @author      Francisco Molina <francois-xavier.molina@inria.fr>
+ * @author      Anonymous
  *
  * @}
  */

@@ -16,7 +16,7 @@
  *
  * @file
  *
- * @author      Roudy Dagher <roudy.dagher@inria.fr>
+ * @author      Anonymous
  */
 
 #ifndef DESIRE_BLE_SCAN_H

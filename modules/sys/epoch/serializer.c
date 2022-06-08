@@ -14,7 +14,7 @@
  * @file
  * @brief       Epoch Encounters implementation
  *
- * @author      Francisco Molina <francois-xavier.molina@inria.fr>
+ * @author      Anonymous
  *
  * @}
  */

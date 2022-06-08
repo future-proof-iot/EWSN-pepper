@@ -13,8 +13,8 @@
  * @file
  * @brief       NimBLE Scanner Multiplexing Module implementation
  *
- * @author      Roudy Dagher <roudy.dagher@inria.fr>
- * @author      Francisco Molina <francois-xavier.molina@inria.fr>
+ * @author      Anonymous
+ * @author      Anonymous
  *
  * @}
  */

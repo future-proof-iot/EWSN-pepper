@@ -30,7 +30,7 @@
  *
  * @file
  *
- * @author      Francisco Molina <francois-xavier.molina@inria.fr>
+ * @author      Anonymous
  */
 
 #ifndef CRYPTO_MANAGER_H

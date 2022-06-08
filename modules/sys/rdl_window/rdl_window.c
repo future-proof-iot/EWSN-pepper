@@ -13,7 +13,7 @@
  * @file
  * @brief       Request Data List Windows implementation
  *
- * @author      Francisco Molina <francois-xavier.molina@inria.fr>
+ * @author      Anonymous
  *
  * @}
  */

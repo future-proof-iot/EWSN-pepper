@@ -17,7 +17,7 @@
  *
  * @file
  *
- * @author      Francisco Molina <francois-xavier.molina@inria.fr>
+ * @author      Anonymous
  */
 
 #ifndef SECURITY_CTX_H

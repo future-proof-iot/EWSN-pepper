@@ -20,7 +20,7 @@
  *
  * @file
  *
- * @author      Francisco Molina <francois-xavier.molina@inria.fr>
+ * @author      Anonymous
  */
 
 #ifndef ED_H

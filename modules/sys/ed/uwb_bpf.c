@@ -14,7 +14,7 @@
  * @file
  * @brief       Encounter Data List implementation
  *
- * @author      Francisco Molina <francois-xavier.molina@inria.fr>
+ * @author      Anonymous
  *
  * @}
  */

@@ -16,7 +16,7 @@
  *
  * @file
  *
- * @author      Francisco Molina <francois-xavier.molina@inria.fr>
+ * @author      Anonymous
  */
 
 #ifndef COAP_UTILS_H

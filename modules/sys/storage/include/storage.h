@@ -17,7 +17,7 @@
  * @file
  *
  * @author      Koen Zandberg <koen@bergzand.net>
- * @author      Francisco Molina <francois-xavier.molina@inria.fr>
+ * @author      Anonymous
  */
 
 #ifndef STORAGE_H

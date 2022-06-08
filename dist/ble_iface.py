@@ -5,7 +5,7 @@
 # directory for more details.
 
 """
-- author:      Roudy DAGHER <roudy.dagher@inria.fr>
+- author:      Anonymous
 """
 
 from dataclasses import dataclass, field

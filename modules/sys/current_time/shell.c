@@ -12,7 +12,7 @@
  * @file
  * @brief       Current Time shell commands
  *
- * @author      Francisco Molina <francois-xavier.molina@inria.fr>
+ * @author      Anonymous
  *
  * @}
  */

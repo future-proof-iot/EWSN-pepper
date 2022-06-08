@@ -18,7 +18,7 @@
  *              Credentials should be CBOR encoded to match the EDHOC-C keys
  *              parsing API.
  *
- * @author      Francisco Molina <francois-xavier.molina@inria.fr>
+ * @author      Anonymous
  *
  * @}
  */

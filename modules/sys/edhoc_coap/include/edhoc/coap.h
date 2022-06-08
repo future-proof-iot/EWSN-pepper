@@ -18,7 +18,7 @@
  *
  * @file
  *
- * @author      Francisco Molina <francois-xavier.molina@inria.fr>
+ * @author      Anonymous
  */
 
 #ifndef EDHOC_COAP_H

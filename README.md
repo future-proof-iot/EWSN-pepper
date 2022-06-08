@@ -2,8 +2,6 @@
 
 RIOT-based privacy preserving proximity tracing applications.
 
-There is [online documentation](https://pepper.gitlabpages.inria.fr/riot-desire) available.
-
 ### Initializing the repository:
 
 RIOT is included as a submodule of this repository. We provide a `make` helper

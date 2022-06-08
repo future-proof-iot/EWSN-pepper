@@ -16,7 +16,7 @@
  * This modules generates a C25519 based key pair. It will also generate
  * Private Encounter Tokens (PET).
  *
- * @author      Francisco Molina <francois-xavier.molina@inria.fr>
+ * @author      Anonymous
  *
  * @}
 */

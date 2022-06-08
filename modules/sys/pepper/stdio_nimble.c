@@ -13,7 +13,7 @@
  * @file
  * @brief       Example of twr ranging exposed over BLE service.
  *
- * @author      Roudy DAGHER <roudy.dagher@inria.fr>
+ * @author      Anonymous
  *
  * @}
  */

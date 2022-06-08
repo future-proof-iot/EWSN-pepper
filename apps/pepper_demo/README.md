@@ -1,7 +1,7 @@
 # PEPPER Demo
 
 This application runs PEPPER (PrEcise Privacy-PresERving Proximity Tracing) and
-adding the required futures to run with [desire CoAP server](https://gitlab.inria.fr/pepper/desire-coap-server)
+adding the required futures to run with [desire CoAP server](https://anonymous.4open.science/r/EWSN-DESIRE-CoAP-SRV-3829)
 in non-secured mode.
 
 In a nutshell devices advertise unique identifiers over BLE
@@ -100,7 +100,7 @@ rtt min/avg/max/mdev = 0.992/1.289/1.839/0.388 ms
 * Deploy the CoAP server
 
 ```
-git clone https://gitlab.inria.fr/pepper/desire-coap-server.git
+git clone https://anonymous.4open.science/r/EWSN-DESIRE-CoAP-SRV-3829.git
 cd desire-coap-server
 pip install .
 ```
@@ -248,4 +248,4 @@ desire-coap-server --node-uid DW75ED DW... --host "fd00:dead:beef::1" --event-lo
 - infection status
 - average distance to neighbors
 
-For more refer to the  [desire-dashboard documentation](https://gitlab.inria.fr/pepper/desire-coap-server/-/blob/master/desire_dashboard/README.md)
+For more refer to the  [desire-dashboard documentation](https://anonymous.4open.science/r/EWSN-DESIRE-CoAP-SRV-3829/desire_dashboard/README.md)

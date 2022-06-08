@@ -13,7 +13,7 @@
  * @file
  * @brief       Ephemeral Bluetooth Identifiers Generator implementation
  *
- * @author      Francisco Molina <francois-xavier.molina@inria.fr>
+ * @author      Anonymous
  *
  * @}
  */

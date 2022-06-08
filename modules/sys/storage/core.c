@@ -13,7 +13,7 @@
  * @file
  * @brief       Storage implementation
  *
- * @author      Francisco Molina <francois-xavier.molina@inria.fr>
+ * @author      Anonymous
  *
  * @}
  */

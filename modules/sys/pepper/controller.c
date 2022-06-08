@@ -13,7 +13,7 @@
  * @file
  * @brief       PrEcise Privacy-PresERving Proximity Tracing (PEPPER) implementation
  *
- * @author      Francisco Molina <francois-xavier.molina@inria.fr>
+ * @author      Anonymous
  *
  * @}
  */
